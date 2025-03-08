@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKSMate - Notlarım</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo(192).png">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Ana JavaScript -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/app.js"></script>
+    
+    <!-- Oturum Kontrolü -->
+    <script>
+        // Sayfa yüklendiğinde çalışacak
+        document.addEventListener('DOMContentLoaded', function() {
+            // Firebase yüklendiyse
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                // Kullanıcı oturumunu kontrol et
+                firebase.auth().onAuthStateChanged(function(user) { 
+                    if (user) {
+                        // Kullanıcı giriş yapmış
+                        console.log("Kullanıcı giriş yapmış:", user.uid);
+                        
+                        // Kullanıcı bilgilerini getir
+                        firebase.database().ref('users/' + user.uid).once('value')
+                            .then((snapshot) => {
+                                const userData = snapshot.val();
+                                if (userData) {
+                                    // Kullanıcı verileri varsa
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = userData.name || user.email.split('@')[0];
+                                    
+                                    // Sınav türünü güncelle
+                                    document.getElementById("userExamType").textContent = "Sınav Türü: " + getExamTypeText(userData.examType);
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                } else {
+                                    // Kullanıcı verileri yoksa e-postadan isim oluştur
+                                    const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = name;
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Kullanıcı verileri alınırken hata:", error);
+                                
+                                // E-postadan isim oluştur
+                                const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                
+                                // Kullanıcı adını güncelle
+                                document.getElementById("userName").textContent = name;
+                                
+                                // Dashboard'u göster
+                                document.getElementById("dashboardContainer").style.display = "flex";
+                            });
+                    } else {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            // Misafir kullanıcı varsa
+                            const guestData = JSON.parse(guestUser);
+                            
+                            // Kullanıcı adını güncelle
+                            document.getElementById("userName").textContent = guestData.name;
+                            document.getElementById("userExamType").textContent = "Sınav Türü: " + getExamTypeText(guestData.examType);
+                            
+                            // Dashboard'u göster
+                            document.getElementById("dashboardContainer").style.display = "flex";
+                        } else {
+                            // Giriş sayfasına yönlendir
+                            console.log("Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...");
+                            window.location.href = "login.html";
+                        }
+                    }
+                });
+            } else {
+                console.error("Firebase yüklenemedi!");
+                alert("Sistem yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.");
+            }
+        });
+        
+        // Sınav türü metni alma fonksiyonu
+        function getExamTypeText(examType) {
+            switch(examType) {
+                case 'tyt': return 'TYT';
+                case 'sayisal': return 'Sayısal';
+                case 'sozel': return 'Sözel';
+                case 'esitagirlik': return 'Eşit Ağırlık';
+                case 'dil': return 'Dil';
+                default: return 'TYT';
+            }
+        }
+    </script>
+</head>
+<body class="light-theme">
+    <div class="container">
+        <!-- Ana Dashboard -->
+        <div class="dashboard-container" id="dashboardContainer" style="display: none;">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <img src="assets/images/logo(192).png" alt="YKSMate Logo" class="sidebar-logo">
+                    <h2>YKSMate</h2>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <h3 id="userName">Kullanıcı Adı</h3>
+                        <p id="userExamType">Sınav Türü: TYT</p>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li>
+                            <a href="index.html"><i class="fas fa-home"></i> Ana Sayfa</a>
+                        </li>
+                        <li>
+                            <a href="exams.html"><i class="fas fa-file-alt"></i> Denemelerim</a>
+                        </li>
+                        <li>
+                            <a href="timer.html"><i class="fas fa-clock"></i> Zamanlayıcı</a>
+                        </li>
+                        <li>
+                            <a href="calendar.html"><i class="fas fa-calendar-alt"></i> Takvim</a>
+                        </li>
+                        <li class="active">
+                            <a href="notes.html"><i class="fas fa-sticky-note"></i> Notlarım</a>
+                        </li>
+                        <li>
+                            <a href="community.html"><i class="fas fa-users"></i> Topluluk</a>
+                        </li>
+                        <li>
+                            <a href="settings.html"><i class="fas fa-cog"></i> Ayarlar</a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="token-info">
+                        <i class="fas fa-coins"></i>
+                        <span id="tokenCount">0 Jeton</span>
+                    </div>
+                    <button id="logoutBtn" class="btn btn-outline">
+                        <i class="fas fa-sign-out-alt"></i> Çıkış Yap
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ana İçerik -->
+            <div class="main-content">
+                <header class="content-header">
+                    <button id="sidebarToggle" class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Ara...">
+                    </div>
+                    <div class="header-actions">
+                        <button class="theme-toggle" id="themeToggle">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <div class="notifications">
+                            <button class="notification-btn">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge">3</span>
+                            </button>
+                            <div class="notification-dropdown">
+                                <div class="notification-header">
+                                    <h3>Bildirimler</h3>
+                                    <button class="mark-all-read">Tümünü Okundu İşaretle</button>
+                                </div>
+                                <div class="notification-list">
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-file-alt"></i></div>
+                                        <div class="notification-content">
+                                            <p>Yarın TYT Denemesi var!</p>
+                                            <span class="notification-time">2 saat önce</span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-tasks"></i></div>
+                                        <div class="notification-content">
+                                            <p>Matematik ödeviniz için son gün!</p>
+                                            <span class="notification-time">5 saat önce</span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-trophy"></i></div>
+                                        <div class="notification-content">
+                                            <p>Haftalık hedefinize ulaştınız!</p>
+                                            <span class="notification-time">1 gün önce</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="notification-footer">
+                                    <a href="#">Tüm Bildirimleri Gör</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Sayfa İçeriği -->
+                <div class="page-content">
+                    <h1 class="page-title">Notlarım</h1>
+                    
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Not Kategorileri</h2>
+                            <button class="btn btn-primary" id="addCategoryBtn">
+                                <i class="fas fa-plus"></i> Kategori Ekle
+                            </button>
+                        </div>
+                        
+                        <div class="categories-container">
+                            <div class="category-card">
+                                <div class="category-icon"><i class="fas fa-calculator"></i></div>
+                                <div class="category-info">
+                                    <h3>Matematik</h3>
+                                    <p>3 not</p>
+                                </div>
+                            </div>
+                            <div class="category-card">
+                                <div class="category-icon"><i class="fas fa-atom"></i></div>
+                                <div class="category-info">
+                                    <h3>Fizik</h3>
+                                    <p>2 not</p>
+                                </div>
+                            </div>
+                            <div class="category-card">
+                                <div class="category-icon"><i class="fas fa-flask"></i></div>
+                                <div class="category-info">
+                                    <h3>Kimya</h3>
+                                    <p>1 not</p>
+                                </div>
+                            </div>
+                            <div class="category-card">
+                                <div class="category-icon"><i class="fas fa-book"></i></div>
+                                <div class="category-info">
+                                    <h3>Türkçe</h3>
+                                    <p>4 not</p>
+                                </div>
+                            </div>
+                            <div class="category-card add-category">
+                                <div class="category-icon"><i class="fas fa-plus"></i></div>
+                                <div class="category-info">
+                                    <h3>Yeni Kategori</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Son Notlar</h2>
+                            <button class="btn btn-primary" id="addNoteBtn">
+                                <i class="fas fa-plus"></i> Not Ekle
+                            </button>
+                        </div>
+                        
+                        <div class="notes-list">
+                            <div class="note-card">
+                                <div class="note-header">
+                                    <h3>Türev Formülleri</h3>
+                                    <span class="note-category">Matematik</span>
+                                </div>
+                                <div class="note-content">
+                                    <p>Türev formülleri ve örnekler...</p>
+                                </div>
+                                <div class="note-footer">
+                                    <span class="note-date">10 Haziran 2023</span>
+                                    <div class="note-actions">
+                                        <button class="btn-icon"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="note-card">
+                                <div class="note-header">
+                                    <h3>Paragraf Çözüm Teknikleri</h3>
+                                    <span class="note-category">Türkçe</span>
+                                </div>
+                                <div class="note-content">
+                                    <p>Paragraf sorularını çözerken dikkat edilmesi gerekenler...</p>
+                                </div>
+                                <div class="note-footer">
+                                    <span class="note-date">8 Haziran 2023</span>
+                                    <div class="note-actions">
+                                        <button class="btn-icon"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="note-card">
+                                <div class="note-header">
+                                    <h3>Periyodik Tablo</h3>
+                                    <span class="note-category">Kimya</span>
+                                </div>
+                                <div class="note-content">
+                                    <p>Periyodik tablodaki elementlerin özellikleri...</p>
+                                </div>
+                                <div class="note-footer">
+                                    <span class="note-date">5 Haziran 2023</span>
+                                    <div class="note-actions">
+                                        <button class="btn-icon"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Not Ekleme Modalı -->
+    <div class="modal" id="noteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Not Ekle</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <i class="fas fa-heading"></i>
+                    <input type="text" id="noteTitle" placeholder="Not Başlığı">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-tag"></i>
+                    <select id="noteCategory">
+                        <option value="">Kategori Seçin</option>
+                        <option value="matematik">Matematik</option>
+                        <option value="fizik">Fizik</option>
+                        <option value="kimya">Kimya</option>
+                        <option value="turkce">Türkçe</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-align-left"></i>
+                    <textarea id="noteContent" placeholder="Not içeriği..."></textarea>
+                </div>
+                <button class="btn btn-primary" id="saveNoteBtn">
+                    <i class="fas fa-save"></i> Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Kategori Ekleme Modalı -->
+    <div class="modal" id="categoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Kategori Ekle</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <i class="fas fa-folder"></i>
+                    <input type="text" id="categoryName" placeholder="Kategori Adı">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-icons"></i>
+                    <select id="categoryIcon">
+                        <option value="fas fa-book">Kitap</option>
+                        <option value="fas fa-calculator">Hesap Makinesi</option>
+                        <option value="fas fa-atom">Atom</option>
+                        <option value="fas fa-flask">Deney Tüpü</option>
+                        <option value="fas fa-globe">Dünya</option>
+                        <option value="fas fa-microscope">Mikroskop</option>
+                        <option value="fas fa-pen">Kalem</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" id="saveCategoryBtn">
+                    <i class="fas fa-save"></i> Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Çıkış İşlemi İçin JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function() {
+                    try {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            if (confirm('Çıkış yapmak istediğinize emin misiniz? Misafir verileriniz silinecektir.')) {
+                                localStorage.removeItem('guestUser');
+                                window.location.href = "login.html";
+                            }
+                        } else {
+                            if (typeof firebase !== 'undefined' && firebase.auth) {
+                                await firebase.auth().signOut();
+                                window.location.href = "login.html";
+                            } else {
+                                throw new Error("Firebase yüklenemedi!");
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Çıkış hatası:', error);
+                        alert('Çıkış yaparken bir hata oluştu: ' + error.message);
+                    }
+                });
+            }
+            
+            // Not ekleme modalı
+            const addNoteBtn = document.getElementById('addNoteBtn');
+            const noteModal = document.getElementById('noteModal');
+            const closeNoteModal = noteModal ? noteModal.querySelector('.close-modal') : null;
+            
+            if (addNoteBtn && noteModal && closeNoteModal) {
+                addNoteBtn.addEventListener('click', function() {
+                    noteModal.style.display = 'flex';
+                });
+                
+                closeNoteModal.addEventListener('click', function() {
+                    noteModal.style.display = 'none';
+                });
+                
+                window.addEventListener('click', function(event) {
+                    if (event.target === noteModal) {
+                        noteModal.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Kategori ekleme modalı
+            const addCategoryBtn = document.getElementById('addCategoryBtn');
+            const categoryModal = document.getElementById('categoryModal');
+            const closeCategoryModal = categoryModal ? categoryModal.querySelector('.close-modal') : null;
+            
+            if (addCategoryBtn && categoryModal && closeCategoryModal) {
+                addCategoryBtn.addEventListener('click', function() {
+                    categoryModal.style.display = 'flex';
+                });
+                
+                closeCategoryModal.addEventListener('click', function() {
+                    categoryModal.style.display = 'none';
+                });
+                
+                window.addEventListener('click', function(event) {
+                    if (event.target === categoryModal) {
+                        categoryModal.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Kategori kartı ekleme butonu
+            const addCategoryCard = document.querySelector('.add-category');
+            if (addCategoryCard && categoryModal) {
+                addCategoryCard.addEventListener('click', function() {
+                    categoryModal.style.display = 'flex';
+                });
+            }
+        });
+    </script>
+</body>
+</html> 
