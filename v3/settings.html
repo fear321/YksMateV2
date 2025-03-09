@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKSMate - Ayarlar</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo(192).png">
+    
+    <!-- Firebase kütüphaneleri (sıralama önemli!) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Ana JavaScript -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/app.js"></script>
+    
+    <!-- Oturum Kontrolü -->
+    <script>
+        // Sayfa yüklendiğinde çalışacak
+        document.addEventListener('DOMContentLoaded', function() {
+            // Firebase yüklendiyse
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                // Kullanıcı oturumunu kontrol et
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        // Kullanıcı giriş yapmış
+                        console.log("Kullanıcı giriş yapmış:", user.uid);
+                        
+                        // Önce localStorage'dan kontrol et
+                        const savedExamType = localStorage.getItem('userExamType');
+                        if (savedExamType) {
+                            // Eğer localStorage'da varsa, hemen UI'ı güncelle
+                            document.getElementById("userExamType").textContent = "Sınav Türü: " + getExamTypeText(savedExamType);
+                        }
+                        
+                        // Sonra veritabanından getir
+                        firebase.database().ref('users/' + user.uid).once('value')
+                            .then((snapshot) => {
+                                if (snapshot.exists()) {
+                                    const userData = snapshot.val();
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = userData.name || user.email.split('@')[0];
+                                    
+                                    // Sınav türünü güncelle
+                                    document.getElementById("userExamType").textContent = "Sınav Türü: " + getExamTypeText(userData.examType);
+                                    
+                                    // Profil bilgilerini doldur
+                                    if (document.getElementById("profileName")) {
+                                        document.getElementById("profileName").value = userData.name || "";
+                                    }
+                                    if (document.getElementById("profileEmail")) {
+                                        document.getElementById("profileEmail").value = user.email || "";
+                                    }
+                                    if (document.getElementById("profileExamType")) {
+                                        document.getElementById("profileExamType").value = userData.examType || "tyt";
+                                    }
+                                    
+                                    // localStorage'a kaydet
+                                    localStorage.setItem('userExamType', userData.examType);
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                } else {
+                                    // Kullanıcı verileri yoksa e-postadan isim oluştur
+                                    const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = name;
+                                    
+                                    // Profil e-postasını doldur
+                                    if (document.getElementById("profileEmail")) {
+                                        document.getElementById("profileEmail").value = user.email || "";
+                                    }
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Kullanıcı verileri alınırken hata:", error);
+                                
+                                // E-postadan isim oluştur
+                                const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                
+                                // Kullanıcı adını güncelle
+                                document.getElementById("userName").textContent = name;
+                                
+                                // Dashboard'u göster
+                                document.getElementById("dashboardContainer").style.display = "flex";
+                            });
+                    } else {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            // Misafir kullanıcı varsa
+                            const guestData = JSON.parse(guestUser);
+                            
+                            // Kullanıcı adını güncelle
+                            document.getElementById("userName").textContent = guestData.name;
+                            document.getElementById("userExamType").textContent = "Sınav Türü: " + getExamTypeText(guestData.examType);
+                            
+                            // Profil bilgilerini doldur
+                            if (document.getElementById("profileName")) {
+                                document.getElementById("profileName").value = guestData.name || "";
+                            }
+                            if (document.getElementById("profileExamType")) {
+                                document.getElementById("profileExamType").value = guestData.examType || "tyt";
+                            }
+                            
+                            // Misafir kullanıcı uyarısını göster
+                            const guestWarning = document.getElementById("guestWarning");
+                            if (guestWarning) {
+                                guestWarning.style.display = "block";
+                            }
+                            
+                            // Dashboard'u göster
+                            document.getElementById("dashboardContainer").style.display = "flex";
+                        } else {
+                            // Giriş sayfasına yönlendir
+                            console.log("Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...");
+                            window.location.href = "login.html";
+                        }
+                    }
+                });
+            } else {
+                console.error("Firebase yüklenemedi!");
+                alert("Sistem yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.");
+            }
+        });
+        
+        // Sınav türü metni alma fonksiyonu
+        function getExamTypeText(examType) {
+            switch(examType) {
+                case 'tyt': return 'TYT';
+                case 'sayisal': return 'Sayısal';
+                case 'sozel': return 'Sözel';
+                case 'esitagirlik': return 'Eşit Ağırlık';
+                case 'dil': return 'Dil';
+                default: return 'TYT';
+            }
+        }
+    </script>
+</head>
+<body class="light-theme">
+    <div class="container">
+        <!-- Ana Dashboard -->
+        <div class="dashboard-container" id="dashboardContainer" style="display: none;">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <img src="assets/images/logo(192).png" alt="YKSMate Logo" class="sidebar-logo">
+                    <h2>YKSMate</h2>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <a href="profile.html" style="text-decoration: none; color: inherit;">
+                            <h3 id="userName">Kullanıcı Adı</h3>
+                            <p id="userExamType">Sınav Türü: TYT</p>
+                        </a>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li>
+                            <a href="index.html"><i class="fas fa-home"></i> Ana Sayfa</a>
+                        </li>
+                        <li>
+                            <a href="exams.html"><i class="fas fa-file-alt"></i> Denemelerim</a>
+                        </li>
+                        <li>
+                            <a href="timer.html"><i class="fas fa-clock"></i> Zamanlayıcı</a>
+                        </li>
+                        <li>
+                            <a href="calendar.html"><i class="fas fa-calendar-alt"></i> Takvim</a>
+                        </li>
+                        <li>
+                            <a href="notes.html"><i class="fas fa-sticky-note"></i> Notlarım</a>
+                        </li>
+                        <li>
+                            <a href="community.html"><i class="fas fa-users"></i> Topluluk</a>
+                        </li>
+                        <li>
+                            <a href="profile.html"><i class="fas fa-user-circle"></i> Profil</a>
+                        </li>
+                        <li class="active">
+                            <a href="settings.html"><i class="fas fa-cog"></i> Ayarlar</a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="token-info">
+                        <i class="fas fa-coins"></i>
+                        <span id="tokenCount">0 Jeton</span>
+                    </div>
+                    <button id="logoutBtn" class="btn btn-outline">
+                        <i class="fas fa-sign-out-alt"></i> Çıkış Yap
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ana İçerik -->
+            <div class="main-content">
+                <header class="content-header">
+                    <button id="sidebarToggle" class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Ara...">
+                    </div>
+                    <div class="header-actions">
+                        <button class="theme-toggle" id="themeToggle">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <div class="notifications">
+                            <button class="notification-btn">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge">3</span>
+                            </button>
+                            <div class="notification-dropdown">
+                                <div class="notification-header">
+                                    <h3>Bildirimler</h3>
+                                    <button class="mark-all-read">Tümünü Okundu İşaretle</button>
+                                </div>
+                                <div class="notification-list">
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-file-alt"></i></div>
+                                        <div class="notification-content">
+                                            <p>Yarın TYT Denemesi var!</p>
+                                            <span class="notification-time">2 saat önce</span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-tasks"></i></div>
+                                        <div class="notification-content">
+                                            <p>Matematik ödeviniz için son gün!</p>
+                                            <span class="notification-time">5 saat önce</span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-trophy"></i></div>
+                                        <div class="notification-content">
+                                            <p>Haftalık hedefinize ulaştınız!</p>
+                                            <span class="notification-time">1 gün önce</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="notification-footer">
+                                    <a href="#">Tüm Bildirimleri Gör</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Sayfa İçeriği -->
+                <div class="page-content">
+                    <h1 class="page-title">Ayarlar</h1>
+                    
+                    <div class="note" id="guestWarning" style="display: none;">
+                        <p><i class="fas fa-exclamation-triangle"></i> Misafir modunda bazı ayarlar sınırlıdır. Tüm özelliklere erişmek için lütfen bir hesap oluşturun.</p>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Profil Ayarları</h2>
+                        </div>
+                        
+                        <div class="settings-form">
+                            <div class="input-group">
+                                <i class="fas fa-user"></i>
+                                <input type="text" id="profileName" placeholder="Adınız">
+                            </div>
+                            <div class="input-group">
+                                <i class="fas fa-envelope"></i>
+                                <input type="email" id="profileEmail" placeholder="E-posta" disabled>
+                            </div>
+                            <div class="input-group">
+                                <select id="profileExamType">
+                                    <option value="tyt">TYT</option>
+                                    <option value="sayisal">Sayısal</option>
+                                    <option value="sozel">Sözel</option>
+                                    <option value="esitagirlik">Eşit Ağırlık</option>
+                                    <option value="dil">Dil</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" id="saveProfileBtn">
+                                <i class="fas fa-save"></i> Profili Kaydet
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Uygulama Ayarları</h2>
+                        </div>
+                        
+                        <div class="settings-form">
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <i class="fas fa-moon"></i>
+                                    <span>Karanlık Mod</span>
+                                </div>
+                                <div class="setting-control">
+                                    <label class="switch">
+                                        <input type="checkbox" id="darkModeToggle">
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <i class="fas fa-palette"></i>
+                                    <span>Tema Seçimi</span>
+                                </div>
+                                <div class="setting-control">
+                                    <select id="themeSelect">
+                                        <option value="light">Açık Tema</option>
+                                        <option value="dark">Koyu Tema</option>
+                                        <option value="purple">Mor Tema</option>
+                                        <option value="blue">Mavi Tema</option>
+                                        <option value="green">Yeşil Tema</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <i class="fas fa-bell"></i>
+                                    <span>Bildirimler</span>
+                                </div>
+                                <div class="setting-control">
+                                    <label class="switch">
+                                        <input type="checkbox" id="notificationsToggle" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <i class="fas fa-volume-up"></i>
+                                    <span>Ses Efektleri</span>
+                                </div>
+                                <div class="setting-control">
+                                    <label class="switch">
+                                        <input type="checkbox" id="soundEffectsToggle" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <i class="fas fa-language"></i>
+                                    <span>Dil</span>
+                                </div>
+                                <div class="setting-control">
+                                    <select id="languageSelect">
+                                        <option value="tr" selected>Türkçe</option>
+                                        <option value="en">English</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <button class="btn btn-primary" id="saveSettingsBtn">
+                                <i class="fas fa-save"></i> Ayarları Kaydet
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Hesap Ayarları</h2>
+                        </div>
+                        
+                        <div class="settings-form">
+                            <button class="btn btn-outline" id="changePasswordBtn">
+                                <i class="fas fa-key"></i> Şifre Değiştir
+                            </button>
+                            
+                            <button class="btn btn-outline danger" id="deleteAccountBtn">
+                                <i class="fas fa-trash"></i> Hesabı Sil
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Şifre Değiştirme Modalı -->
+    <div class="modal" id="passwordModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Şifre Değiştir</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="currentPassword" placeholder="Mevcut Şifre">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-key"></i>
+                    <input type="password" id="newPassword" placeholder="Yeni Şifre">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-check-circle"></i>
+                    <input type="password" id="confirmPassword" placeholder="Yeni Şifre (Tekrar)">
+                </div>
+                <div class="note">
+                    <p><i class="fas fa-info-circle"></i> Şifreniz en az 8 karakter uzunluğunda olmalı ve harf, rakam ve özel karakter içermelidir.</p>
+                </div>
+                <button class="btn btn-primary" id="updatePasswordBtn">
+                    <i class="fas fa-save"></i> Şifreyi Güncelle
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Hesap Silme Modalı -->
+    <div class="modal" id="deleteAccountModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Hesabı Sil</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="note danger">
+                    <p><i class="fas fa-exclamation-triangle"></i> <strong>Dikkat:</strong> Hesabınızı silmek geri alınamaz bir işlemdir. Tüm verileriniz kalıcı olarak silinecektir.</p>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="deleteAccountPassword" placeholder="Şifrenizi girin">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-check"></i>
+                    <input type="text" id="deleteConfirmation" placeholder="HESABIMI SİL yazarak onaylayın">
+                </div>
+                <button class="btn btn-danger" id="confirmDeleteAccountBtn" disabled>
+                    <i class="fas fa-trash"></i> Hesabımı Kalıcı Olarak Sil
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Çıkış İşlemi İçin JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tema seçimi
+            const themeSelect = document.getElementById('themeSelect');
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            
+            // Mevcut temayı yükle
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            themeSelect.value = currentTheme;
+            
+            // Karanlık mod toggle'ını güncelle
+            darkModeToggle.checked = currentTheme === 'dark';
+            
+            // Tema değiştiğinde
+            themeSelect.addEventListener('change', function() {
+                const selectedTheme = this.value;
+                
+                // Body sınıfını güncelle
+                document.body.className = `${selectedTheme}-theme`;
+                
+                // LocalStorage'a kaydet
+                localStorage.setItem('theme', selectedTheme);
+                
+                // Karanlık mod toggle'ını güncelle
+                darkModeToggle.checked = selectedTheme === 'dark';
+                
+                // Tema toggle ikonunu güncelle
+                const themeToggle = document.getElementById('themeToggle');
+                if (themeToggle) {
+                    themeToggle.innerHTML = `<i class="fas fa-${selectedTheme === 'dark' ? 'sun' : 'moon'}"></i>`;
+                }
+            });
+            
+            // Karanlık mod toggle'ı değiştiğinde
+            darkModeToggle.addEventListener('change', function() {
+                const newTheme = this.checked ? 'dark' : 'light';
+                
+                // Tema seçimini güncelle
+                themeSelect.value = newTheme;
+                
+                // Body sınıfını güncelle
+                document.body.className = `${newTheme}-theme`;
+                
+                // LocalStorage'a kaydet
+                localStorage.setItem('theme', newTheme);
+                
+                // Tema toggle ikonunu güncelle
+                const themeToggle = document.getElementById('themeToggle');
+                if (themeToggle) {
+                    themeToggle.innerHTML = `<i class="fas fa-${newTheme === 'dark' ? 'sun' : 'moon'}"></i>`;
+                }
+            });
+            
+            // Çıkış butonu
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function() {
+                    try {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            if (confirm('Çıkış yapmak istediğinize emin misiniz? Misafir verileriniz silinecektir.')) {
+                                localStorage.removeItem('guestUser');
+                                window.location.href = "login.html";
+                            }
+                        } else {
+                            if (typeof firebase !== 'undefined' && firebase.auth) {
+                                await firebase.auth().signOut();
+                                window.location.href = "login.html";
+                            } else {
+                                throw new Error("Firebase yüklenemedi!");
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Çıkış hatası:', error);
+                        alert('Çıkış yaparken bir hata oluştu: ' + error.message);
+                    }
+                });
+            }
+            
+            // Şifre değiştirme modalı
+            const changePasswordBtn = document.getElementById('changePasswordBtn');
+            const passwordModal = document.getElementById('passwordModal');
+            const closePasswordModal = passwordModal ? passwordModal.querySelector('.close-modal') : null;
+            
+            if (changePasswordBtn && passwordModal && closePasswordModal) {
+                changePasswordBtn.addEventListener('click', function() {
+                    passwordModal.style.display = 'flex';
+                });
+                
+                closePasswordModal.addEventListener('click', function() {
+                    passwordModal.style.display = 'none';
+                });
+                
+                window.addEventListener('click', function(event) {
+                    if (event.target === passwordModal) {
+                        passwordModal.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Hesap silme modalı
+            const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+            const deleteAccountModal = document.getElementById('deleteAccountModal');
+            const closeDeleteAccountModal = deleteAccountModal ? deleteAccountModal.querySelector('.close-modal') : null;
+            
+            if (deleteAccountBtn && deleteAccountModal && closeDeleteAccountModal) {
+                deleteAccountBtn.addEventListener('click', function() {
+                    deleteAccountModal.style.display = 'flex';
+                });
+                
+                closeDeleteAccountModal.addEventListener('click', function() {
+                    deleteAccountModal.style.display = 'none';
+                });
+                
+                window.addEventListener('click', function(event) {
+                    if (event.target === deleteAccountModal) {
+                        deleteAccountModal.style.display = 'none';
+                    }
+                });
+                
+                // Hesap silme onay kontrolü
+                const deleteConfirmation = document.getElementById('deleteConfirmation');
+                const confirmDeleteAccountBtn = document.getElementById('confirmDeleteAccountBtn');
+                
+                if (deleteConfirmation && confirmDeleteAccountBtn) {
+                    deleteConfirmation.addEventListener('input', function() {
+                        confirmDeleteAccountBtn.disabled = this.value !== 'HESABIMI SİL';
+                    });
+                }
+            }
+        });
+    </script>
+    
+    <!-- Sayfa sonunda, mevcut script etiketinden sonra eklemeniz gereken kod -->
+    <script>
+        document.getElementById('saveProfileBtn').addEventListener('click', async function() {
+            try {
+                const profileName = document.getElementById('profileName').value.trim();
+                const profileExamType = document.getElementById('profileExamType').value;
+                
+                if (!profileName) {
+                    alert('Lütfen adınızı girin.');
+                    return;
+                }
+                
+                // Profil verilerini hazırla
+                const profileData = {
+                    name: profileName,
+                    examType: profileExamType
+                };
+                
+                // Profili kaydet
+                const success = await saveUserProfile(profileData);
+                
+                if (success) {
+                    alert('Profil başarıyla güncellendi! Değişikliklerin tüm sayfalara yansıması için sayfalar yenilenecek.');
+                    
+                    // Sayfayı yenile
+                    window.location.reload();
+                } else {
+                    alert('Profil güncellenirken bir hata oluştu.');
+                }
+            } catch (error) {
+                console.error('Profil kaydetme hatası:', error);
+                alert('Profil güncellenirken bir hata oluştu: ' + error.message);
+            }
+        });
+    </script>
+    
+    <!-- Kullanıcı oturum açmış mı kontrol edin -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const user = firebase.auth().currentUser;
+            if (user) {
+                // Test verisi ekleyin
+                firebase.database().ref('users/' + user.uid + '/test').set({
+                    message: "Test başarılı!"
+                })
+                .then(() => {
+                    console.log("Test verisi başarıyla yazıldı!");
+                })
+                .catch((error) => {
+                    console.error("Test verisi yazılırken hata:", error);
+                });
+            } else {
+                console.log("Kullanıcı oturum açmamış!");
+            }
+        });
+    </script>
+    
+    <!-- Firebase Database Test -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Firebase Database test başlatılıyor...");
+            
+            // Firebase yüklenmişse test et
+            if (typeof firebase !== 'undefined') {
+                try {
+                    console.log("Firebase tanımlanmış: ", typeof firebase);
+                    console.log("Firebase database tanımlanmış: ", typeof firebase.database);
+                    
+                    // Database referansı oluştur
+                    const testRef = firebase.database().ref('test');
+                    console.log("Database referansı oluşturuldu:", testRef);
+                    
+                    // Test verisi yaz
+                    testRef.set({
+                        testTime: new Date().toISOString(),
+                        message: "Test başarılı!"
+                    })
+                    .then(() => {
+                        console.log("Test verisi başarıyla yazıldı!");
+                    })
+                    .catch((error) => {
+                        console.error("Test verisi yazılırken hata:", error);
+                    });
+                } catch (error) {
+                    console.error("Firebase Database test hatası:", error);
+                }
+            } else {
+                console.error("Firebase tanımlanmamış!");
+            }
+        });
+    </script>
+</body>
+</html> 

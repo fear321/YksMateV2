@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKSMate - Zamanlayıcı</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo(192).png">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Ana JavaScript -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/app.js"></script>
+    
+    <!-- Oturum Kontrolü -->
+    <script>
+        // Sayfa yüklendiğinde çalışacak
+        document.addEventListener('DOMContentLoaded', function() {
+            // Firebase yüklendiyse
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                // Kullanıcı oturumunu kontrol et
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        // Kullanıcı giriş yapmış
+                        console.log("Kullanıcı giriş yapmış:", user.uid);
+                        
+                        // Kullanıcı bilgilerini getir
+                        firebase.database().ref('users/' + user.uid).once('value')
+                            .then((snapshot) => {
+                                const userData = snapshot.val();
+                                if (userData) {
+                                    // Kullanıcı verileri varsa
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = userData.name || user.email.split('@')[0];
+                                    
+                                    // Sınav türünü güncelle
+                                    document.getElementById("userExamType").textContent = "Sınav Türü: " + getExamTypeText(userData.examType);
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                } else {
+                                    // Kullanıcı verileri yoksa e-postadan isim oluştur
+                                    const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = name;
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Kullanıcı verileri alınırken hata:", error);
+                                
+                                // E-postadan isim oluştur
+                                const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                
+                                // Kullanıcı adını güncelle
+                                document.getElementById("userName").textContent = name;
+                                
+                                // Dashboard'u göster
+                                document.getElementById("dashboardContainer").style.display = "flex";
+                            });
+                    } else {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            // Misafir kullanıcı varsa
+                            const guestData = JSON.parse(guestUser);
+                            
+                            // Kullanıcı adını güncelle
+                            document.getElementById("userName").textContent = guestData.name;
+                            document.getElementById("userExamType").textContent = "Sınav Türü: " + getExamTypeText(guestData.examType);
+                            
+                            // Dashboard'u göster
+                            document.getElementById("dashboardContainer").style.display = "flex";
+                        } else {
+                            // Giriş sayfasına yönlendir
+                            console.log("Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...");
+                            window.location.href = "login.html";
+                        }
+                    }
+                });
+            } else {
+                console.error("Firebase yüklenemedi!");
+                alert("Sistem yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.");
+            }
+        });
+        
+        // Sınav türü metni alma fonksiyonu
+        function getExamTypeText(examType) {
+            switch(examType) {
+                case 'tyt': return 'TYT';
+                case 'sayisal': return 'Sayısal';
+                case 'sozel': return 'Sözel';
+                case 'esitagirlik': return 'Eşit Ağırlık';
+                case 'dil': return 'Dil';
+                default: return 'TYT';
+            }
+        }
+    </script>
+</head>
+<body class="light-theme">
+    <div class="container">
+        <!-- Ana Dashboard -->
+        <div class="dashboard-container" id="dashboardContainer" style="display: none;">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <img src="assets/images/logo(192).png" alt="YKSMate Logo" class="sidebar-logo">
+                    <h2>YKSMate</h2>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <a href="profile.html" style="text-decoration: none; color: inherit;">
+                            <h3 id="userName">Kullanıcı Adı</h3>
+                            <p id="userExamType">Sınav Türü: TYT</p>
+                        </a>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li>
+                            <a href="index.html"><i class="fas fa-home"></i> Ana Sayfa</a>
+                        </li>
+                        <li>
+                            <a href="exams.html"><i class="fas fa-file-alt"></i> Denemelerim</a>
+                        </li>
+                        <li class="active">
+                            <a href="timer.html"><i class="fas fa-clock"></i> Zamanlayıcı</a>
+                        </li>
+                        <li>
+                            <a href="calendar.html"><i class="fas fa-calendar-alt"></i> Takvim</a>
+                        </li>
+                        <li>
+                            <a href="notes.html"><i class="fas fa-sticky-note"></i> Notlarım</a>
+                        </li>
+                        <li>
+                            <a href="community.html"><i class="fas fa-users"></i> Topluluk</a>
+                        </li>
+                        <li>
+                            <a href="profile.html"><i class="fas fa-user-circle"></i> Profil</a>
+                        </li>
+                        <li>
+                            <a href="settings.html"><i class="fas fa-cog"></i> Ayarlar</a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="token-info">
+                        <i class="fas fa-coins"></i>
+                        <span id="tokenCount">0 Jeton</span>
+                    </div>
+                    <button id="logoutBtn" class="btn btn-outline">
+                        <i class="fas fa-sign-out-alt"></i> Çıkış Yap
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ana İçerik -->
+            <div class="main-content">
+                <header class="content-header">
+                    <button id="sidebarToggle" class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Ara...">
+                    </div>
+                    <div class="header-actions">
+                        <button class="theme-toggle" id="themeToggle">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <div class="notifications">
+                            <button class="notification-btn">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge">3</span>
+                            </button>
+                            <div class="notification-dropdown">
+                                <div class="notification-header">
+                                    <h3>Bildirimler</h3>
+                                    <button class="mark-all-read">Tümünü Okundu İşaretle</button>
+                                </div>
+                                <div class="notification-list">
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-file-alt"></i></div>
+                                        <div class="notification-content">
+                                            <p>Yarın TYT Denemesi var!</p>
+                                            <span class="notification-time">2 saat önce</span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-tasks"></i></div>
+                                        <div class="notification-content">
+                                            <p>Matematik ödeviniz için son gün!</p>
+                                            <span class="notification-time">5 saat önce</span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-trophy"></i></div>
+                                        <div class="notification-content">
+                                            <p>Haftalık hedefinize ulaştınız!</p>
+                                            <span class="notification-time">1 gün önce</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="notification-footer">
+                                    <a href="#">Tüm Bildirimleri Gör</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Sayfa İçeriği -->
+                <div class="page-content">
+                    <h1 class="page-title">Zamanlayıcı</h1>
+                    
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Sınav Zamanlayıcısı</h2>
+                            <div class="timer-controls">
+                                <select id="examType">
+                                    <option value="tyt">TYT (135 dk)</option>
+                                    <option value="ayt">AYT (180 dk)</option>
+                                    <option value="ydt">YDT (120 dk)</option>
+                                    <option value="custom">Özel Süre</option>
+                                </select>
+                                <input type="number" id="customTime" placeholder="Dakika" min="1" max="300" style="display: none;">
+                            </div>
+                        </div>
+                        
+                        <div class="timer-display">
+                            <div class="timer-clock">
+                                <span id="hours">00</span>:<span id="minutes">00</span>:<span id="seconds">00</span>
+                            </div>
+                            <div class="timer-buttons">
+                                <button class="btn btn-primary" id="startTimer">
+                                    <i class="fas fa-play"></i> Başlat
+                                </button>
+                                <button class="btn btn-secondary" id="pauseTimer" disabled>
+                                    <i class="fas fa-pause"></i> Duraklat
+                                </button>
+                                <button class="btn btn-outline" id="resetTimer" disabled>
+                                    <i class="fas fa-redo"></i> Sıfırla
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Pomodoro Zamanlayıcısı</h2>
+                            <div class="timer-controls">
+                                <select id="pomodoroType">
+                                    <option value="25-5">25 dk Çalışma / 5 dk Mola</option>
+                                    <option value="50-10">50 dk Çalışma / 10 dk Mola</option>
+                                    <option value="custom">Özel Ayar</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="timer-display">
+                            <div class="timer-status">
+                                <span id="pomodoroStatus">Çalışma Zamanı</span>
+                            </div>
+                            <div class="timer-clock">
+                                <span id="pomodoroMinutes">25</span>:<span id="pomodoroSeconds">00</span>
+                            </div>
+                            <div class="timer-buttons">
+                                <button class="btn btn-primary" id="startPomodoro">
+                                    <i class="fas fa-play"></i> Başlat
+                                </button>
+                                <button class="btn btn-secondary" id="pausePomodoro" disabled>
+                                    <i class="fas fa-pause"></i> Duraklat
+                                </button>
+                                <button class="btn btn-outline" id="resetPomodoro" disabled>
+                                    <i class="fas fa-redo"></i> Sıfırla
+                                </button>
+                            </div>
+                            <div class="pomodoro-counter">
+                                <span>Tamamlanan Pomodoro: <span id="completedPomodoros">0</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Çıkış İşlemi İçin JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function() {
+                    try {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            if (confirm('Çıkış yapmak istediğinize emin misiniz? Misafir verileriniz silinecektir.')) {
+                                localStorage.removeItem('guestUser');
+                                window.location.href = "login.html";
+                            }
+                        } else {
+                            if (typeof firebase !== 'undefined' && firebase.auth) {
+                                await firebase.auth().signOut();
+                                window.location.href = "login.html";
+                            } else {
+                                throw new Error("Firebase yüklenemedi!");
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Çıkış hatası:', error);
+                        alert('Çıkış yaparken bir hata oluştu: ' + error.message);
+                    }
+                });
+            }
+            
+            // Sınav tipi değiştiğinde özel süre alanını göster/gizle
+            const examType = document.getElementById('examType');
+            const customTime = document.getElementById('customTime');
+            
+            if (examType && customTime) {
+                examType.addEventListener('change', function() {
+                    if (this.value === 'custom') {
+                        customTime.style.display = 'inline-block';
+                    } else {
+                        customTime.style.display = 'none';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html> 
