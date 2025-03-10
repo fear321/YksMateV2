@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKSMate - Ayarlar</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo(192).png">
+    
+    <!-- Firebase kütüphaneleri (sıralama önemli!) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Ana JavaScript -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/app.js"></script>
+    
+    <!-- Oturum Kontrolü -->
+    <script>
+        // Sayfa yüklendiğinde çalışacak
+        document.addEventListener('DOMContentLoaded', function() {
+            // Firebase yüklendiyse
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                // Kullanıcı oturumunu kontrol et
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        // Kullanıcı giriş yapmış
+                        console.log("Kullanıcı giriş yapmış:", user.uid);
+                        
+                        // Önce localStorage'dan kontrol et
+                        const savedExamType = localStorage.getItem('userExamType');
+                        if (savedExamType) {
+                            // Eğer localStorage'da varsa, hemen UI'ı güncelle
+                            document.getElementById("userExamType").textContent = "Sınav Türü: " + getExamTypeText(savedExamType);
+                        }
+                        
+                        // Sonra veritabanından getir
+                        firebase.database().ref('users/' + user.uid).once('value')
+                            .then((snapshot) => {
+                                if (snapshot.exists()) {
+                                    const userData = snapshot.val();
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = userData.name || user.email.split('@')[0];
+                                    
+                                    // Sınav türünü güncelle
+                                    document.getElementById("userExamType").textContent = "" + getExamTypeText(userData.examType);
+                                    
+                                    // Profil bilgilerini doldur
+                                    if (document.getElementById("profileName")) {
+                                        document.getElementById("profileName").value = userData.name || "";
+                                    }
+                                    if (document.getElementById("profileEmail")) {
+                                        document.getElementById("profileEmail").value = user.email || "";
+                                    }
+                                    if (document.getElementById("profileExamType")) {
+                                        document.getElementById("profileExamType").value = userData.examType || "tyt";
+                                    }
+                                    
+                                    // localStorage'a kaydet
+                                    localStorage.setItem('userExamType', userData.examType);
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                } else {
+                                    // Kullanıcı verileri yoksa e-postadan isim oluştur
+                                    const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = name;
+                                    
+                                    // Profil e-postasını doldur
+                                    if (document.getElementById("profileEmail")) {
+                                        document.getElementById("profileEmail").value = user.email || "";
+                                    }
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Kullanıcı verileri alınırken hata:", error);
+                                
+                                // E-postadan isim oluştur
+                                const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                
+                                // Kullanıcı adını güncelle
+                                document.getElementById("userName").textContent = name;
+                                
+                                // Dashboard'u göster
+                                document.getElementById("dashboardContainer").style.display = "flex";
+                            });
+                    } else {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            // Misafir kullanıcı varsa
+                            const guestData = JSON.parse(guestUser);
+                            
+                            // Kullanıcı adını güncelle
+                            document.getElementById("userName").textContent = guestData.name;
+                            document.getElementById("userExamType").textContent = "Sınav Türü: " + getExamTypeText(guestData.examType);
+                            
+                            // Profil bilgilerini doldur
+                            if (document.getElementById("profileName")) {
+                                document.getElementById("profileName").value = guestData.name || "";
+                            }
+                            if (document.getElementById("profileExamType")) {
+                                document.getElementById("profileExamType").value = guestData.examType || "tyt";
+                            }
+                            
+                            // Misafir kullanıcı uyarısını göster
+                            const guestWarning = document.getElementById("guestWarning");
+                            if (guestWarning) {
+                                guestWarning.style.display = "block";
+                            }
+                            
+                            // Dashboard'u göster
+                            document.getElementById("dashboardContainer").style.display = "flex";
+                        } else {
+                            // Giriş sayfasına yönlendir
+                            console.log("Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...");
+                            window.location.href = "login.html";
+                        }
+                    }
+                });
+            } else {
+                console.error("Firebase yüklenemedi!");
+                alert("Sistem yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.");
+            }
+        });
+        
+        // Sınav türü metni alma fonksiyonu
+        function getExamTypeText(examType) {
+            switch(examType) {
+                case 'tyt': return 'TYT';
+                case 'sayisal': return 'Sayısal';
+                case 'sozel': return 'Sözel';
+                case 'esitagirlik': return 'Eşit Ağırlık';
+                case 'dil': return 'Dil';
+                default: return 'TYT';
+            }
+        }
+    </script>
+</head>
+<body class="light-theme">
+    <div class="container">
+        <!-- Ana Dashboard -->
+        <div class="dashboard-container" id="dashboardContainer" style="display: none;">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <img src="assets/images/logo(192).png" alt="YKSMate Logo" class="sidebar-logo">
+                    <h2>YKSMate</h2>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <a href="profile.html" style="text-decoration: none; color: inherit;">
+                            <h3 id="userName">Kullanıcı Adı</h3>
+                            <p id="userExamType">Sınav Türü: TYT</p>
+                        </a>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li>
+                            <a href="index.html"><i class="fas fa-home"></i> Ana Sayfa</a>
+                        </li>
+                        <li>
+                            <a href="exams.html"><i class="fas fa-file-alt"></i> Denemelerim</a>
+                        </li>
+                        <li>
+                            <a href="timer.html"><i class="fas fa-clock"></i> Zamanlayıcı</a>
+                        </li>
+                        <li>
+                            <a href="calendar.html"><i class="fas fa-calendar-alt"></i> Takvim</a>
+                        </li>
+                        <li>
+                            <a href="notes.html"><i class="fas fa-sticky-note"></i> Notlarım</a>
+                        </li>
+                        <li>
+                            <a href="community.html"><i class="fas fa-users"></i> Topluluk</a>
+                        </li>
+                        <li>
+                            <a href="ai.html"><i class="fas fa-robot"></i> MateAI</a>
+                        </li>
+                        <li>
+                            <a href="profile.html"><i class="fas fa-user-circle"></i> Profil</a>
+                        </li>
+                        <li class="active">
+                            <a href="settings.html"><i class="fas fa-cog"></i> Ayarlar</a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="token-info">
+                        <i class="fas fa-coins"></i>
+                        <span id="tokenCount">0 Jeton</span>
+                    </div>
+                    <button id="logoutBtn" class="btn btn-outline">
+                        <i class="fas fa-sign-out-alt"></i> Çıkış Yap
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ana İçerik -->
+            <div class="main-content">
+                <header class="content-header">
+                    <button id="sidebarToggle" class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Ara...">
+                    </div>
+                    <div class="header-actions">
+                        <button class="theme-toggle" id="themeToggle">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <div class="notifications">
+                            <button class="notification-btn">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge">3</span>
+                            </button>
+                            <div class="notification-dropdown">
+                                <div class="notification-header">
+                                    <h3>Bildirimler</h3>
+                                    <button class="mark-all-read">Tümünü Okundu İşaretle</button>
+                                </div>
+                                <div class="notification-list">
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-file-alt"></i></div>
+                                        <div class="notification-content">
+                                            <p>Yarın TYT Denemesi var!</p>
+                                            <span class="notification-time">2 saat önce</span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-tasks"></i></div>
+                                        <div class="notification-content">
+                                            <p>Matematik ödeviniz için son gün!</p>
+                                            <span class="notification-time">5 saat önce</span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-trophy"></i></div>
+                                        <div class="notification-content">
+                                            <p>Haftalık hedefinize ulaştınız!</p>
+                                            <span class="notification-time">1 gün önce</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="notification-footer">
+                                    <a href="#">Tüm Bildirimleri Gör</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Sayfa İçeriği -->
+                <div class="page-content">
+                    <h1 class="page-title">Ayarlar</h1>
+                    
+                    <div class="note" id="guestWarning" style="display: none;">
+                        <p><i class="fas fa-exclamation-triangle"></i> Misafir modunda bazı ayarlar sınırlıdır. Tüm özelliklere erişmek için lütfen bir hesap oluşturun.</p>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Profil Ayarları</h2>
+                        </div>
+                        
+                        <div class="settings-form">
+                            <div class="input-group">
+                                <i class="fas fa-user"></i>
+                                <input type="text" id="profileName" placeholder="Adınız">
+                            </div>
+                            <div class="input-group">
+                                <i class="fas fa-envelope"></i>
+                                <input type="email" id="profileEmail" placeholder="E-posta" disabled>
+                            </div>
+                            <div class="input-group">
+                                <select id="profileExamType">
+                                    <option value="tyt">TYT</option>
+                                    <option value="sayisal">Sayısal</option>
+                                    <option value="sozel">Sözel</option>
+                                    <option value="esitagirlik">Eşit Ağırlık</option>
+                                    <option value="dil">Dil</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" id="saveProfileBtn">
+                                <i class="fas fa-save"></i> Profili Kaydet
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Uygulama Ayarları</h2>
+                        </div>
+                        
+                        <div class="settings-form">
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <i class="fas fa-moon"></i>
+                                    <span>Karanlık Mod</span>
+                                </div>
+                                <div class="setting-control">
+                                    <label class="switch">
+                                        <input type="checkbox" id="darkModeToggle">
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <i class="fas fa-palette"></i>
+                                    <span>Tema Seçimi</span>
+                                </div>
+                                <div class="setting-control">
+                                    <select id="themeSelect">
+                                        <option value="light">Açık Tema</option>
+                                        <option value="dark">Koyu Tema</option>
+                                        <option value="purple">Mor Tema</option>
+                                        <option value="blue">Mavi Tema</option>
+                                        <option value="green">Yeşil Tema</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <i class="fas fa-bell"></i>
+                                    <span>Bildirimler</span>
+                                </div>
+                                <div class="setting-control">
+                                    <label class="switch">
+                                        <input type="checkbox" id="notificationsToggle" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <i class="fas fa-volume-up"></i>
+                                    <span>Ses Efektleri</span>
+                                </div>
+                                <div class="setting-control">
+                                    <label class="switch">
+                                        <input type="checkbox" id="soundEffectsToggle" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <i class="fas fa-language"></i>
+                                    <span>Dil</span>
+                                </div>
+                                <div class="setting-control">
+                                    <select id="languageSelect">
+                                        <option value="tr" selected>Türkçe</option>
+                                        <option value="en">English</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <button class="btn btn-primary" id="saveSettingsBtn">
+                                <i class="fas fa-save"></i> Ayarları Kaydet
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Hesap Ayarları</h2>
+                        </div>
+                        
+                        <div class="settings-form">
+                            <button class="btn btn-outline" id="changePasswordBtn">
+                                <i class="fas fa-key"></i> Şifre Değiştir
+                            </button>
+                            
+                            <button class="btn btn-outline danger" id="deleteAccountBtn">
+                                <i class="fas fa-trash"></i> Hesabı Sil
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Şifre Değiştirme Modalı -->
+    <div class="modal" id="passwordModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Şifre Değiştir</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="currentPassword" placeholder="Mevcut Şifre">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-key"></i>
+                    <input type="password" id="newPassword" placeholder="Yeni Şifre">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-check-circle"></i>
+                    <input type="password" id="confirmPassword" placeholder="Yeni Şifre (Tekrar)">
+                </div>
+                <div class="note">
+                    <p><i class="fas fa-info-circle"></i> Şifreniz en az 8 karakter uzunluğunda olmalı ve harf, rakam ve özel karakter içermelidir.</p>
+                </div>
+                <button class="btn btn-primary" id="updatePasswordBtn">
+                    <i class="fas fa-save"></i> Şifreyi Güncelle
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Hesap Silme Modalı -->
+    <div class="modal" id="deleteAccountModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Hesabı Sil</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="note danger">
+                    <p><i class="fas fa-exclamation-triangle"></i> <strong>Dikkat:</strong> Hesabınızı silmek geri alınamaz bir işlemdir. Tüm verileriniz kalıcı olarak silinecektir.</p>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="deleteAccountPassword" placeholder="Şifrenizi girin">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-check"></i>
+                    <input type="text" id="deleteConfirmation" placeholder="HESABIMI SİL yazarak onaylayın">
+                </div>
+                <button class="btn btn-danger" id="confirmDeleteAccountBtn" disabled>
+                    <i class="fas fa-trash"></i> Hesabımı Kalıcı Olarak Sil
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Çıkış İşlemi İçin JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentUser;
+            let userRef;
+
+            // Kullanıcı oturumunu kontrol et
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    currentUser = user;
+                    userRef = firebase.database().ref('users/' + user.uid);
+                    loadUserSettings();
+                }
+            });
+
+            // Kullanıcı ayarlarını yükle
+            function loadUserSettings() {
+                userRef.once('value').then(snapshot => {
+                    const userData = snapshot.val();
+                    if (userData) {
+                        // Profil bilgilerini form alanlarına doldur
+                        document.getElementById('profileName').value = userData.name || '';
+                        document.getElementById('profileEmail').value = currentUser.email;
+                        document.getElementById('profileExamType').value = userData.examType || 'tyt';
+                        
+                        // Tema ayarlarını güncelle
+                        document.getElementById('themeSelect').value = userData.theme || 'light';
+                        document.getElementById('darkModeToggle').checked = userData.theme === 'dark';
+                        
+                        // Diğer ayarları güncelle
+                        document.getElementById('notificationsToggle').checked = userData.notifications !== false;
+                        document.getElementById('soundEffectsToggle').checked = userData.soundEffects !== false;
+                        document.getElementById('languageSelect').value = userData.language || 'tr';
+                    }
+                }).catch(error => {
+                    console.error('Ayarlar yüklenirken hata:', error);
+                    alert('Ayarlar yüklenirken bir hata oluştu.');
+                });
+            }
+
+            // Profil kaydetme
+            const saveProfileBtn = document.getElementById('saveProfileBtn');
+            if (saveProfileBtn) {
+                saveProfileBtn.addEventListener('click', function() {
+                    const name = document.getElementById('profileName').value.trim();
+                    const examType = document.getElementById('profileExamType').value;
+                    
+                    if (!name) {
+                        alert('Lütfen adınızı girin.');
+                        return;
+                    }
+                    
+                    userRef.update({
+                        name: name,
+                        examType: examType
+                    }).then(() => {
+                        alert('Profil başarıyla güncellendi!');
+                        
+                        // Kullanıcı adını güncelle
+                        document.getElementById('userName').textContent = name;
+                        document.getElementById('userExamType').textContent = getExamTypeText(examType);
+                        
+                        // LocalStorage'ı güncelle
+                        localStorage.setItem('userExamType', examType);
+                    }).catch(error => {
+                        console.error('Profil güncellenirken hata:', error);
+                        alert('Profil güncellenirken bir hata oluştu.');
+                    });
+                });
+            }
+
+            // Ayarları kaydetme
+            const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+            if (saveSettingsBtn) {
+                saveSettingsBtn.addEventListener('click', function() {
+                    const theme = document.getElementById('themeSelect').value;
+                    const notifications = document.getElementById('notificationsToggle').checked;
+                    const soundEffects = document.getElementById('soundEffectsToggle').checked;
+                    const language = document.getElementById('languageSelect').value;
+                    
+                    userRef.update({
+                        theme: theme,
+                        notifications: notifications,
+                        soundEffects: soundEffects,
+                        language: language
+                    }).then(() => {
+                        alert('Ayarlar başarıyla güncellendi!');
+                        
+                        // Temayı uygula
+                        document.body.className = `${theme}-theme`;
+                        localStorage.setItem('theme', theme);
+                        
+                        // Tema toggle ikonunu güncelle
+                        const themeToggle = document.getElementById('themeToggle');
+                        if (themeToggle) {
+                            themeToggle.innerHTML = `<i class="fas fa-${theme === 'dark' ? 'sun' : 'moon'}"></i>`;
+                        }
+                    }).catch(error => {
+                        console.error('Ayarlar güncellenirken hata:', error);
+                        alert('Ayarlar güncellenirken bir hata oluştu.');
+                    });
+                });
+            }
+
+            // Şifre değiştirme
+            const updatePasswordBtn = document.getElementById('updatePasswordBtn');
+            if (updatePasswordBtn) {
+                updatePasswordBtn.addEventListener('click', function() {
+                    const currentPassword = document.getElementById('currentPassword').value;
+                    const newPassword = document.getElementById('newPassword').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
+                    
+                    if (!currentPassword || !newPassword || !confirmPassword) {
+                        alert('Lütfen tüm alanları doldurun.');
+                        return;
+                    }
+                    
+                    if (newPassword !== confirmPassword) {
+                        alert('Yeni şifreler eşleşmiyor.');
+                        return;
+                    }
+                    
+                    if (newPassword.length < 8) {
+                        alert('Yeni şifre en az 8 karakter uzunluğunda olmalıdır.');
+                        return;
+                    }
+                    
+                    // Yeniden kimlik doğrulama
+                    const credential = firebase.auth.EmailAuthProvider.credential(
+                        currentUser.email,
+                        currentPassword
+                    );
+                    
+                    currentUser.reauthenticateWithCredential(credential).then(() => {
+                        // Şifre değiştirme
+                        return currentUser.updatePassword(newPassword);
+                    }).then(() => {
+                        alert('Şifreniz başarıyla güncellendi!');
+                        document.getElementById('passwordModal').style.display = 'none';
+                        document.getElementById('currentPassword').value = '';
+                        document.getElementById('newPassword').value = '';
+                        document.getElementById('confirmPassword').value = '';
+                    }).catch(error => {
+                        console.error('Şifre güncellenirken hata:', error);
+                        if (error.code === 'auth/wrong-password') {
+                            alert('Mevcut şifreniz yanlış.');
+                        } else {
+                            alert('Şifre güncellenirken bir hata oluştu.');
+                        }
+                    });
+                });
+            }
+
+            // Hesap silme
+            const confirmDeleteAccountBtn = document.getElementById('confirmDeleteAccountBtn');
+            if (confirmDeleteAccountBtn) {
+                confirmDeleteAccountBtn.addEventListener('click', function() {
+                    const password = document.getElementById('deleteAccountPassword').value;
+                    const confirmation = document.getElementById('deleteConfirmation').value;
+                    
+                    if (!password || confirmation !== 'HESABIMI SİL') {
+                        alert('Lütfen tüm alanları doğru şekilde doldurun.');
+                        return;
+                    }
+                    
+                    // Yeniden kimlik doğrulama
+                    const credential = firebase.auth.EmailAuthProvider.credential(
+                        currentUser.email,
+                        password
+                    );
+                    
+                    if (confirm('Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz!')) {
+                        currentUser.reauthenticateWithCredential(credential).then(() => {
+                            // Kullanıcı verilerini sil
+                            return userRef.remove();
+                        }).then(() => {
+                            // Hesabı sil
+                            return currentUser.delete();
+                        }).then(() => {
+                            alert('Hesabınız başarıyla silindi.');
+                            window.location.href = 'login.html';
+                        }).catch(error => {
+                            console.error('Hesap silinirken hata:', error);
+                            if (error.code === 'auth/wrong-password') {
+                                alert('Şifreniz yanlış.');
+                            } else {
+                                alert('Hesap silinirken bir hata oluştu.');
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Çıkış butonu
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function() {
+                    try {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            if (confirm('Çıkış yapmak istediğinize emin misiniz? Misafir verileriniz silinecektir.')) {
+                                localStorage.removeItem('guestUser');
+                                window.location.href = "login.html";
+                            }
+                        } else {
+                            if (typeof firebase !== 'undefined' && firebase.auth) {
+                                await firebase.auth().signOut();
+                                window.location.href = "login.html";
+                            } else {
+                                throw new Error("Firebase yüklenemedi!");
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Çıkış hatası:', error);
+                        alert('Çıkış yaparken bir hata oluştu: ' + error.message);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html> 
