@@ -1,0 +1,595 @@
+  <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentUser;
+            let userRef;
+
+            // Kullanıcı oturumunu kontrol et
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    currentUser = user;
+                    userRef = firebase.database().ref('users/' + user.uid);
+                    loadUserSettings();
+                }
+            });
+
+            // Kullanıcı ayarlarını yükle
+            function loadUserSettings() {
+                userRef.once('value').then(snapshot => {
+                    const userData = snapshot.val();
+                    if (userData) {
+                        // Profil bilgilerini form alanlarına doldur
+                        document.getElementById('profileName').value = userData.name || '';
+                        document.getElementById('profileEmail').value = currentUser.email;
+                        document.getElementById('profileExamType').value = userData.examType || 'tyt';
+                        
+                        // Tema ayarlarını güncelle
+                        document.getElementById('themeSelect').value = userData.theme || 'light';
+                        document.getElementById('darkModeToggle').checked = userData.theme === 'dark';
+                        
+                        // Diğer ayarları güncelle
+                        document.getElementById('notificationsToggle').checked = userData.notifications !== false;
+                        document.getElementById('soundEffectsToggle').checked = userData.soundEffects !== false;
+                        document.getElementById('languageSelect').value = userData.language || 'tr';
+                    }
+                })
+            }
+
+            // Profil kaydetme
+            const saveProfileBtn = document.getElementById('saveProfileBtn');
+            if (saveProfileBtn) {
+                saveProfileBtn.addEventListener('click', function() {
+                    const name = document.getElementById('profileName').value.trim();
+                    const examType = document.getElementById('profileExamType').value;
+                    
+                    if (!name) {
+                        alert('Lütfen adınızı girin.');
+                        return;
+                    }
+                    
+                    userRef.update({
+                        name: name,
+                        examType: examType
+                    }).then(() => {
+                        alert('Profil başarıyla güncellendi!');
+                        
+                        // Kullanıcı adını güncelle
+                        document.getElementById('userName').textContent = name;
+                        document.getElementById('userExamType').textContent = getExamTypeText(examType);
+                        
+                        // LocalStorage'a kaydet
+                        localStorage.setItem('userExamType', examType);
+                    }).catch(error => {
+                        console.error('Profil güncellenirken hata:', error);
+                        alert('Profil güncellenirken bir hata oluştu.');
+                    });
+                });
+            }
+
+            // Ayarları kaydetme
+            const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+            if (saveSettingsBtn) {
+                saveSettingsBtn.addEventListener('click', function() {
+                    const theme = document.getElementById('themeSelect').value;
+                    const notifications = document.getElementById('notificationsToggle').checked;
+                    const soundEffects = document.getElementById('soundEffectsToggle').checked;
+                    const language = document.getElementById('languageSelect').value;
+                    
+                    userRef.update({
+                        theme: theme,
+                        notifications: notifications,
+                        soundEffects: soundEffects,
+                        language: language
+                    }).then(() => {
+                        alert('Ayarlar başarıyla güncellendi!');
+                        
+                        // Temayı uygula
+                        document.body.className = `${theme}-theme`;
+                        localStorage.setItem('theme', theme);
+                        
+                        // Tema toggle ikonunu güncelle
+                        const themeToggle = document.getElementById('themeToggle');
+                        if (themeToggle) {
+                            themeToggle.innerHTML = `<i class="fas fa-${theme === 'dark' ? 'sun' : 'moon'}"></i>`;
+                        }
+                    }).catch(error => {
+                        console.error('Ayarlar güncellenirken hata:', error);
+                        alert('Ayarlar güncellenirken bir hata oluştu.');
+                    });
+                });
+            }
+
+            // Şifre değiştirme
+            const updatePasswordBtn = document.getElementById('updatePasswordBtn');
+            if (updatePasswordBtn) {
+                updatePasswordBtn.addEventListener('click', function() {
+                    const currentPassword = document.getElementById('currentPassword').value;
+                    const newPassword = document.getElementById('newPassword').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
+                    
+                    if (!currentPassword || !newPassword || !confirmPassword) {
+                        alert('Lütfen tüm alanları doldurun.');
+                        return;
+                    }
+                    
+                    if (newPassword !== confirmPassword) {
+                        alert('Yeni şifreler eşleşmiyor.');
+                        return;
+                    }
+                    
+                    if (newPassword.length < 8) {
+                        alert('Yeni şifre en az 8 karakter uzunluğunda olmalıdır.');
+                        return;
+                    }
+                    
+                    // Yeniden kimlik doğrulama
+                    const credential = firebase.auth.EmailAuthProvider.credential(
+                        currentUser.email,
+                        currentPassword
+                    );
+                    
+                    currentUser.reauthenticateWithCredential(credential).then(() => {
+                        // Şifre değiştirme
+                        return currentUser.updatePassword(newPassword);
+                    }).then(() => {
+                        alert('Şifreniz başarıyla güncellendi!');
+                        document.getElementById('passwordModal').style.display = 'none';
+                        document.getElementById('currentPassword').value = '';
+                        document.getElementById('newPassword').value = '';
+                        document.getElementById('confirmPassword').value = '';
+                    }).catch(error => {
+                        console.error('Şifre güncellenirken hata:', error);
+                        if (error.code === 'auth/wrong-password') {
+                            alert('Mevcut şifreniz yanlış.');
+                        } else {
+                            alert('Şifre güncellenirken bir hata oluştu.');
+                        }
+                    });
+                });
+            }
+
+            // Hesap silme
+            const confirmDeleteAccountBtn = document.getElementById('confirmDeleteAccountBtn');
+            if (confirmDeleteAccountBtn) {
+                confirmDeleteAccountBtn.addEventListener('click', function() {
+                    const password = document.getElementById('deleteAccountPassword').value;
+                    const confirmation = document.getElementById('deleteConfirmation').value;
+                    
+                    if (!password || confirmation !== 'HESABIMI SİL') {
+                        alert('Lütfen tüm alanları doğru şekilde doldurun.');
+                        return;
+                    }
+                    
+                    // Yeniden kimlik doğrulama
+                    const credential = firebase.auth.EmailAuthProvider.credential(
+                        currentUser.email,
+                        password
+                    );
+                    
+                    if (confirm('Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz!')) {
+                        currentUser.reauthenticateWithCredential(credential).then(() => {
+                            // Kullanıcı verilerini sil
+                            return userRef.remove();
+                        }).then(() => {
+                            // Hesabı sil
+                            return currentUser.delete();
+                        }).then(() => {
+                            alert('Hesabınız başarıyla silindi.');
+                            window.location.href = 'login.html';
+                        }).catch(error => {
+                            console.error('Hesap silinirken hata:', error);
+                            if (error.code === 'auth/wrong-password') {
+                                alert('Şifreniz yanlış.');
+                            } else {
+                                alert('Hesap silinirken bir hata oluştu.');
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Çıkış butonu
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function() {
+                    try {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            if (confirm('Çıkış yapmak istediğinize emin misiniz? Misafir verileriniz silinecektir.')) {
+                                localStorage.removeItem('guestUser');
+                                window.location.href = "login.html";
+                            }
+                        } else {
+                            if (typeof firebase !== 'undefined' && firebase.auth) {
+                                await firebase.auth().signOut();
+                                window.location.href = "login.html";
+                            } else {
+                                throw new Error("Firebase yüklenemedi!");
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Çıkış hatası:', error);
+                        alert('Çıkış yaparken bir hata oluştu: ' + error.message);
+                    }
+                });
+            }
+        });
+    </script>
+
+    <script>
+    // Tema ve parlaklık/saydamlık ayarları için JavaScript
+    document.addEventListener('DOMContentLoaded', function() {
+        const themeCards = document.querySelectorAll('.theme-card');
+        const opacitySlider = document.getElementById('opacitySlider');
+        const opacityValue = document.getElementById('opacityValue');
+        const transparencySlider = document.getElementById('transparencySlider');
+        const transparencyValue = document.getElementById('transparencyValue');
+        const blurSlider = document.getElementById('blurSlider');
+        const blurValue = document.getElementById('blurValue');
+        
+        // Arkaplan fotoğrafı için elementler
+        const backgroundUpload = document.getElementById('background-upload');
+        const backgroundPreview = document.getElementById('background-preview');
+        const removeBackgroundBtn = document.getElementById('remove-background');
+        
+        // Kayıtlı tema ve ayarları yükle
+        const savedTheme = localStorage.getItem('selectedTheme') || 'purple';
+        const savedBrightness = localStorage.getItem('selectedBrightness') || '100';
+        const savedTransparency = localStorage.getItem('selectedTransparency') || '100';
+        const savedBlur = localStorage.getItem('selectedBlur') || '0';
+        
+        // Başlangıç değerlerini ayarla
+        document.body.className = `${savedTheme}-theme`;
+        
+        // Parlaklık ayarını uygula
+        opacitySlider.value = savedBrightness;
+        opacityValue.textContent = `${savedBrightness}%`;
+        document.body.style.filter = `brightness(${savedBrightness / 100})`;
+        
+        // Saydamlık ayarını uygula
+        transparencySlider.value = savedTransparency;
+        transparencyValue.textContent = `${savedTransparency}%`;
+        document.body.style.opacity = savedTransparency / 100;
+        
+        // Bulanıklık ayarını uygula
+        blurSlider.value = savedBlur;
+        blurValue.textContent = `${savedBlur}px`;
+        applyBlurToCards(savedBlur);
+        
+        // Arkaplan fotoğrafını uygula
+        const savedBackgroundImage = localStorage.getItem('backgroundImage');
+        if (savedBackgroundImage) {
+            document.body.classList.add('has-background');
+            document.body.style.backgroundImage = `url(${savedBackgroundImage})`;
+            backgroundPreview.innerHTML = `<img src="${savedBackgroundImage}" alt="Arkaplan Önizleme" style="width: 100%; height: 100%; object-fit: cover;">`;
+            removeBackgroundBtn.disabled = false;
+        } else {
+            // Kaldır butonunu devre dışı bırak
+            removeBackgroundBtn.disabled = true;
+        }
+        
+        // Tema seçimi
+        themeCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const theme = card.dataset.theme;
+                document.body.className = `${theme}-theme`;
+                localStorage.setItem('selectedTheme', theme);
+                localStorage.setItem('theme', theme); // Uygulama genelinde tutarlılık için
+                
+                // Aktif temayı vurgula
+                themeCards.forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                
+                // Tema toggle ikonunu güncelle
+                const themeToggle = document.getElementById('themeToggle');
+                if (themeToggle) {
+                    themeToggle.innerHTML = `<i class="fas fa-${theme === 'dark' ? 'sun' : 'moon'}"></i>`;
+                }
+                
+                // Arkaplan fotoğrafını tekrar uygula (tema değişince kaybolmaması için)
+                if (savedBackgroundImage) {
+                    document.body.style.backgroundImage = `url(${savedBackgroundImage})`;
+                }
+            });
+            
+            // Başlangıçta aktif temayı işaretle
+            if (card.dataset.theme === savedTheme) {
+                card.classList.add('active');
+            }
+        });
+        
+        // Parlaklık kontrolü
+        opacitySlider.addEventListener('input', () => {
+            const value = opacitySlider.value;
+            opacityValue.textContent = `${value}%`;
+            document.body.style.filter = `brightness(${value / 100})`;
+            localStorage.setItem('selectedBrightness', value);
+        });
+        
+        // Saydamlık kontrolü
+        transparencySlider.addEventListener('input', () => {
+            const value = transparencySlider.value;
+            transparencyValue.textContent = `${value}%`;
+            document.body.style.opacity = value / 100;
+            localStorage.setItem('selectedTransparency', value);
+        });
+        
+        // Bulanıklık kontrolü
+        blurSlider.addEventListener('input', () => {
+            const value = blurSlider.value;
+            blurValue.textContent = `${value}px`;
+            applyBlurToCards(value);
+            localStorage.setItem('selectedBlur', value);
+        });
+        
+        // Kutucuklara bulanıklık uygulama fonksiyonu
+        function applyBlurToCards(blurValue) {
+            const sections = document.querySelectorAll('.section');
+            const cards = document.querySelectorAll('.theme-card, .setting-item, .opacity-control');
+            
+            sections.forEach(section => {
+                section.style.backdropFilter = `blur(${blurValue}px)`;
+                section.style.webkitBackdropFilter = `blur(${blurValue}px)`;
+                
+                // Eğer blur değeri varsa, arka planı biraz saydam yap
+                if (parseInt(blurValue) > 0) {
+                    section.style.backgroundColor = 'rgba(var(--bg-secondary-rgb), 0.8)';
+                } else {
+                    section.style.backgroundColor = 'var(--bg-secondary)';
+                }
+            });
+            
+            cards.forEach(card => {
+                card.style.backdropFilter = `blur(${blurValue}px)`;
+                card.style.webkitBackdropFilter = `blur(${blurValue}px)`;
+                
+                // Eğer blur değeri varsa, arka planı biraz saydam yap
+                if (parseInt(blurValue) > 0) {
+                    card.style.backgroundColor = 'rgba(var(--bg-primary-rgb), 0.8)';
+                } else {
+                    card.style.backgroundColor = 'var(--bg-primary)';
+                }
+            });
+        }
+        
+        // Arkaplan fotoğrafı yükleme
+        backgroundUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file && file.type.match('image.*')) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const imageUrl = e.target.result;
+                    
+                    // Önizleme güncelle
+                    backgroundPreview.innerHTML = `<img src="${imageUrl}" alt="Arkaplan Önizleme" style="width: 100%; height: 100%; object-fit: cover;">`;
+                    
+                    // Arkaplanı uygula
+                    document.body.style.backgroundImage = `url(${imageUrl})`;
+                    document.body.style.backgroundSize = 'cover';
+                    document.body.style.backgroundAttachment = 'fixed';
+                    document.body.style.backgroundPosition = 'center';
+                    
+                    // LocalStorage'a kaydet
+                    localStorage.setItem('backgroundImage', imageUrl);
+                    
+                    // Kaldır butonunu aktifleştir
+                    removeBackgroundBtn.disabled = false;
+                };
+                
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Arkaplan fotoğrafını kaldır
+        removeBackgroundBtn.addEventListener('click', function() {
+            // Önizlemeyi temizle
+            backgroundPreview.style.backgroundImage = '';
+            backgroundPreview.innerHTML = `
+                <div class="no-background">
+                    <i class="fas fa-image"></i>
+                    <p>Arkaplan fotoğrafı yok</p>
+                </div>
+            `;
+            
+            // Arkaplanı temizle
+            document.body.style.backgroundImage = '';
+            
+            // LocalStorage'dan kaldır
+            localStorage.removeItem('backgroundImage');
+            
+            // Kaldır butonunu devre dışı bırak
+            removeBackgroundBtn.disabled = true;
+        });
+        
+        // Karanlık mod toggle
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        if (darkModeToggle) {
+            // Başlangıç durumunu ayarla
+            darkModeToggle.checked = savedTheme === 'dark';
+            
+            // Toggle olayını dinle
+            darkModeToggle.addEventListener('change', function() {
+                const theme = this.checked ? 'dark' : 'light';
+                
+                // Temayı değiştir
+                document.body.className = `${theme}-theme`;
+                localStorage.setItem('selectedTheme', theme);
+                localStorage.setItem('theme', theme);
+                
+                // Tema kartlarını güncelle
+                themeCards.forEach(card => {
+                    card.classList.remove('active');
+                    if (card.dataset.theme === theme) {
+                        card.classList.add('active');
+                    }
+                });
+                
+                // Tema toggle ikonunu güncelle
+                const themeToggle = document.getElementById('themeToggle');
+                if (themeToggle) {
+                    themeToggle.innerHTML = `<i class="fas fa-${theme === 'dark' ? 'sun' : 'moon'}"></i>`;
+                }
+                
+                // Arkaplan fotoğrafını tekrar uygula (tema değişince kaybolmaması için)
+                if (localStorage.getItem('backgroundImage')) {
+                    document.body.style.backgroundImage = `url(${localStorage.getItem('backgroundImage')})`;
+                }
+            });
+        }
+    });
+    </script>
+        <script>
+        // Sayfa yüklendiğinde çalışacak
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sidebar toggle işlevi
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const sidebarOverlay = document.querySelector('.sidebar-overlay');
+            
+            if (sidebarToggle && sidebar && mainContent) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('sidebar-open');
+                    mainContent.classList.toggle('content-pushed');
+                    document.body.classList.toggle('sidebar-active');
+                    
+                    if (sidebarOverlay) {
+                        sidebarOverlay.classList.toggle('active');
+                    }
+                });
+                
+                // Overlay'a tıklandığında sidebar'ı kapat
+                if (sidebarOverlay) {
+                    sidebarOverlay.addEventListener('click', function() {
+                        sidebar.classList.remove('sidebar-open');
+                        mainContent.classList.remove('content-pushed');
+                        document.body.classList.remove('sidebar-active');
+                        sidebarOverlay.classList.remove('active');
+                    });
+                }
+            }
+            
+            // Firebase yüklendiyse
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                // Kullanıcı oturumunu kontrol et
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        // Kullanıcı giriş yapmış
+                        console.log("Kullanıcı giriş yapmış:", user.uid);
+                        
+                        // Önce localStorage'dan kontrol et
+                        const savedExamType = localStorage.getItem('userExamType');
+                        if (savedExamType) {
+                            // Eğer localStorage'da varsa, hemen UI'ı güncelle
+                            document.getElementById("userExamType").textContent = "Sınav Türü: " + getExamTypeText(savedExamType);
+                        }
+                        
+                        // Sonra veritabanından getir
+                        firebase.database().ref('users/' + user.uid).once('value')
+                            .then((snapshot) => {
+                                if (snapshot.exists()) {
+                                    const userData = snapshot.val();
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = userData.name || user.email.split('@')[0];
+                                    
+                                    // Sınav türünü güncelle
+                                    document.getElementById("userExamType").textContent = "" + getExamTypeText(userData.examType);
+                                    
+                                    // Profil bilgilerini doldur
+                                    if (document.getElementById("profileName")) {
+                                        document.getElementById("profileName").value = userData.name || "";
+                                    }
+                                    if (document.getElementById("profileEmail")) {
+                                        document.getElementById("profileEmail").value = user.email || "";
+                                    }
+                                    if (document.getElementById("profileExamType")) {
+                                        document.getElementById("profileExamType").value = userData.examType || "tyt";
+                                    }
+                                    
+                                    // localStorage'a kaydet
+                                    localStorage.setItem('userExamType', userData.examType);
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                } else {
+                                    // Kullanıcı verileri yoksa e-postadan isim oluştur
+                                    const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = name;
+                                    
+                                    // Profil e-postasını doldur
+                                    if (document.getElementById("profileEmail")) {
+                                        document.getElementById("profileEmail").value = user.email || "";
+                                    }
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Kullanıcı verileri alınırken hata:", error);
+                                
+                                // E-postadan isim oluştur
+                                const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                
+                                // Kullanıcı adını güncelle
+                                document.getElementById("userName").textContent = name;
+                                
+                                // Dashboard'u göster
+                                document.getElementById("dashboardContainer").style.display = "flex";
+                            });
+                    } else {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            // Misafir kullanıcı varsa
+                            const guestData = JSON.parse(guestUser);
+                            
+                            // Kullanıcı adını güncelle
+                            document.getElementById("userName").textContent = guestData.name;
+                            document.getElementById("userExamType").textContent = "Sınav Türü: " + getExamTypeText(guestData.examType);
+                            
+                            // Profil bilgilerini doldur
+                            if (document.getElementById("profileName")) {
+                                document.getElementById("profileName").value = guestData.name || "";
+                            }
+                            if (document.getElementById("profileExamType")) {
+                                document.getElementById("profileExamType").value = guestData.examType || "tyt";
+                            }
+                            
+                            // Misafir kullanıcı uyarısını göster
+                            const guestWarning = document.getElementById("guestWarning");
+                            if (guestWarning) {
+                                guestWarning.style.display = "block";
+                            }
+                            
+                            // Dashboard'u göster
+                            document.getElementById("dashboardContainer").style.display = "flex";
+                        } else {
+                            // Giriş sayfasına yönlendir
+                            console.log("Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...");
+                            window.location.href = "login.html";
+                        }
+                    }
+                });
+            } else {
+                console.error("Firebase yüklenemedi!");
+                alert("Sistem yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.");
+            }
+        });
+        
+        // Sınav türü metni alma fonksiyonu
+        function getExamTypeText(examType) {
+            switch(examType) {
+                case 'tyt': return 'TYT';
+                case 'sayisal': return 'Sayısal';
+                case 'sozel': return 'Sözel';
+                case 'esitagirlik': return 'Eşit Ağırlık';
+                case 'dil': return 'Dil';
+                default: return 'TYT';
+            }
+        }
+    </script>

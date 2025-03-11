@@ -1,0 +1,3325 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKSMate - YKS Deneme Analiz Takip Sistemi</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo(192).png">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js Annotation Eklentisi -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0/dist/chartjs-plugin-annotation.min.js"></script>
+    
+    <!-- Ana JavaScript -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/theme-manager.js"></script>
+    <script src="js/app.js"></script>
+    
+    <!-- Arkaplan Fotoğrafı Stili -->
+    <style>
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* Arkaplan fotoğrafı için pseudo-element */
+        body.has-background::before {
+            background-color: var(--bg-primary);
+            opacity: 0.5; /* Varsayılan opaklık */
+            z-index: -1;
+        }
+        
+        /* Bulanıklık efekti için stil */
+        body.has-background::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            pointer-events: none;
+        }
+    </style>
+    
+    <!-- Oturum Kontrolü -->
+    <script>
+        // Sayfa yüklendiğinde çalışacak
+        document.addEventListener('DOMContentLoaded', function() {
+            // Arkaplan fotoğrafı kontrolü
+            const savedBackground = localStorage.getItem('backgroundImage');
+            if (savedBackground) {
+                document.body.style.backgroundImage = `url(${savedBackground})`;
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundAttachment = 'fixed';
+                document.body.style.backgroundPosition = 'center';
+                document.body.classList.add('has-background');
+                
+                // Arkaplan opaklığı
+                const savedBackgroundOpacity = localStorage.getItem('backgroundOpacity') || '50';
+                applyBackgroundOpacity(savedBackgroundOpacity);
+                
+                // Arkaplan bulanıklığı
+                const savedBackgroundBlur = localStorage.getItem('backgroundBlur') || '0';
+                applyBackgroundBlur(savedBackgroundBlur);
+            }
+            
+            // Firebase yüklendiyse
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                console.log("Firebase yüklendi, oturum kontrolü yapılıyor...");
+                // Kullanıcı oturumunu kontrol et
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        console.log("Kullanıcı giriş yapmış:", user.uid);
+                        // Kullanıcı giriş yapmış
+                        firebase.database().ref('users/' + user.uid).once('value')
+                            .then((snapshot) => {
+                                const userData = snapshot.val();
+                                console.log("Kullanıcı verileri alındı:", userData);
+                                
+                                if (userData) {
+                                    // Kullanıcı verileri varsa
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = userData.name || user.email.split('@')[0];
+                                    document.getElementById("welcomeUserName").textContent = userData.name || user.email.split('@')[0];
+                                    
+                                    // Sınav türünü güncelle
+                                    document.getElementById("userExamType").textContent = "" + getExamTypeText(userData.examType);
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                    
+                                    // İstatistik verilerini güncelle
+                                    document.getElementById("totalExams").textContent = userData.totalExams || 0;
+                                    document.getElementById("totalStudyTime").textContent = userData.totalStudyTime ? `${userData.totalStudyTime} saat` : "0 saat";
+                                    document.getElementById("completedTasks").textContent = userData.completedTasks ? `${userData.completedTasks}/${userData.totalTasks || 0}` : "0/0";
+                                    
+                                    // Ortalama net bilgisini güncelle
+                                    updateAverageScores(userData);
+                                    
+                                    document.getElementById("aiNotifications").textContent = userData.aiNotifications ? `${userData.aiNotifications} öneri` : "0 öneri";
+                                    
+                                    // Deneme verilerini kontrol et
+                                    if (userData.exams) {
+                                        // Denemeleri göster
+                                        showRecentExams(userData.exams);
+                                        // Grafik göster
+                                        showExamGraph(userData.exams);
+                                    } else {
+                                        console.log("Kullanıcının deneme verisi yok");
+                                    }
+                                } else {
+                                    console.log("Kullanıcı verisi bulunamadı");
+                                    // Kullanıcı verileri yoksa e-postadan isim oluştur
+                                    const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = name;
+                                    document.getElementById("welcomeUserName").textContent = name;
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Kullanıcı verileri alınırken hata:", error);
+                                
+                                // E-postadan isim oluştur
+                                const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                
+                                // Kullanıcı adını güncelle
+                                document.getElementById("userName").textContent = name;
+                                document.getElementById("welcomeUserName").textContent = name;
+                                
+                                // Dashboard'u göster
+                                document.getElementById("dashboardContainer").style.display = "flex";
+                            });
+                    } else {
+                        console.log("Kullanıcı giriş yapmamış, misafir kontrolü yapılıyor...");
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            console.log("Misafir kullanıcı bulundu");
+                            const guestData = JSON.parse(guestUser);
+                            
+                            // Kullanıcı adını güncelle
+                            document.getElementById("userName").textContent = guestData.name;
+                            document.getElementById("welcomeUserName").textContent = guestData.name;
+                            document.getElementById("userExamType").textContent = "Bölüm: " + getExamTypeText(guestData.examType);
+                            
+                            // Dashboard'u göster
+                            document.getElementById("dashboardContainer").style.display = "flex";
+                            
+                            // İstatistik verilerini güncelle
+                            document.getElementById("totalExams").textContent = guestData.totalExams || 0;
+                            document.getElementById("totalStudyTime").textContent = guestData.totalStudyTime ? `${guestData.totalStudyTime} saat` : "0 saat";
+                            document.getElementById("completedTasks").textContent = guestData.completedTasks ? `${guestData.completedTasks}/${guestData.totalTasks || 0}` : "0/0";
+                            
+                            // Ortalama net bilgisini güncelle
+                            updateAverageScores(guestData);
+                            
+                            document.getElementById("aiNotifications").textContent = guestData.aiNotifications ? `${guestData.aiNotifications} öneri` : "0 öneri";
+                            
+                            if (guestData.exams && guestData.exams.length > 0) {
+                                // Denemeleri göster
+                                showRecentExams(guestData.exams);
+                                // Grafik göster
+                                showExamGraph(guestData.exams);
+                            } else {
+                                console.log("Misafir kullanıcının deneme verisi yok");
+                            }
+                        } else {
+                            console.log("Misafir kullanıcı bulunamadı, giriş sayfasına yönlendiriliyor...");
+                            window.location.href = "login.html";
+                        }
+                    }
+                });
+            } else {
+                console.error("Firebase yüklenemedi!");
+                alert("Sistem yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.");
+            }
+        });
+        
+        // Sınav türü metni alma fonksiyonu
+        function getExamTypeText(examType) {
+            switch(examType) {
+                case 'tyt': return 'TYT';
+                case 'sayisal': return 'Sayısal';
+                case 'sozel': return 'Sözel';
+                case 'esitagirlik': return 'Eşit Ağırlık';
+                case 'dil': return 'Dil';
+                default: return 'TYT';
+            }
+        }
+        
+        // Ortalama net bilgisini güncelleme fonksiyonu
+        function updateAverageScores(userData) {
+            // Ortalama net container'ı temizle
+            const container = document.getElementById('averageScoreContainer');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            // Kullanıcının sınav türünü al
+            let userExamType = userData.examType || 'tyt';
+            
+            // Deneme verileri yoksa genel ortalamayı göster
+            if (!userData.exams || (typeof userData.exams === 'object' && Object.keys(userData.exams).length === 0) || 
+                (Array.isArray(userData.exams) && userData.exams.length === 0)) {
+                const scoreElement = document.createElement('p');
+                scoreElement.id = 'averageScore';
+                scoreElement.textContent = userData.averageScore ? userData.averageScore.toFixed(2) : "0.0";
+                container.appendChild(scoreElement);
+                return;
+            }
+            
+            // Denemeleri diziye çevir
+            let examsList = [];
+            if (typeof userData.exams === 'object' && !Array.isArray(userData.exams)) {
+                Object.keys(userData.exams).forEach(key => {
+                    examsList.push({
+                        id: key,
+                        ...userData.exams[key]
+                    });
+                });
+            } else if (Array.isArray(userData.exams)) {
+                examsList = userData.exams;
+            }
+            
+            // Sınav türlerine göre denemeleri ayır ve ortalama hesapla
+            let tytExams = [];
+            let aytExams = [];
+            let ydtExams = [];
+            
+            examsList.forEach(exam => {
+                // TYT verileri olan tüm sınavları TYT listesine ekle
+                if (exam.subjects && exam.subjects.tyt) {
+                    let tytNet = 0;
+                    Object.keys(exam.subjects.tyt).forEach(subject => {
+                        tytNet += exam.subjects.tyt[subject].net || 0;
+                    });
+                    
+                    tytExams.push({
+                        ...exam,
+                        netScore: tytNet
+                    });
+                }
+                
+                // AYT verileri olan sınavları AYT listesine ekle
+                if (exam.subjects && exam.subjects.ayt) {
+                    let aytNet = 0;
+                    Object.keys(exam.subjects.ayt).forEach(subject => {
+                        aytNet += exam.subjects.ayt[subject].net || 0;
+                    });
+                    
+                    aytExams.push({
+                        ...exam,
+                        netScore: aytNet
+                    });
+                }
+                
+                // YDT verileri olan sınavları YDT listesine ekle
+                if (exam.subjects && exam.subjects.ydt) {
+                    let ydtNet = 0;
+                    Object.keys(exam.subjects.ydt).forEach(subject => {
+                        ydtNet += exam.subjects.ydt[subject].net || 0;
+                    });
+                    
+                    ydtExams.push({
+                        ...exam,
+                        netScore: ydtNet
+                    });
+                }
+            });
+            
+            // Ortalama netleri hesapla
+            let tytAvg = 0;
+            let aytAvg = 0;
+            let ydtAvg = 0;
+            
+            if (tytExams.length > 0) {
+                tytAvg = tytExams.reduce((sum, exam) => sum + exam.netScore, 0) / tytExams.length;
+            }
+            
+            if (aytExams.length > 0) {
+                aytAvg = aytExams.reduce((sum, exam) => sum + exam.netScore, 0) / aytExams.length;
+            }
+            
+            if (ydtExams.length > 0) {
+                ydtAvg = ydtExams.reduce((sum, exam) => sum + exam.netScore, 0) / ydtExams.length;
+            }
+            
+            // Kullanıcının sınav türüne göre ortalama netleri göster
+            if (userExamType === 'tyt') {
+                // Sadece TYT
+                if (tytExams.length > 0) {
+                    const scoreElement = document.createElement('p');
+                    scoreElement.className = 'average-score-item';
+                    scoreElement.innerHTML = `<span class="exam-type">TYT:</span> <span class="net-score">${tytAvg.toFixed(2)}</span>`;
+                    container.appendChild(scoreElement);
+                } else {
+                    const scoreElement = document.createElement('p');
+                    scoreElement.id = 'averageScore';
+                    scoreElement.textContent = "0.0";
+                    container.appendChild(scoreElement);
+                }
+            } else if (userExamType === 'sayisal' || userExamType === 'sozel' || userExamType === 'esitagirlik') {
+                // TYT + AYT
+                if (tytExams.length > 0) {
+                    const tytScoreElement = document.createElement('p');
+                    tytScoreElement.className = 'average-score-item';
+                    tytScoreElement.innerHTML = `<span class="exam-type">TYT:</span> <span class="net-score">${tytAvg.toFixed(2)}</span>`;
+                    container.appendChild(tytScoreElement);
+                }
+                
+                if (aytExams.length > 0) {
+                    const aytScoreElement = document.createElement('p');
+                    aytScoreElement.className = 'average-score-item';
+                    aytScoreElement.innerHTML = `<span class="exam-type">AYT:</span> <span class="net-score">${aytAvg.toFixed(2)}</span>`;
+                    container.appendChild(aytScoreElement);
+                }
+                
+                if (tytExams.length === 0 && aytExams.length === 0) {
+                    const scoreElement = document.createElement('p');
+                    scoreElement.id = 'averageScore';
+                    scoreElement.textContent = "0.0";
+                    container.appendChild(scoreElement);
+                }
+            } else if (userExamType === 'dil') {
+                // TYT + YDT
+                if (tytExams.length > 0) {
+                    const tytScoreElement = document.createElement('p');
+                    tytScoreElement.className = 'average-score-item';
+                    tytScoreElement.innerHTML = `<span class="exam-type">TYT:</span> <span class="net-score">${tytAvg.toFixed(2)}</span>`;
+                    container.appendChild(tytScoreElement);
+                }
+                
+                if (ydtExams.length > 0) {
+                    const ydtScoreElement = document.createElement('p');
+                    ydtScoreElement.className = 'average-score-item';
+                    ydtScoreElement.innerHTML = `<span class="exam-type">YDT:</span> <span class="net-score">${ydtAvg.toFixed(2)}</span>`;
+                    container.appendChild(ydtScoreElement);
+                }
+                
+                if (tytExams.length === 0 && ydtExams.length === 0) {
+                    const scoreElement = document.createElement('p');
+                    scoreElement.id = 'averageScore';
+                    scoreElement.textContent = "0.0";
+                    container.appendChild(scoreElement);
+                }
+            } else {
+                // Varsayılan durum
+                const scoreElement = document.createElement('p');
+                scoreElement.id = 'averageScore';
+                scoreElement.textContent = userData.averageScore ? userData.averageScore.toFixed(2) : "0.0";
+                container.appendChild(scoreElement);
+            }
+        }
+        
+        /**
+         * Arkaplan opaklığını uygular
+         * @param {string} opacity - Opaklık değeri (0-100)
+         */
+        function applyBackgroundOpacity(opacity) {
+            // Arkaplan için bir pseudo-element oluştur
+            const style = document.createElement('style');
+            style.id = 'backgroundOpacityStyle';
+            
+            // Varsa önceki stili kaldır
+            const existingStyle = document.getElementById('backgroundOpacityStyle');
+            if (existingStyle) {
+                existingStyle.remove();
+            }
+            
+            // Yeni stili ekle
+            style.textContent = `
+                body::before {
+                    content: '';
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: var(--bg-primary);
+                    opacity: ${1 - opacity/100};
+                    z-index: -1;
+                    pointer-events: none;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        /**
+         * Arkaplan bulanıklığını uygular
+         * @param {string} blur - Bulanıklık değeri (0-20px)
+         */
+        function applyBackgroundBlur(blur) {
+            // Arkaplan bulanıklığı için bir stil oluştur
+            const style = document.createElement('style');
+            style.id = 'backgroundBlurStyle';
+            
+            // Varsa önceki stili kaldır
+            const existingStyle = document.getElementById('backgroundBlurStyle');
+            if (existingStyle) {
+                existingStyle.remove();
+            }
+            
+            // Yeni stili ekle
+            style.textContent = `
+                body.has-background {
+                    position: relative;
+                }
+                
+                body.has-background::after {
+                    content: '';
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    z-index: -2;
+                    backdrop-filter: blur(${blur}px);
+                    -webkit-backdrop-filter: blur(${blur}px);
+                    pointer-events: none;
+                }
+                
+                /* Sidebar için bulanıklık efekti */
+                .sidebar {
+                    backdrop-filter: blur(${blur}px);
+                    -webkit-backdrop-filter: blur(${blur}px);
+                    background-color: rgba(var(--bg-primary-rgb, 255, 255, 255), 0.7) !important;
+                }
+                
+                .dark-theme .sidebar {
+                    background-color: rgba(30, 30, 46, 0.7) !important;
+                }
+                
+                .purple-theme .sidebar {
+                    background-color: rgba(245, 240, 245, 0.7) !important;
+                }
+                
+                .blue-theme .sidebar {
+                    background-color: rgba(240, 245, 249, 0.7) !important;
+                }
+                
+                .green-theme .sidebar {
+                    background-color: rgba(240, 249, 245, 0.7) !important;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    </script>
+    
+    <style>
+        /* Not Sayfası Özel Stilleri */
+        .note {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        
+        .note i {
+            margin-right: 10px;
+        }
+        
+        /* Bugünkü Görevler Stilleri */
+        .task-table-header, .task-table-row {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .task-table-header {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .task-table-row {
+            background-color: var(--light-card-bg);
+            border: 1px solid var(--light-border);
+            cursor: pointer;
+            animation: fadeInUp 0.5s ease forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .dark-theme .task-table-row {
+            background-color: var(--dark-card-bg);
+            border: 1px solid var(--dark-border);
+        }
+        
+        .task-table-row:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark-theme .task-table-row:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .task-column {
+            padding: 0 10px;
+        }
+        
+        .task-title-column {
+            flex: 2;
+            font-weight: 500;
+        }
+        
+        .task-time-column {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .task-priority-column {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .task-status-column {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .task-priority {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        
+        .priority-high {
+            background-color: rgba(255, 76, 76, 0.15);
+            color: #ff4c4c;
+        }
+        
+        .priority-medium {
+            background-color: rgba(255, 165, 0, 0.15);
+            color: #ffa500;
+        }
+        
+        .priority-low {
+            background-color: rgba(76, 175, 80, 0.15);
+            color: #4caf50;
+        }
+        
+        .task-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        
+        .status-completed {
+            background-color: rgba(76, 175, 80, 0.15);
+            color: #4caf50;
+        }
+        
+        .status-in-progress {
+            background-color: rgba(33, 150, 243, 0.15);
+            color: #2196f3;
+        }
+        
+        .status-not-started {
+            background-color: rgba(158, 158, 158, 0.15);
+            color: #9e9e9e;
+        }
+        
+        /* Animasyonlar */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .task-table-row:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+        
+        .task-table-row:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .task-table-row:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+        
+        .task-table-row:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+        
+        .task-table-row:nth-child(5) {
+            animation-delay: 0.5s;
+        }
+        
+        /* Görev Ekleme Modalı */
+        .add-task-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .add-task-modal-content {
+            background-color: var(--light-bg);
+            border-radius: 10px;
+            padding: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            animation: modalFadeIn 0.3s ease forwards;
+        }
+        
+        .dark-theme .add-task-modal-content {
+            background-color: var(--dark-card-bg);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        }
+        
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Son Denemeler Stilleri */
+        .exam-table-header {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .exam-table-row {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background-color: var(--light-card-bg);
+            border: 1px solid var(--light-border);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            animation: fadeInUp 0.5s ease forwards;
+            opacity: 0;
+            transform: translateY(20px);
+            height: 70px; /* Sabit yükseklik */
+        }
+        
+        .exam-column {
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
+        
+        .dark-theme .exam-table-row {
+            background-color: var(--dark-card-bg);
+            border: 1px solid var(--dark-border);
+        }
+        
+        .exam-table-row:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark-theme .exam-table-row:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .exam-table-row:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+        
+        .exam-table-row:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+        
+        .exam-table-row:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+        
+        /* Tarih Başlığı Stilleri */
+        .date-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            padding: 0 5px;
+            animation: fadeInUp 0.5s ease forwards;
+            opacity: 0;
+        }
+        
+        .date-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .date-header a {
+            color: var(--primary-color);
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .date-header a:hover {
+            text-decoration: underline;
+        }
+        
+        .date-group-spacer {
+            height: 20px;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed var(--light-border);
+        }
+        
+        .dark-theme .date-group-spacer {
+            border-bottom: 1px dashed var(--dark-border);
+        }
+        
+        /* Görev Günü Kartları */
+        .task-day-card {
+            background-color: var(--light-card-bg);
+            border-radius: 10px;
+            padding: 12px; /* Padding'i azalt */
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.5s ease forwards;
+            opacity: 0;
+            transform: translateY(20px);
+            height: 100px; /* Sabit yükseklik */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden; /* Taşan içeriği gizle */
+            box-sizing: border-box; /* Padding'i yüksekliğe dahil et */
+        }
+        
+        .dark-theme .task-day-card {
+            background-color: var(--dark-card-bg);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .task-day-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark-theme .task-day-card:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .task-day-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex: 1;
+            min-height: 0; /* Taşmayı önlemek için */
+            width: 100%; /* Genişliği sınırla */
+            margin: 0 auto; /* Ortalama */
+        }
+        
+        .task-day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px; /* Boşluğu artır */
+            width: 100%; /* Tam genişlik */
+        }
+        
+        .task-day-header h3 {
+            font-size: 15px; /* Yazı boyutunu küçült */
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 0;
+            white-space: nowrap; /* Yazının alt satıra geçmesini engelle */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 70%; /* Genişliği sınırla */
+        }
+        
+        .task-day-header a {
+            color: var(--primary-color);
+            font-size: 11px; /* Yazı boyutunu küçült */
+            text-decoration: none;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            padding: 2px 5px;
+            border-radius: 4px;
+            background-color: rgba(var(--primary-rgb), 0.1);
+        }
+        
+        .task-day-header a:hover {
+            background-color: rgba(var(--primary-rgb), 0.2);
+        }
+        
+        .task-day-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px; /* Boşluğu artır */
+            width: 100%; /* Tam genişlik */
+        }
+        
+        .task-day-stats .task-stat {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .task-stat-value {
+            display: block;
+            font-size: 15px; /* Yazı boyutunu küçült */
+            font-weight: 600;
+            color: var(--primary-color);
+            line-height: 1.2;
+        }
+        
+        .task-stat-label {
+            display: block;
+            font-size: 10px; /* Yazı boyutunu küçült */
+            color: var(--light-text-secondary);
+            margin-top: 0;
+            white-space: nowrap;
+            line-height: 1.2;
+        }
+        
+        .dark-theme .task-stat-label {
+            color: var(--dark-text-secondary);
+        }
+        
+        .task-progress-bar {
+            height: 4px; /* Yüksekliği azalt */
+            background-color: var(--light-border);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: auto;
+            width: 100%; /* Tam genişlik */
+            margin-bottom: 0; /* Alt boşluğu kaldır */
+        }
+        
+        .dark-theme .task-progress-bar {
+            background-color: var(--dark-border);
+        }
+        
+        .task-progress {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        
+        /* Görev Detay Modalı */
+        .task-detail-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .task-detail-modal-content {
+            background-color: var(--light-bg);
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            animation: modalFadeIn 0.3s ease forwards;
+        }
+        
+        .dark-theme .task-detail-modal-content {
+            background-color: var(--dark-bg);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        }
+        
+        .task-list {
+            padding: 0 10px;
+        }
+        
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background-color: var(--light-card-bg);
+            border: 1px solid var(--light-border);
+            transition: all 0.3s ease;
+        }
+        
+        .dark-theme .task-item {
+            background-color: var(--dark-card-bg);
+            border: 1px solid var(--dark-border);
+        }
+        
+        .task-item.completed .task-title {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+        
+        .task-checkbox {
+            position: relative;
+            width: 24px;
+            height: 24px;
+            margin-right: 15px;
+            margin-top: 2px;
+            cursor: pointer;
+        }
+        
+        .task-checkbox input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 24px;
+            width: 24px;
+            z-index: 2;
+        }
+        
+        .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 20px;
+            width: 20px;
+            background-color: #eee;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        .dark-theme .checkmark {
+            background-color: #444;
+            border: 1px solid #555;
+        }
+        
+        .task-checkbox:hover input ~ .checkmark {
+            background-color: #ccc;
+        }
+        
+        .dark-theme .task-checkbox:hover input ~ .checkmark {
+            background-color: #555;
+        }
+        
+        .task-checkbox input:checked ~ .checkmark {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+        }
+        
+        .task-checkbox input:checked ~ .checkmark:after {
+            display: block;
+        }
+        
+        .task-checkbox .checkmark:after {
+            left: 6px;
+            top: 2px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        
+        .task-content {
+            flex: 1;
+        }
+        
+        .task-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--light-text);
+            margin-bottom: 5px;
+        }
+        
+        .dark-theme .task-title {
+            color: var(--dark-text);
+        }
+        
+        .task-details {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .task-time {
+            font-size: 12px;
+            color: var(--light-text-secondary);
+            margin-right: 10px;
+        }
+        
+        .dark-theme .task-time {
+            color: var(--dark-text-secondary);
+        }
+        
+        .task-priority {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .task-notes {
+            font-size: 13px;
+            color: var(--light-text-secondary);
+            margin-top: 5px;
+            white-space: pre-line;
+        }
+        
+        .dark-theme .task-notes {
+            color: var(--dark-text-secondary);
+        }
+        
+        /* Bildirim Stilleri */
+        .task-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            background-color: var(--success-color);
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 2000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .task-notification.error {
+            background-color: var(--error-color);
+        }
+        
+        .task-notification.warning {
+            background-color: var(--warning-color);
+        }
+        
+        /* Görev Günü Kartları Animasyonları */
+        .task-day-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+        
+        .task-day-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .task-day-card:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+    </style>
+</head>
+<body class="light-theme">
+    <div class="container">
+        <!-- Ana Dashboard -->
+        <div class="dashboard-container" id="dashboardContainer" style="display: none;">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <img src="assets/images/logo(192).png" alt="YKSMate Logo" class="sidebar-logo">
+                    <h2>YKSMate</h2>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <a href="profile.html" style="text-decoration: none; color: inherit;">
+                            <h3 id="userName">Kullanıcı Adı</h3>
+                            <p id="userExamType">Bölüm: TYT</p>
+                        </a>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li class="active">
+                            <a href="index.html"><i class="fas fa-home"></i> Ana Sayfa</a>
+                        </li>
+                        <li>
+                            <a href="exams.html"><i class="fas fa-file-alt"></i> Denemelerim</a>
+                        </li>
+                        <li>
+                            <a href="timer.html"><i class="fas fa-clock"></i> Zamanlayıcı</a>
+                        </li>
+                        <li>
+                            <a href="calendar.html"><i class="fas fa-calendar-alt"></i> Takvim</a>
+                        </li>
+                        <li>
+                            <a href="notes.html"><i class="fas fa-sticky-note"></i> Notlarım</a>
+                        </li>
+                        <li>
+                            <a href="community.html"><i class="fas fa-users"></i> Topluluk</a>
+                        </li>
+                        <li>
+                            <a href="ai.html"><i class="fas fa-robot"></i> MateAI</a>
+                        </li>
+                        <li>
+                            <a href="profile.html"><i class="fas fa-user-circle"></i> Profil</a>
+                        </li>
+                        <li>
+                            <a href="settings.html"><i class="fas fa-cog"></i> Ayarlar</a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="token-info">
+                        <i class="fas fa-coins"></i>
+                        <span id="tokenCount">0 Jeton</span>
+                    </div>
+                    <button id="collapseToggle" class="collapse-toggle">
+                        <i class="fas fa-chevron-left"></i>
+                        <span>Menüyü Daralt</span>
+                    </button>
+                    <button id="logoutBtn" class="btn btn-outline">
+                        <i class="fas fa-sign-out-alt"></i> <span>Çıkış Yap</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sidebar Overlay -->
+            <div class="sidebar-overlay"></div>
+
+            <!-- Ana İçerik -->
+            <div class="main-content">
+                <header class="content-header">
+                    <button id="sidebarToggle" class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Ara...">
+                    </div>
+                    <div class="header-actions">
+                        <button class="theme-toggle" id="themeToggle">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <div class="notifications">
+                            <button class="notification-btn">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge">3</span>
+                            </button>
+                            <div class="notification-dropdown">
+                                <div class="notification-header">
+                                    <h3>Bildirimler</h3>
+                                    <button class="mark-all-read">Tümünü Okundu İşaretle</button>
+                                </div>
+                                <div class="notification-list">
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-file-alt"></i></div>
+                                        <div class="notification-content">
+                                            <p>Yarın TYT Denemesi var!</p>
+                                            <span class="notification-time">2 saat önce</span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-tasks"></i></div>
+                                        <div class="notification-content">
+                                            <p>Matematik ödeviniz için son gün!</p>
+                                            <span class="notification-time">5 saat önce</span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-trophy"></i></div>
+                                        <div class="notification-content">
+                                            <p>Haftalık hedefinize ulaştınız!</p>
+                                            <span class="notification-time">1 gün önce</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="notification-footer">
+                                    <a href="#">Tüm Bildirimleri Gör</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Sayfa İçeriği -->
+                <div class="page-content">
+                    <!-- Ana Sayfa İçeriği -->
+                    <div class="page active" id="homePage">
+                        <h1 class="page-title">Hoş Geldin, <span id="welcomeUserName">Kullanıcı</span>!</h1>
+                        
+                        <div class="stats-container">
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
+                                <div class="stat-info">
+                                    <h3>Toplam Deneme</h3>
+                                    <p id="totalExams">0</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                                <div class="stat-info">
+                                    <h3>Çalışma Süresi</h3>
+                                    <p id="totalStudyTime">0 saat</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-tasks"></i></div>
+                                <div class="stat-info">
+                                    <h3>Tamamlanan Görevler</h3>
+                                    <p id="completedTasks">0/0</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                                <div class="stat-info">
+                                    <h3>Ortalama Net</h3>
+                                    <div id="averageScoreContainer">
+                                        <p id="averageScore">0.0</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="stat-card" onclick="window.location.href='ai.html';" style="cursor: pointer;">
+                                <div class="stat-icon">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <h3 id="aiNotifications">0 öneri</h3>
+                                    <p>AI Önerileri</p>
+                                </div>
+                                <div class="input-container">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-sections">
+                            <div class="section">
+                                <div class="section-header">
+                                    <h2>Son Denemeler</h2>
+                                    <div class="header-actions">
+                                        <a href="exams.html" class="view-all">Tümünü Gör</a>
+                                        <span class="action-separator">|</span>
+                                        <a href="#" class="view-all add-exam-link">Deneme Ekle</a>
+                                    </div>
+                                </div>
+                                <div class="recent-exams">
+                                    <div class="empty-state" id="noExamsMessage">
+                                        <i class="fas fa-file-alt"></i>
+                                        <p>Henüz deneme eklenmemiş</p>
+                                        <button class="btn btn-primary" id="addExamBtn">
+                                            <i class="fas fa-plus"></i> Deneme Ekle
+                                        </button>
+                                    </div>
+                                    <div id="recentExamsContainer" style="display: none;">
+                                        <!-- Denemeler buraya dinamik olarak eklenecek -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="section">
+                                <div class="section-header">
+                                    <h2>Bugünkü Görevler</h2>
+                                    <div class="header-actions">
+                                        <a href="calendar.html" class="view-all">Tümünü Gör</a>
+                                        <span class="action-separator">|</span>
+                                        <a href="#" class="view-all add-task-link">Görev Ekle</a>
+                                    </div>
+                                </div>
+                                <div class="today-tasks">
+                                    <div class="empty-state" id="noTasksMessage">
+                                        <i class="fas fa-tasks"></i>
+                                        <p>Bugün için görev yok</p>
+                                        <button class="btn btn-primary" id="addTaskBtn">
+                                            <i class="fas fa-plus"></i> Görev Ekle
+                                        </button>
+                                    </div>
+                                    <div id="todayTasksContainer" style="display: none;">
+                                        <!-- Görevler buraya dinamik olarak eklenecek -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-sections">
+                            <div class="section full-width">
+                                <div class="section-header">
+                                    <h2>Performans Grafikleri</h2>
+                                    <div class="graph-filters">
+                                        <select id="graphSubject">
+                                            <option value="all">Tüm Dersler</option>
+                                            <option value="math">Matematik</option>
+                                            <option value="physics">Fizik</option>
+                                            <option value="chemistry">Kimya</option>
+                                            <option value="biology">Biyoloji</option>
+                                            <option value="turkish">Türkçe</option>
+                                        </select>
+                                        <select id="graphPeriod">
+                                            <option value="week">Haftalık</option>
+                                            <option value="month">Aylık</option>
+                                            <option value="year">Yıllık</option>
+                                        </select>
+                                        <select id="graphType">
+                                            <option value="all">Tüm Sınavlar</option>
+                                            <option value="tyt">TYT</option>
+                                            <option value="ayt">AYT</option>
+                                            <option value="ydt">YDT</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="performance-graphs">
+                                    <div class="empty-state" id="noGraphMessage">
+                                        <i class="fas fa-chart-line"></i>
+                                        <p>Henüz veri yok</p>
+                                        <p class="small-text">Deneme ekledikçe performans grafiğiniz burada görünecek</p>
+                                    </div>
+                                    <div id="examGraphsContainer" style="display: none;">
+                                        <div class="graph-tabs">
+                                            <button class="graph-tab active" data-graph="tyt">Tüm Sınavlar</button>
+                                        </div>
+                                        <div class="graph-content">
+                                            <div class="graph-panel active" id="tytGraphPanel">
+                                                <h3>Sınav Performans Grafiği</h3>
+                                                <div id="tytGraphContainer" style="height: 300px;">
+                                                    <!-- Grafik buraya dinamik olarak eklenecek -->
+                                                </div>
+                                            </div>
+                                            <div class="graph-panel" id="aytGraphPanel" style="display: none;">
+                                            </div>
+                                            <div class="graph-panel" id="ydtGraphPanel" style="display: none;">
+                                            </div>
+                                        </div>
+                                        <div class="graph-legend">
+                                            <div class="legend-item">
+                                                <span class="legend-color" style="background-color: rgba(75, 192, 192, 1);"></span>
+                                                <span class="legend-text">TYT</span>
+                                            </div>
+                                            <div class="legend-item">
+                                                <span class="legend-color" style="background-color: rgba(255, 159, 64, 1);"></span>
+                                                <span class="legend-text">AYT</span>
+                                            </div>
+                                            <div class="legend-item">
+                                                <span class="legend-color" style="background-color: rgba(153, 102, 255, 1);"></span>
+                                                <span class="legend-text">YDT</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Diğer sayfalar için yer tutucu -->
+                    <div class="page" id="examsPage">
+                        <h1 class="page-title">Denemelerim</h1>
+                        <!-- Deneme sayfası içeriği buraya gelecek -->
+                    </div>
+
+                    <div class="page" id="timerPage">
+                        <h1 class="page-title">Zamanlayıcı</h1>
+                        <!-- Zamanlayıcı sayfası içeriği buraya gelecek -->
+                    </div>
+
+                    <div class="page" id="calendarPage">
+                        <h1 class="page-title">Takvim</h1>
+                        <!-- Takvim sayfası içeriği buraya gelecek -->
+                    </div>
+
+                    <div class="page" id="notesPage">
+                        <h1 class="page-title">Notlarım</h1>
+                        <!-- Notlar sayfası içeriği buraya gelecek -->
+                    </div>
+
+                    <div class="page" id="communityPage">
+                        <h1 class="page-title">Topluluk</h1>
+                        <!-- Topluluk sayfası içeriği buraya gelecek -->
+                    </div>
+
+                    <div class="page" id="settingsPage">
+                        <h1 class="page-title">Ayarlar</h1>
+                        <!-- Ayarlar sayfası içeriği buraya gelecek -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Deneme Ekleme Modalı -->
+    <div class="modal" id="addExamModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Yeni Deneme Ekle</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <i class="fas fa-file-alt"></i>
+                    <input type="text" id="examTitle" placeholder="Deneme Adı" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-calendar-day"></i>
+                    <input type="date" id="examDate" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-graduation-cap"></i>
+                    <select id="examType" required>
+                        <option value="">Sınav Türü Seçin</option>
+                        <option value="tyt">TYT</option>
+                        <option value="ayt-sayisal">AYT Sayısal</option>
+                        <option value="ayt-sozel">AYT Sözel</option>
+                        <option value="ayt-esitagirlik">AYT Eşit Ağırlık</option>
+                        <option value="ydt">YDT</option>
+                    </select>
+                </div>
+                
+                <div class="note">
+                    <p><i class="fas fa-info-circle"></i> Not: Sınav türünüze göre girebileceğiniz deneme türleri otomatik olarak filtrelenmektedir.</p>
+                </div>
+                
+                <!-- TYT Dersleri -->
+                <div class="exam-subjects" id="tytSubjects" style="display: none;">
+                    <h3>TYT Dersleri</h3>
+                    <div class="subject-inputs">
+                        <div class="subject-input">
+                            <label>Türkçe</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="40" class="tyt-subject" data-subject="turkce" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="40" class="tyt-subject" data-subject="turkce" data-type="yanlis">
+                            </div>
+                        </div>
+                        <div class="subject-input">
+                            <label>Sosyal Bilimler</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="20" class="tyt-subject" data-subject="sosyal" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="20" class="tyt-subject" data-subject="sosyal" data-type="yanlis">
+                            </div>
+                        </div>
+                        <div class="subject-input">
+                            <label>Matematik</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="40" class="tyt-subject" data-subject="matematik" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="40" class="tyt-subject" data-subject="matematik" data-type="yanlis">
+                            </div>
+                        </div>
+                        <div class="subject-input">
+                            <label>Fen Bilimleri</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="20" class="tyt-subject" data-subject="fen" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="20" class="tyt-subject" data-subject="fen" data-type="yanlis">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AYT Sayısal Dersleri -->
+                <div class="exam-subjects" id="aytSayisalSubjects" style="display: none;">
+                    <h3>AYT Sayısal Dersleri</h3>
+                    <div class="subject-inputs">
+                        <div class="subject-input">
+                            <label>Matematik</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="40" class="ayt-sayisal-subject" data-subject="matematik" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="40" class="ayt-sayisal-subject" data-subject="matematik" data-type="yanlis">
+                            </div>
+                        </div>
+                        <div class="subject-input">
+                            <label>Fizik</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="14" class="ayt-sayisal-subject" data-subject="fizik" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="14" class="ayt-sayisal-subject" data-subject="fizik" data-type="yanlis">
+                            </div>
+                        </div>
+                        <div class="subject-input">
+                            <label>Kimya</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="13" class="ayt-sayisal-subject" data-subject="kimya" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="13" class="ayt-sayisal-subject" data-subject="kimya" data-type="yanlis">
+                            </div>
+                        </div>
+                        <div class="subject-input">
+                            <label>Biyoloji</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="13" class="ayt-sayisal-subject" data-subject="biyoloji" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="13" class="ayt-sayisal-subject" data-subject="biyoloji" data-type="yanlis">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AYT Sözel Dersleri -->
+                <div class="exam-subjects" id="aytSozelSubjects" style="display: none;">
+                    <h3>AYT Sözel Dersleri</h3>
+                    <div class="subject-inputs">
+                        <div class="subject-input">
+                            <label>Türk Dili ve Edebiyatı</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="24" class="ayt-sozel-subject" data-subject="edebiyat" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="24" class="ayt-sozel-subject" data-subject="edebiyat" data-type="yanlis">
+                            </div>
+                        </div>
+                        <div class="subject-input">
+                            <label>Tarih-1</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="10" class="ayt-sozel-subject" data-subject="tarih1" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="10" class="ayt-sozel-subject" data-subject="tarih1" data-type="yanlis">
+                            </div>
+                        </div>
+                        <div class="subject-input">
+                            <label>Coğrafya-1</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="6" class="ayt-sozel-subject" data-subject="cografya1" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="6" class="ayt-sozel-subject" data-subject="cografya1" data-type="yanlis">
+                            </div>
+                        </div>
+                        <div class="subject-input">
+                            <label>Tarih-2</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="11" class="ayt-sozel-subject" data-subject="tarih2" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="11" class="ayt-sozel-subject" data-subject="tarih2" data-type="yanlis">
+                            </div>
+                        </div>
+                        <div class="subject-input">
+                            <label>Coğrafya-2</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="11" class="ayt-sozel-subject" data-subject="cografya2" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="11" class="ayt-sozel-subject" data-subject="cografya2" data-type="yanlis">
+                            </div>
+                        </div>
+                        <div class="subject-input">
+                            <label>Felsefe Grubu</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="12" class="ayt-sozel-subject" data-subject="felsefe" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="12" class="ayt-sozel-subject" data-subject="felsefe" data-type="yanlis">
+                            </div>
+                        </div>
+                        <div class="subject-input">
+                            <label>Din Kültürü</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="6" class="ayt-sozel-subject" data-subject="din" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="6" class="ayt-sozel-subject" data-subject="din" data-type="yanlis">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AYT Eşit Ağırlık Dersleri -->
+                <div class="exam-subjects" id="aytEsitAgirlikSubjects" style="display: none;">
+                    <h3>AYT Eşit Ağırlık Dersleri</h3>
+                    <div class="subject-inputs">
+                        <div class="subject-input">
+                            <label>Türk Dili ve Edebiyatı</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="24" class="ayt-esitagirlik-subject" data-subject="edebiyat" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="24" class="ayt-esitagirlik-subject" data-subject="edebiyat" data-type="yanlis">
+                            </div>
+                        </div>
+                        <div class="subject-input">
+                            <label>Tarih-1</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="10" class="ayt-esitagirlik-subject" data-subject="tarih1" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="10" class="ayt-esitagirlik-subject" data-subject="tarih1" data-type="yanlis">
+                            </div>
+                        </div>
+                        <div class="subject-input">
+                            <label>Coğrafya-1</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="6" class="ayt-esitagirlik-subject" data-subject="cografya1" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="6" class="ayt-esitagirlik-subject" data-subject="cografya1" data-type="yanlis">
+                            </div>
+                        </div>
+                        <div class="subject-input">
+                            <label>Matematik</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="40" class="ayt-esitagirlik-subject" data-subject="matematik" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="40" class="ayt-esitagirlik-subject" data-subject="matematik" data-type="yanlis">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- YDT Dersleri -->
+                <div class="exam-subjects" id="ydtSubjects" style="display: none;">
+                    <h3>YDT Dersleri</h3>
+                    <div class="subject-inputs">
+                        <div class="subject-input">
+                            <label>Yabancı Dil</label>
+                            <div class="score-inputs">
+                                <input type="number" placeholder="Doğru" min="0" max="80" class="ydt-subject" data-subject="yabancidil" data-type="dogru">
+                                <input type="number" placeholder="Yanlış" min="0" max="80" class="ydt-subject" data-subject="yabancidil" data-type="yanlis">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <i class="fas fa-sticky-note"></i>
+                    <textarea id="examNotes" placeholder="Notlar (İsteğe bağlı)"></textarea>
+                </div>
+                
+                <button class="btn btn-primary" id="saveExamBtn">
+                    <i class="fas fa-save"></i> Denemeyi Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Görev Ekleme Modalı -->
+    <div class="modal add-task-modal" id="addTaskModal">
+        <div class="modal-content add-task-modal-content">
+            <div class="modal-header">
+                <h3>Yeni Görev Ekle</h3>
+                <button class="close-btn" id="closeTaskModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addTaskForm">
+                    <div class="form-group">
+                        <label for="taskTitle">Görev Başlığı*</label>
+                        <input type="text" id="taskTitle" placeholder="Görev başlığını girin" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDate">Tarih*</label>
+                        <input type="date" id="taskDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskTime">Saat</label>
+                        <input type="time" id="taskTime">
+                    </div>
+                    <div class="form-group">
+                        <label for="taskPriority">Öncelik</label>
+                        <select id="taskPriority">
+                            <option value="low">Düşük</option>
+                            <option value="medium" selected>Orta</option>
+                            <option value="high">Yüksek</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskNotes">Notlar</label>
+                        <textarea id="taskNotes" placeholder="Görev hakkında notlar..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelTaskBtn">İptal</button>
+                        <button type="submit" class="btn btn-primary" id="saveTaskBtn">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Çıkış İşlemi İçin JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function() {
+                    try {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            if (confirm('Çıkış yapmak istediğinize emin misiniz? Misafir verileriniz silinecektir.')) {
+                                localStorage.removeItem('guestUser');
+                                window.location.href = "login.html";
+                            }
+                        } else {
+                            if (typeof firebase !== 'undefined' && firebase.auth) {
+                                await firebase.auth().signOut();
+                                window.location.href = "login.html";
+                            } else {
+                                throw new Error("Firebase yüklenemedi!");
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Çıkış hatası:', error);
+                        alert('Çıkış yaparken bir hata oluştu: ' + error.message);
+                    }
+                });
+            }
+            
+            // Deneme Ekleme Modalı
+            const addExamBtn = document.getElementById('addExamBtn');
+            const addExamModal = document.getElementById('addExamModal');
+            const closeModal = document.querySelector('.close-modal');
+            const examType = document.getElementById('examType');
+            const saveExamBtn = document.getElementById('saveExamBtn');
+            
+            // Kullanıcının sınav türüne göre deneme ekleme formunu ayarla
+            let userExamType = '';
+            
+            // Kullanıcı oturumunu kontrol et ve sınav türünü al
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        firebase.database().ref('users/' + user.uid).once('value')
+                            .then((snapshot) => {
+                                const userData = snapshot.val();
+                                if (userData && userData.examType) {
+                                    userExamType = userData.examType;
+                                    console.log("Kullanıcı sınav türü:", userExamType);
+                                }
+                            });
+                    } else {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            const guestData = JSON.parse(guestUser);
+                            if (guestData.examType) {
+                                userExamType = guestData.examType;
+                                console.log("Misafir kullanıcı sınav türü:", userExamType);
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Kullanıcının sınav türüne göre seçenekleri filtrele
+            function filterExamTypeOptions() {
+                if (userExamType && examType) {
+                    const options = examType.querySelectorAll('option');
+                    options.forEach(option => {
+                        // TYT her zaman gösterilir
+                        if (option.value === 'tyt') {
+                            option.style.display = 'block';
+                        } 
+                        // Sayısal için AYT Sayısal gösterilir
+                        else if (option.value === 'ayt-sayisal') {
+                            option.style.display = userExamType === 'sayisal' ? 'block' : 'none';
+                        }
+                        // Sözel için AYT Sözel gösterilir
+                        else if (option.value === 'ayt-sozel') {
+                            option.style.display = userExamType === 'sozel' ? 'block' : 'none';
+                        }
+                        // Eşit Ağırlık için AYT Eşit Ağırlık gösterilir
+                        else if (option.value === 'ayt-esitagirlik') {
+                            option.style.display = userExamType === 'esitagirlik' ? 'block' : 'none';
+                        }
+                        // Dil için YDT gösterilir
+                        else if (option.value === 'ydt') {
+                            option.style.display = userExamType === 'dil' ? 'block' : 'none';
+                        }
+                    });
+                }
+            }
+            
+            // Modal açma/kapama
+            if (addExamModal && closeModal) {
+                // Orijinal buton için event listener
+                if (addExamBtn) {
+                    addExamBtn.addEventListener('click', function() {
+                        addExamModal.style.display = 'flex';
+                        filterExamTypeOptions();
+                    });
+                }
+                
+                // "Deneme Ekle" yazısı için event listener
+                const addExamLink = document.querySelector('.add-exam-link');
+                if (addExamLink) {
+                    addExamLink.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        addExamModal.style.display = 'flex';
+                        filterExamTypeOptions();
+                    });
+                }
+                
+                closeModal.addEventListener('click', function() {
+                    addExamModal.style.display = 'none';
+                });
+                
+                window.addEventListener('click', function(event) {
+                    if (event.target === addExamModal) {
+                        addExamModal.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Sınav türü değiştiğinde ilgili dersleri göster
+            if (examType) {
+                examType.addEventListener('change', function() {
+                    // Tüm ders alanlarını gizle
+                    document.querySelectorAll('.exam-subjects').forEach(el => {
+                        el.style.display = 'none';
+                    });
+                    
+                    // Seçilen sınav türüne göre dersleri göster
+                    const selectedType = this.value;
+                    if (selectedType === 'tyt') {
+                        document.getElementById('tytSubjects').style.display = 'block';
+                    } else if (selectedType === 'ayt-sayisal') {
+                        document.getElementById('aytSayisalSubjects').style.display = 'block';
+                    } else if (selectedType === 'ayt-sozel') {
+                        document.getElementById('aytSozelSubjects').style.display = 'block';
+                    } else if (selectedType === 'ayt-esitagirlik') {
+                        document.getElementById('aytEsitAgirlikSubjects').style.display = 'block';
+                    } else if (selectedType === 'ydt') {
+                        document.getElementById('ydtSubjects').style.display = 'block';
+                    }
+                });
+            }
+            
+            // Deneme kaydetme
+            if (saveExamBtn) {
+                saveExamBtn.addEventListener('click', async function() {
+                    try {
+                        // Form verilerini al
+                        const title = document.getElementById('examTitle').value;
+                        const date = document.getElementById('examDate').value;
+                        const type = document.getElementById('examType').value;
+                        const notes = document.getElementById('examNotes').value;
+                        
+                        // Zorunlu alanları kontrol et
+                        if (!title || !date || !type) {
+                            alert('Lütfen tüm zorunlu alanları doldurun.');
+                            return;
+                        }
+                        
+                        // Ders verilerini topla
+                        const subjects = {};
+                        
+                        // TYT dersleri
+                        if (type === 'tyt') {
+                            const tytSubjects = document.querySelectorAll('.tyt-subject');
+                            tytSubjects.forEach(input => {
+                                const subject = input.dataset.subject;
+                                const type = input.dataset.type;
+                                const value = parseInt(input.value) || 0;
+                                
+                                if (!subjects.tyt) subjects.tyt = {};
+                                if (!subjects.tyt[subject]) subjects.tyt[subject] = {};
+                                subjects.tyt[subject][type] = value;
+                            });
+                        }
+                        
+                        // AYT Sayısal dersleri
+                        if (type === 'ayt-sayisal') {
+                            const aytSubjects = document.querySelectorAll('.ayt-sayisal-subject');
+                            aytSubjects.forEach(input => {
+                                const subject = input.dataset.subject;
+                                const type = input.dataset.type;
+                                const value = parseInt(input.value) || 0;
+                                
+                                if (!subjects.ayt) subjects.ayt = {};
+                                if (!subjects.ayt[subject]) subjects.ayt[subject] = {};
+                                subjects.ayt[subject][type] = value;
+                            });
+                        }
+                        
+                        // AYT Sözel dersleri
+                        if (type === 'ayt-sozel') {
+                            const aytSubjects = document.querySelectorAll('.ayt-sozel-subject');
+                            aytSubjects.forEach(input => {
+                                const subject = input.dataset.subject;
+                                const type = input.dataset.type;
+                                const value = parseInt(input.value) || 0;
+                                
+                                if (!subjects.ayt) subjects.ayt = {};
+                                if (!subjects.ayt[subject]) subjects.ayt[subject] = {};
+                                subjects.ayt[subject][type] = value;
+                            });
+                        }
+                        
+                        // AYT Eşit Ağırlık dersleri
+                        if (type === 'ayt-esitagirlik') {
+                            const aytSubjects = document.querySelectorAll('.ayt-esitagirlik-subject');
+                            aytSubjects.forEach(input => {
+                                const subject = input.dataset.subject;
+                                const type = input.dataset.type;
+                                const value = parseInt(input.value) || 0;
+                                
+                                if (!subjects.ayt) subjects.ayt = {};
+                                if (!subjects.ayt[subject]) subjects.ayt[subject] = {};
+                                subjects.ayt[subject][type] = value;
+                            });
+                        }
+                        
+                        // YDT dersleri
+                        if (type === 'ydt') {
+                            const ydtSubjects = document.querySelectorAll('.ydt-subject');
+                            ydtSubjects.forEach(input => {
+                                const subject = input.dataset.subject;
+                                const type = input.dataset.type;
+                                const value = parseInt(input.value) || 0;
+                                
+                                if (!subjects.ydt) subjects.ydt = {};
+                                if (!subjects.ydt[subject]) subjects.ydt[subject] = {};
+                                subjects.ydt[subject][type] = value;
+                            });
+                        }
+                        
+                        // Net hesapla
+                        let totalNet = 0;
+                        
+                        // TYT netleri
+                        if (subjects.tyt) {
+                            Object.keys(subjects.tyt).forEach(subject => {
+                                const dogru = subjects.tyt[subject].dogru || 0;
+                                const yanlis = subjects.tyt[subject].yanlis || 0;
+                                const net = dogru - (yanlis * 0.25);
+                                subjects.tyt[subject].net = net;
+                                totalNet += net;
+                            });
+                        }
+                        
+                        // AYT netleri
+                        if (subjects.ayt) {
+                            Object.keys(subjects.ayt).forEach(subject => {
+                                const dogru = subjects.ayt[subject].dogru || 0;
+                                const yanlis = subjects.ayt[subject].yanlis || 0;
+                                const net = dogru - (yanlis * 0.25);
+                                subjects.ayt[subject].net = net;
+                                totalNet += net;
+                            });
+                        }
+                        
+                        // YDT netleri
+                        if (subjects.ydt) {
+                            Object.keys(subjects.ydt).forEach(subject => {
+                                const dogru = subjects.ydt[subject].dogru || 0;
+                                const yanlis = subjects.ydt[subject].yanlis || 0;
+                                const net = dogru - (yanlis * 0.25);
+                                subjects.ydt[subject].net = net;
+                                totalNet += net;
+                            });
+                        }
+                        
+                        // Deneme verilerini oluştur
+                        const examData = {
+                            title,
+                            date,
+                            type,
+                            notes,
+                            subjects,
+                            totalNet,
+                            createdAt: new Date().toISOString()
+                        };
+                        
+                        // Kullanıcı oturumunu kontrol et
+                        const user = firebase.auth().currentUser;
+                        if (user) {
+                            // Firebase'e kaydet
+                            const examRef = firebase.database().ref('users/' + user.uid + '/exams').push();
+                            await examRef.set(examData);
+                            
+                            // Kullanıcı verilerini güncelle
+                            const userRef = firebase.database().ref('users/' + user.uid);
+                            const snapshot = await userRef.once('value');
+                            const userData = snapshot.val();
+                            
+                            // Toplam deneme sayısını güncelle
+                            const totalExams = (userData.totalExams || 0) + 1;
+                            
+                            // Ortalama neti güncelle
+                            const currentAvg = userData.averageScore || 0;
+                            const newAvg = ((currentAvg * (totalExams - 1)) + totalNet) / totalExams;
+                            
+                            await userRef.update({
+                                totalExams,
+                                averageScore: newAvg
+                            });
+                            
+                            console.log("Deneme başarıyla kaydedildi:", examData);
+                            alert("Deneme başarıyla kaydedildi!");
+                            
+                            // Modalı kapat
+                            addExamModal.style.display = 'none';
+                            
+                            // Sayfayı yenile
+                            location.reload();
+                        } else {
+                            // Misafir kullanıcı kontrolü
+                            const guestUser = localStorage.getItem('guestUser');
+                            if (guestUser) {
+                                const guestData = JSON.parse(guestUser);
+                                
+                                // Misafir kullanıcının denemelerini kontrol et
+                                if (!guestData.exams) guestData.exams = [];
+                                
+                                // Yeni denemeyi ekle
+                                const examId = 'exam_' + Date.now();
+                                guestData.exams.push({
+                                    id: examId,
+                                    ...examData
+                                });
+                                
+                                // Toplam deneme sayısını güncelle
+                                guestData.totalExams = (guestData.totalExams || 0) + 1;
+                                
+                                // Ortalama neti güncelle
+                                const currentAvg = guestData.averageScore || 0;
+                                const newAvg = ((currentAvg * (guestData.totalExams - 1)) + totalNet) / guestData.totalExams;
+                                guestData.averageScore = newAvg;
+                                
+                                // LocalStorage'a kaydet
+                                localStorage.setItem('guestUser', JSON.stringify(guestData));
+                                
+                                console.log("Misafir kullanıcı için deneme kaydedildi:", examData);
+                                alert("Deneme başarıyla kaydedildi!");
+                                
+                                // Modalı kapat
+                                addExamModal.style.display = 'none';
+                                
+                                // Sayfayı yenile
+                                location.reload();
+                            } else {
+                                alert("Deneme eklemek için giriş yapmalısınız!");
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Deneme kaydedilirken hata:", error);
+                        alert("Deneme kaydedilirken bir hata oluştu: " + error.message);
+                    }
+                });
+            }
+        });
+    </script>
+    
+    <!-- Ana Sayfa Grafik ve Deneme Gösterimi -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Kullanıcı oturumunu kontrol et
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                console.log("Firebase yüklendi, oturum kontrolü yapılıyor...");
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        console.log("Kullanıcı giriş yapmış:", user.uid);
+                        // Kullanıcı giriş yapmış
+                        firebase.database().ref('users/' + user.uid).once('value')
+                            .then((snapshot) => {
+                                const userData = snapshot.val();
+                                console.log("Kullanıcı verileri alındı:", userData);
+                                if (userData && userData.exams) {
+                                    // Denemeleri göster
+                                    showRecentExams(userData.exams);
+                                    // Grafik göster
+                                    showExamGraph(userData.exams);
+                                } else {
+                                    console.log("Kullanıcının deneme verisi yok veya kullanıcı verisi bulunamadı");
+                                }
+                                
+                                // Görevleri yükle
+                                loadTodayTasks(user.uid);
+                            })
+                            .catch(error => {
+                                console.error("Kullanıcı verileri alınırken hata:", error);
+                            });
+                    } else {
+                        console.log("Kullanıcı giriş yapmamış, misafir kontrolü yapılıyor...");
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            console.log("Misafir kullanıcı bulundu");
+                            const guestData = JSON.parse(guestUser);
+                            if (guestData.exams && guestData.exams.length > 0) {
+                                // Denemeleri göster
+                                showRecentExams(guestData.exams);
+                                // Grafik göster
+                                showExamGraph(guestData.exams);
+                            } else {
+                                console.log("Misafir kullanıcının deneme verisi yok");
+                            }
+                            
+                            // Misafir kullanıcının görevlerini yükle
+                            loadTodayTasks(null, guestData);
+                        } else {
+                            console.log("Misafir kullanıcı bulunamadı, giriş sayfasına yönlendiriliyor...");
+                        }
+                    }
+                });
+            } else {
+                console.error("Firebase yüklenemedi!");
+            }
+            
+            // Son denemeleri gösterme fonksiyonu
+            function showRecentExams(exams) {
+                // Denemeleri kontrol et
+                let examsList = [];
+                
+                // Firebase'den gelen veriler için
+                if (typeof exams === 'object' && !Array.isArray(exams)) {
+                    // Object formatındaki denemeleri diziye çevir
+                    Object.keys(exams).forEach(key => {
+                        examsList.push({
+                            id: key,
+                            ...exams[key]
+                        });
+                    });
+                } else if (Array.isArray(exams)) {
+                    // Zaten dizi formatında ise doğrudan kullan (misafir kullanıcı için)
+                    examsList = exams;
+                }
+                
+                // Denemeleri tarihe göre sırala (en yeni en üstte)
+                examsList.sort((a, b) => {
+                    // Önce tarihe göre sırala
+                    const dateCompare = new Date(b.date) - new Date(a.date);
+                    
+                    // Tarihler aynıysa, oluşturulma zamanına göre sırala (son eklenen en üstte)
+                    if (dateCompare === 0) {
+                        // createdAt varsa kullan, yoksa date'i kullan
+                        const aTime = a.createdAt ? new Date(a.createdAt) : new Date(a.date);
+                        const bTime = b.createdAt ? new Date(b.createdAt) : new Date(b.date);
+                        return bTime - aTime;
+                    }
+                    
+                    return dateCompare;
+                });
+                
+                // Son 3 denemeyi al
+                const recentExams = examsList.slice(0, 3);
+                
+                // Deneme listesini göster
+                const recentExamsContainer = document.getElementById('recentExamsContainer');
+                const noExamsMessage = document.getElementById('noExamsMessage');
+                
+                if (recentExams.length > 0 && recentExamsContainer && noExamsMessage) {
+                    // Denemeleri göster
+                    recentExamsContainer.innerHTML = '';
+                    recentExamsContainer.style.display = 'block';
+                    noExamsMessage.style.display = 'none';
+                    
+                    // Tablo başlığı oluştur
+                    const tableHeader = document.createElement('div');
+                    tableHeader.className = 'exam-table-header';
+                    tableHeader.innerHTML = `
+                        <div class="exam-column exam-title-column">Deneme Adı</div>
+                        <div class="exam-column exam-date-column">Tarih</div>
+                        <div class="exam-column exam-type-column">Sınav Türü</div>
+                        <div class="exam-column exam-net-column">Toplam Net</div>
+                    `;
+                    recentExamsContainer.appendChild(tableHeader);
+                    
+                    // Her deneme için satır oluştur
+                    recentExams.forEach((exam, index) => {
+                        const examRow = document.createElement('div');
+                        examRow.className = 'exam-table-row';
+                        examRow.style.animationDelay = `${0.1 * (index + 1)}s`;
+                        
+                        // Tarih formatı
+                        const examDate = new Date(exam.date);
+                        const formattedDate = `${examDate.getDate().toString().padStart(2, '0')}.${(examDate.getMonth() + 1).toString().padStart(2, '0')}.${examDate.getFullYear()}`;
+                        
+                        // Net bilgilerini hazırla
+                        let netInfo = '0.00';
+                        let examTypeText = '';
+                        
+                        // Toplam net bilgisi
+                        if (exam.totalNet !== undefined) {
+                            netInfo = exam.totalNet.toFixed(2);
+                        }
+                        
+                        // Sınav türü bilgisi yoksa exam.type'dan al
+                        if (!examTypeText) {
+                            switch(exam.type) {
+                                case 'tyt': examTypeText = 'TYT'; break;
+                                case 'ayt-sayisal': examTypeText = 'AYT Sayısal'; break;
+                                case 'ayt-sozel': examTypeText = 'AYT Sözel'; break;
+                                case 'ayt-esitagirlik': examTypeText = 'AYT Eşit Ağırlık'; break;
+                                case 'ydt': examTypeText = 'YDT'; break;
+                                default: examTypeText = 'TYT';
+                            }
+                        }
+                        
+                        // Mobil görünüm için net bilgisini kısalt
+                        let shortNetInfo = netInfo;
+                        if (window.innerWidth <= 768) {
+                            // Mobil görünümde sadece sayısal değeri göster
+                            shortNetInfo = parseFloat(netInfo).toFixed(1); // Ondalık kısmı bir basamağa indir
+                        }
+                        
+                        // Satır içeriği
+                        examRow.innerHTML = `
+                            <div class="exam-column exam-title-column">${exam.title}</div>
+                            <div class="exam-column exam-date-column">${formattedDate}</div>
+                            <div class="exam-column exam-type-column">${examTypeText}</div>
+                            <div class="exam-column exam-net-column">${shortNetInfo}</div>
+                        `;
+                        
+                        recentExamsContainer.appendChild(examRow);
+                    });
+                }
+            }
+            
+            // Grafik gösterme fonksiyonu
+            function showExamGraph(exams) {
+                // Denemeleri kontrol et
+                let examsList = [];
+                
+                // Firebase'den gelen veriler için
+                if (typeof exams === 'object' && !Array.isArray(exams)) {
+                    // Object formatındaki denemeleri diziye çevir
+                    Object.keys(exams).forEach(key => {
+                        examsList.push({
+                            id: key,
+                            ...exams[key]
+                        });
+                    });
+                } else if (Array.isArray(exams)) {
+                    // Zaten dizi formatında ise doğrudan kullan (misafir kullanıcı için)
+                    examsList = exams;
+                }
+                
+                if (examsList.length === 0) return;
+                
+                // Grafik konteynerini bul
+                
+                const graphsContainer = document.getElementById('examGraphsContainer');
+                const noGraphMessage = document.getElementById('noGraphMessage');
+                
+                if (!graphsContainer || !noGraphMessage) {
+                    console.error("Grafik konteyner elementleri bulunamadı!");
+                    return;
+                }
+                
+                // Boş durum mesajını gizle
+                noGraphMessage.style.display = 'none';
+                graphsContainer.style.display = 'block';
+                
+                // Denemeleri tarihe göre sırala (en eski en önce)
+                examsList.sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+                // Son 10 denemeyi al
+                const recentExams = examsList.slice(-10);
+                
+                // Sınav türlerine göre denemeleri ayır
+                const tytExams = [];
+                const aytExams = [];
+                const ydtExams = [];
+                
+                recentExams.forEach(exam => {
+                    // TYT verileri olan tüm sınavları TYT listesine ekle
+                    if (exam.subjects && exam.subjects.tyt) {
+                        let tytNet = 0;
+                        Object.keys(exam.subjects.tyt).forEach(subject => {
+                            tytNet += exam.subjects.tyt[subject].net || 0;
+                        });
+                        
+                        tytExams.push({
+                            ...exam,
+                            netScore: tytNet
+                        });
+                    }
+                    
+                    // AYT verileri olan sınavları AYT listesine ekle
+                    if (exam.subjects && exam.subjects.ayt) {
+                        let aytNet = 0;
+                        Object.keys(exam.subjects.ayt).forEach(subject => {
+                            aytNet += exam.subjects.ayt[subject].net || 0;
+                        });
+                        
+                        aytExams.push({
+                            ...exam,
+                            netScore: aytNet
+                        });
+                    }
+                    
+                    // YDT verileri olan sınavları YDT listesine ekle
+                    if (exam.subjects && exam.subjects.ydt) {
+                        let ydtNet = 0;
+                        Object.keys(exam.subjects.ydt).forEach(subject => {
+                            ydtNet += exam.subjects.ydt[subject].net || 0;
+                        });
+                        
+                        ydtExams.push({
+                            ...exam,
+                            netScore: ydtNet
+                        });
+                    }
+                });
+                
+                // TYT Grafiği
+                if (tytExams.length > 0 || aytExams.length > 0 || ydtExams.length > 0) {
+                    // Grafik panelini güncelle
+                    document.getElementById('tytGraphPanel').innerHTML = `
+                        <h3>Sınav Performans Grafiği</h3>
+                        <div id="tytGraphContainer" style="height: 300px;">
+                            <!-- Grafik buraya dinamik olarak eklenecek -->
+                        </div>
+                    `;
+                    
+                    // AYT ve YDT panellerini gizle
+                    document.getElementById('aytGraphPanel').style.display = 'none';
+                    document.getElementById('ydtGraphPanel').style.display = 'none';
+                    
+                    // Tüm sınav türlerini tek grafikte göster
+                    createCombinedExamGraph('tytGraphContainer', tytExams, aytExams, ydtExams);
+                } else {
+                    document.getElementById('tytGraphPanel').innerHTML = `
+                        <h3>Sınav Performans Grafiği</h3>
+                        <div class="empty-state">
+                            <i class="fas fa-chart-line"></i>
+                            <p>Henüz deneme verisi yok</p>
+                            <p class="small-text">Deneme ekledikçe performans grafiğiniz burada görünecek</p>
+                        </div>
+                    `;
+                }
+                
+                // Grafik sekmeleri için event listener
+                setupGraphTabs();
+            }
+            
+            // Grafik sekmeleri için event listener
+            function setupGraphTabs() {
+                // Artık tek bir sekme olduğu için bu fonksiyon boş kalabilir
+                // veya ileride başka sekmeler eklenirse diye kodu koruyabiliriz
+                const tabs = document.querySelectorAll('.graph-tab');
+                const panels = document.querySelectorAll('.graph-panel');
+                
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        // Aktif sekmeyi değiştir
+                        tabs.forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        
+                        // İlgili paneli göster
+                        const graphType = tab.getAttribute('data-graph');
+                        panels.forEach(panel => {
+                            panel.classList.remove('active');
+                            if (panel.id === `${graphType}GraphPanel`) {
+                                panel.classList.add('active');
+                            }
+                        });
+                    });
+                });
+            }
+            
+            // Tüm sınav türlerini tek grafikte gösteren fonksiyon
+            function createCombinedExamGraph(containerId, tytExams, aytExams, ydtExams) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                
+                // Canvas oluştur
+                let canvas = container.querySelector('canvas');
+                if (!canvas) {
+                    canvas = document.createElement('canvas');
+                    container.appendChild(canvas);
+                }
+                
+                // Kullanıcının sınav tercihini al
+                let userExamType = '';
+                const userExamTypeElement = document.getElementById('userExamType');
+                if (userExamTypeElement) {
+                    const examTypeText = userExamTypeElement.textContent;
+                    if (examTypeText.includes('TYT')) {
+                        userExamType = 'tyt';
+                    } else if (examTypeText.includes('Sayısal')) {
+                        userExamType = 'sayisal';
+                    } else if (examTypeText.includes('Sözel')) {
+                        userExamType = 'sozel';
+                    } else if (examTypeText.includes('Eşit Ağırlık')) {
+                        userExamType = 'esitagirlik';
+                    } else if (examTypeText.includes('Dil')) {
+                        userExamType = 'dil';
+                    }
+                }
+                
+                // Y ekseninin maksimum değerini belirle
+                let yAxisMax = 120; // Varsayılan değer
+                
+                if (userExamType === 'sayisal' || userExamType === 'sozel' || userExamType === 'esitagirlik') {
+                    yAxisMax = 160;
+                } else if (userExamType === 'tyt' || userExamType === 'dil') {
+                    yAxisMax = 120;
+                }
+                
+                // Tüm sınavları birleştir
+                let allExams = [];
+                
+                // TYT sınavlarını ekle
+                tytExams.forEach(exam => {
+                    allExams.push({
+                        ...exam,
+                        type: 'tyt'
+                    });
+                });
+                
+                // AYT sınavlarını ekle
+                aytExams.forEach(exam => {
+                    allExams.push({
+                        ...exam,
+                        type: 'ayt'
+                    });
+                });
+                
+                // YDT sınavlarını ekle
+                ydtExams.forEach(exam => {
+                    allExams.push({
+                        ...exam,
+                        type: 'ydt'
+                    });
+                });
+                
+                // Sınavları tarihe göre sırala (en eski en önce)
+                allExams.sort((a, b) => {
+                    // Önce tarihe göre sırala
+                    const dateCompare = new Date(a.date) - new Date(b.date);
+                    
+                    // Tarihler aynıysa, oluşturulma zamanına göre sırala (önce eklenen önce)
+                    if (dateCompare === 0 && a.createdAt && b.createdAt) {
+                        return new Date(a.createdAt) - new Date(b.createdAt);
+                    }
+                    
+                    return dateCompare;
+                });
+                
+                // Grafik etiketlerini oluştur (deneme adları)
+                const labels = allExams.map(exam => exam.title);
+                
+                // Her sınav türü için veri setleri oluştur
+                const tytData = allExams.map(exam => exam.type === 'tyt' ? exam.netScore : null);
+                const aytData = allExams.map(exam => exam.type === 'ayt' ? exam.netScore : null);
+                const ydtData = allExams.map(exam => exam.type === 'ydt' ? exam.netScore : null);
+                
+                // Ortalama değerleri hesapla
+                let tytAvg = 0;
+                let aytAvg = 0;
+                let ydtAvg = 0;
+                
+                if (tytExams.length > 0) {
+                    tytAvg = tytExams.reduce((sum, exam) => sum + exam.netScore, 0) / tytExams.length;
+                }
+                
+                if (aytExams.length > 0) {
+                    aytAvg = aytExams.reduce((sum, exam) => sum + exam.netScore, 0) / aytExams.length;
+                }
+                
+                if (ydtExams.length > 0) {
+                    ydtAvg = ydtExams.reduce((sum, exam) => sum + exam.netScore, 0) / ydtExams.length;
+                }
+                
+                // Tema renklerini al
+                const isDarkTheme = document.body.classList.contains('dark-theme');
+                
+                // Tema renklerini belirle
+                const tytColor = isDarkTheme ? 'rgba(75, 192, 192, 1)' : 'rgba(75, 192, 192, 1)'; // Turkuaz
+                const aytColor = isDarkTheme ? 'rgba(255, 159, 64, 1)' : 'rgba(255, 159, 64, 1)'; // Turuncu
+                const ydtColor = isDarkTheme ? 'rgba(153, 102, 255, 1)' : 'rgba(153, 102, 255, 1)'; // Mor
+                
+                // Grafik oluştur
+                const ctx = canvas.getContext('2d');
+                return new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'TYT Net Puanları',
+                                data: tytData,
+                                backgroundColor: tytColor.replace('1)', '0.2)'),
+                                borderColor: tytColor,
+                                borderWidth: 2,
+                                tension: 0.3,
+                                pointBackgroundColor: tytColor,
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 5,
+                                pointHoverRadius: 7,
+                                spanGaps: true
+                            },
+                            {
+                                label: 'AYT Net Puanları',
+                                data: aytData,
+                                backgroundColor: aytColor.replace('1)', '0.2)'),
+                                borderColor: aytColor,
+                                borderWidth: 2,
+                                tension: 0.3,
+                                pointBackgroundColor: aytColor,
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 5,
+                                pointHoverRadius: 7,
+                                spanGaps: true
+                            },
+                            {
+                                label: 'YDT Net Puanları',
+                                data: ydtData,
+                                backgroundColor: ydtColor.replace('1)', '0.2)'),
+                                borderColor: ydtColor,
+                                borderWidth: 2,
+                                tension: 0.3,
+                                pointBackgroundColor: ydtColor,
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 5,
+                                pointHoverRadius: 7,
+                                spanGaps: true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                grid: {
+                                    color: 'rgba(200, 200, 200, 0.2)'
+                                },
+                                ticks: {
+                                    color: isDarkTheme ? '#e0e0e0' : '#333'
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                max: yAxisMax, // Kullanıcının sınav tercihine göre maksimum değer
+                                grid: {
+                                    color: 'rgba(200, 200, 200, 0.2)'
+                                },
+                                ticks: {
+                                    color: isDarkTheme ? '#e0e0e0' : '#333'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: isDarkTheme ? '#e0e0e0' : '#333',
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: isDarkTheme ? 'rgba(50, 50, 50, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                                titleColor: isDarkTheme ? '#fff' : '#333',
+                                bodyColor: isDarkTheme ? '#e0e0e0' : '#666',
+                                borderColor: isDarkTheme ? 'rgba(200, 200, 200, 0.3)' : 'rgba(0, 0, 0, 0.1)',
+                                borderWidth: 1,
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        const index = tooltipItems[0].dataIndex;
+                                        return allExams[index].title;
+                                    },
+                                    label: function(context) {
+                                        if (context.raw === null) return null;
+                                        
+                                        const datasetLabel = context.dataset.label || '';
+                                        return `${datasetLabel}: ${context.raw.toFixed(2)}`;
+                                    }
+                                }
+                            },
+                            annotation: {
+                                annotations: {
+                                    // TYT ortalama çizgisi
+                                    tytLine: tytExams.length > 0 ? {
+                                        type: 'line',
+                                        yMin: tytAvg,
+                                        yMax: tytAvg,
+                                        borderColor: tytColor,
+                                        borderWidth: 1,
+                                        borderDash: [5, 5],
+                                        label: {
+                                            content: `TYT Ort: ${tytAvg.toFixed(2)}`,
+                                            enabled: true,
+                                            position: 'end',
+                                            backgroundColor: tytColor,
+                                            color: '#fff',
+                                            font: {
+                                                size: 10
+                                            }
+                                        },
+                                        listeners: {
+                                            click: function(e) {
+                                                // Daha modern bir tooltip göster
+                                                const tooltip = document.createElement('div');
+                                                tooltip.className = 'custom-tooltip';
+                                                tooltip.innerHTML = `<div class="tooltip-content">TYT Ortalama Net: <strong>${tytAvg.toFixed(2)}</strong></div>`;
+                                                document.body.appendChild(tooltip);
+                                                
+                                                // Tooltip pozisyonunu ayarla
+                                                const rect = e.chart.canvas.getBoundingClientRect();
+                                                tooltip.style.left = (e.x + window.scrollX) + 'px';
+                                                tooltip.style.top = (e.y + window.scrollY - 40) + 'px';
+                                                
+                                                // 3 saniye sonra tooltip'i kaldır
+                                                setTimeout(() => {
+                                                    document.body.removeChild(tooltip);
+                                                }, 3000);
+                                            },
+                                            enter: function(e) {
+                                                e.chart.canvas.style.cursor = 'pointer';
+                                            },
+                                            leave: function(e) {
+                                                e.chart.canvas.style.cursor = 'default';
+                                            }
+                                        }
+                                    } : undefined,
+                                    
+                                    // AYT ortalama çizgisi
+                                    aytLine: aytExams.length > 0 ? {
+                                        type: 'line',
+                                        yMin: aytAvg,
+                                        yMax: aytAvg,
+                                        borderColor: aytColor,
+                                        borderWidth: 1,
+                                        borderDash: [5, 5],
+                                        label: {
+                                            content: `AYT Ort: ${aytAvg.toFixed(2)}`,
+                                            enabled: true,
+                                            position: 'end',
+                                            backgroundColor: aytColor,
+                                            color: '#fff',
+                                            font: {
+                                                size: 10
+                                            }
+                                        },
+                                        listeners: {
+                                            click: function(e) {
+                                                // Daha modern bir tooltip göster
+                                                const tooltip = document.createElement('div');
+                                                tooltip.className = 'custom-tooltip';
+                                                tooltip.innerHTML = `<div class="tooltip-content">AYT Ortalama Net: <strong>${aytAvg.toFixed(2)}</strong></div>`;
+                                                document.body.appendChild(tooltip);
+                                                
+                                                // Tooltip pozisyonunu ayarla
+                                                const rect = e.chart.canvas.getBoundingClientRect();
+                                                tooltip.style.left = (e.x + window.scrollX) + 'px';
+                                                tooltip.style.top = (e.y + window.scrollY - 40) + 'px';
+                                                
+                                                // 3 saniye sonra tooltip'i kaldır
+                                                setTimeout(() => {
+                                                    document.body.removeChild(tooltip);
+                                                }, 3000);
+                                            },
+                                            enter: function(e) {
+                                                e.chart.canvas.style.cursor = 'pointer';
+                                            },
+                                            leave: function(e) {
+                                                e.chart.canvas.style.cursor = 'default';
+                                            }
+                                        }
+                                    } : undefined,
+                                    
+                                    // YDT ortalama çizgisi
+                                    ydtLine: ydtExams.length > 0 ? {
+                                        type: 'line',
+                                        yMin: ydtAvg,
+                                        yMax: ydtAvg,
+                                        borderColor: ydtColor,
+                                        borderWidth: 1,
+                                        borderDash: [5, 5],
+                                        label: {
+                                            content: `YDT Ort: ${ydtAvg.toFixed(2)}`,
+                                            enabled: true,
+                                            position: 'end',
+                                            backgroundColor: ydtColor,
+                                            color: '#fff',
+                                            font: {
+                                                size: 10
+                                            }
+                                        },
+                                        listeners: {
+                                            click: function(e) {
+                                                // Daha modern bir tooltip göster
+                                                const tooltip = document.createElement('div');
+                                                tooltip.className = 'custom-tooltip';
+                                                tooltip.innerHTML = `<div class="tooltip-content">YDT Ortalama Net: <strong>${ydtAvg.toFixed(2)}</strong></div>`;
+                                                document.body.appendChild(tooltip);
+                                                
+                                                // Tooltip pozisyonunu ayarla
+                                                const rect = e.chart.canvas.getBoundingClientRect();
+                                                tooltip.style.left = (e.x + window.scrollX) + 'px';
+                                                tooltip.style.top = (e.y + window.scrollY - 40) + 'px';
+                                                
+                                                // 3 saniye sonra tooltip'i kaldır
+                                                setTimeout(() => {
+                                                    document.body.removeChild(tooltip);
+                                                }, 3000);
+                                            },
+                                            enter: function(e) {
+                                                e.chart.canvas.style.cursor = 'pointer';
+                                            },
+                                            leave: function(e) {
+                                                e.chart.canvas.style.cursor = 'default';
+                                            }
+                                        }
+                                    } : undefined
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const lastStatCard = document.querySelector('.stats-container .stat-card:last-child');
+        
+        lastStatCard.addEventListener('click', function() {
+            this.classList.toggle('expanded');
+        });
+    });
+    </script>
+    
+    <!-- Görevler için JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Görevler için JavaScript yükleniyor...");
+            
+            // DOM elementleri
+            const addTaskBtn = document.getElementById('addTaskBtn');
+            const addTaskLink = document.querySelector('.add-task-link');
+            const addTaskModal = document.getElementById('addTaskModal');
+            const closeTaskModal = document.getElementById('closeTaskModal');
+            const cancelTaskBtn = document.getElementById('cancelTaskBtn');
+            const addTaskForm = document.getElementById('addTaskForm');
+            const todayTasksContainer = document.getElementById('todayTasksContainer');
+            const noTasksMessage = document.getElementById('noTasksMessage');
+            
+            // Bugünün tarihini al
+            const today = new Date();
+            const todayFormatted = today.toISOString().split('T')[0];
+            
+            // Tarih alanını bugünün tarihine ayarla
+            if (document.getElementById('taskDate')) {
+                document.getElementById('taskDate').value = todayFormatted;
+            }
+            
+            // Sayfa yüklendiğinde bugünkü görevleri yükle
+            setTimeout(() => {
+                console.log("Sayfa yüklendi, görevler yükleniyor...");
+                loadTodayTasks();
+            }, 1000);
+            
+            // Modal açma fonksiyonları
+            if (addTaskBtn) {
+                addTaskBtn.addEventListener('click', function() {
+                    addTaskModal.style.display = 'flex';
+                });
+            }
+            
+            if (addTaskLink) {
+                addTaskLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    addTaskModal.style.display = 'flex';
+                });
+            }
+            
+            // Modal kapatma fonksiyonları
+            if (closeTaskModal) {
+                closeTaskModal.addEventListener('click', function() {
+                    addTaskModal.style.display = 'none';
+                });
+            }
+            
+            if (cancelTaskBtn) {
+                cancelTaskBtn.addEventListener('click', function() {
+                    addTaskModal.style.display = 'none';
+                });
+            }
+            
+            // Modal dışına tıklama ile kapatma
+            window.addEventListener('click', function(event) {
+                if (event.target === addTaskModal) {
+                    addTaskModal.style.display = 'none';
+                }
+            });
+            
+            // Form gönderme
+            if (addTaskForm) {
+                addTaskForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    try {
+                        // Form verilerini al
+                        const title = document.getElementById('taskTitle').value;
+                        const date = document.getElementById('taskDate').value;
+                        const time = document.getElementById('taskTime').value || '';
+                        const priority = document.getElementById('taskPriority').value;
+                        const notes = document.getElementById('taskNotes').value || '';
+                        
+                        // Zorunlu alanları kontrol et
+                        if (!title || !date) {
+                            alert('Lütfen tüm zorunlu alanları doldurun.');
+                            return;
+                        }
+                        
+                        // Görev verisi oluştur
+                        const taskData = {
+                            title: title,
+                            date: date,
+                            time: time,
+                            priority: priority,
+                            notes: notes,
+                            status: 'not-started',
+                            createdAt: new Date().toISOString()
+                        };
+                        
+                        // Kullanıcı oturumunu kontrol et
+                        const user = firebase.auth().currentUser;
+                        
+                        if (user) {
+                            // Kullanıcı giriş yapmış, Firebase'e kaydet
+                            const taskRef = firebase.database().ref('users/' + user.uid + '/tasks').push();
+                            await taskRef.set(taskData);
+                            
+                            console.log("Görev kaydedildi:", taskData);
+                            alert("Görev başarıyla kaydedildi!");
+                            
+                            // Modalı kapat
+                            addTaskModal.style.display = 'none';
+                            
+                            // Görevleri yeniden yükle
+                            loadTodayTasks();
+                        } else {
+                            // Misafir kullanıcı kontrolü
+                            const guestUser = localStorage.getItem('guestUser');
+                            
+                            if (guestUser) {
+                                // Misafir kullanıcı için localStorage'a kaydet
+                                const guestData = JSON.parse(guestUser);
+                                
+                                // Görevler dizisi yoksa oluştur
+                                if (!guestData.tasks) {
+                                    guestData.tasks = [];
+                                }
+                                
+                                // Görev ID'si oluştur
+                                const taskId = 'task_' + Date.now();
+                                taskData.id = taskId;
+                                
+                                // Görevi ekle
+                                guestData.tasks.push(taskData);
+                                
+                                // LocalStorage'a kaydet
+                                localStorage.setItem('guestUser', JSON.stringify(guestData));
+                                
+                                console.log("Misafir kullanıcı için görev kaydedildi:", taskData);
+                                alert("Görev başarıyla kaydedildi!");
+                                
+                                // Modalı kapat
+                                addTaskModal.style.display = 'none';
+                                
+                                // Görevleri yeniden yükle
+                                loadTodayTasks();
+                            } else {
+                                alert("Görev eklemek için giriş yapmalısınız!");
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Görev kaydedilirken hata:", error);
+                        alert("Görev kaydedilirken bir hata oluştu: " + error.message);
+                    }
+                });
+            }
+            
+            // Sayfa yüklendiğinde bugünkü görevleri yükle
+            loadTodayTasks();
+            
+            // Bugünkü görevleri yükleme fonksiyonu
+            function loadTodayTasks(userId = null, guestData = null) {
+                console.log("Bugünkü görevler yükleniyor...");
+                
+                if (userId) {
+                    // Kullanıcı giriş yapmış, Firebase'den görevleri al
+                    console.log("Kullanıcı ID ile görevler yükleniyor:", userId);
+                    firebase.database().ref('users/' + userId + '/tasks').once('value')
+                        .then((snapshot) => {
+                            const tasksData = snapshot.val();
+                            console.log("Görevler alındı:", tasksData);
+                            showTodayTasks(tasksData);
+                        })
+                        .catch(error => {
+                            console.error("Görevler alınırken hata:", error);
+                        });
+                } else if (guestData) {
+                    // Misafir kullanıcı verileri doğrudan parametre olarak geldi
+                    console.log("Misafir kullanıcı görevleri yükleniyor:", guestData.tasks);
+                    showTodayTasks(guestData.tasks);
+                } else {
+                    // Kullanıcı oturumunu kontrol et
+                    const user = firebase.auth().currentUser;
+                    
+                    if (user) {
+                        // Kullanıcı giriş yapmış, Firebase'den görevleri al
+                        console.log("Mevcut kullanıcı ile görevler yükleniyor:", user.uid);
+                        firebase.database().ref('users/' + user.uid + '/tasks').once('value')
+                            .then((snapshot) => {
+                                const tasksData = snapshot.val();
+                                console.log("Görevler alındı:", tasksData);
+                                showTodayTasks(tasksData);
+                            })
+                            .catch(error => {
+                                console.error("Görevler alınırken hata:", error);
+                            });
+                    } else {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        
+                        if (guestUser) {
+                            const guestData = JSON.parse(guestUser);
+                            console.log("LocalStorage'dan misafir kullanıcı görevleri yükleniyor:", guestData.tasks);
+                            showTodayTasks(guestData.tasks);
+                        } else {
+                            console.log("Görev yüklenecek kullanıcı bulunamadı");
+                        }
+                    }
+                }
+            }
+            
+            // Bugünkü görevleri gösterme fonksiyonu
+            function showTodayTasks(tasks) {
+                console.log("Görevler gösteriliyor:", tasks);
+                
+                // Görevleri kontrol et
+                let tasksList = [];
+                
+                // Görevler null veya undefined ise boş dizi kullan
+                if (!tasks) {
+                    console.log("Görev verisi bulunamadı");
+                    tasks = [];
+                }
+                
+                // Firebase'den gelen veriler için
+                if (typeof tasks === 'object' && !Array.isArray(tasks) && tasks !== null) {
+                    // Object formatındaki görevleri diziye çevir
+                    Object.keys(tasks).forEach(key => {
+                        tasksList.push({
+                            id: key,
+                            ...tasks[key]
+                        });
+                    });
+                    console.log("Object formatındaki görevler diziye çevrildi:", tasksList);
+                } else if (Array.isArray(tasks)) {
+                    // Zaten dizi formatında ise doğrudan kullan (misafir kullanıcı için)
+                    tasksList = tasks;
+                    console.log("Dizi formatındaki görevler kullanılıyor:", tasksList);
+                }
+                
+                // Bugünün tarihini al
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                // Görevleri tarihe göre grupla
+                const tasksByDate = {};
+                
+                tasksList.forEach(task => {
+                    const taskDate = new Date(task.date);
+                    taskDate.setHours(0, 0, 0, 0);
+                    
+                    // Tarih anahtarını oluştur (YYYY-MM-DD formatında)
+                    const dateKey = task.date;
+                    
+                    // Tarih için dizi yoksa oluştur
+                    if (!tasksByDate[dateKey]) {
+                        tasksByDate[dateKey] = {
+                            date: taskDate,
+                            tasks: []
+                        };
+                    }
+                    
+                    // Görevi tarih grubuna ekle
+                    tasksByDate[dateKey].tasks.push(task);
+                });
+                
+                // Tarihleri diziye çevir ve sırala (bugün ve gelecek tarihler önce)
+                let datesList = Object.values(tasksByDate);
+                
+                // Tarihleri sırala (bugün, gelecek, geçmiş)
+                datesList.sort((a, b) => {
+                    // Bugün en üstte
+                    const aIsToday = a.date.getTime() === today.getTime();
+                    const bIsToday = b.date.getTime() === today.getTime();
+                    
+                    if (aIsToday && !bIsToday) return -1;
+                    if (!aIsToday && bIsToday) return 1;
+                    
+                    // Bugün değilse, gelecek tarihler geçmiş tarihlerden önce
+                    const aIsFuture = a.date.getTime() > today.getTime();
+                    const bIsFuture = b.date.getTime() > today.getTime();
+                    
+                    if (aIsFuture && !bIsFuture) return -1;
+                    if (!aIsFuture && bIsFuture) return 1;
+                    
+                    // Aynı kategorideyse (gelecek veya geçmiş), yakın tarih önce
+                    return a.date.getTime() - b.date.getTime();
+                });
+                
+                // En fazla 3 gün göster
+                datesList = datesList.slice(0, 3);
+                
+                // Görev listesini göster
+                if (todayTasksContainer && noTasksMessage) {
+                    if (datesList.length > 0) {
+                        // Görevleri göster
+                        todayTasksContainer.innerHTML = '';
+                        todayTasksContainer.style.display = 'block';
+                        noTasksMessage.style.display = 'none';
+                        
+                        // Her tarih için görevleri göster
+                        datesList.forEach((dateGroup, groupIndex) => {
+                            // Tarih formatını ayarla
+                            const dateObj = dateGroup.date;
+                            const isToday = dateObj.getTime() === today.getTime();
+                            const isTomorrow = new Date(today.getTime() + 86400000).getTime() === dateObj.getTime();
+                            
+                            let dateTitle = '';
+                            if (isToday) {
+                                dateTitle = 'Bugün';
+                            } else if (isTomorrow) {
+                                dateTitle = 'Yarın';
+                            } else {
+                                dateTitle = `${dateObj.getDate().toString().padStart(2, '0')}.${(dateObj.getMonth() + 1).toString().padStart(2, '0')}.${dateObj.getFullYear()}`;
+                            }
+                            
+                            // Görev istatistiklerini hesapla
+                            const totalTasks = dateGroup.tasks.length;
+                            const highPriorityTasks = dateGroup.tasks.filter(task => task.priority === 'high').length;
+                            const completedTasks = dateGroup.tasks.filter(task => task.status === 'completed').length;
+                            const completionRate = Math.round((completedTasks / totalTasks) * 100);
+                            
+                            // Görev kartını oluştur
+                            const taskCard = document.createElement('div');
+                            taskCard.className = 'task-day-card';
+                            taskCard.dataset.date = dateGroup.date.toISOString().split('T')[0];
+                            
+                            // Kart içeriği
+                            taskCard.innerHTML = `
+                                <div class="task-day-header">
+                                    <h3>${dateTitle}</h3>
+                                    <a href="calendar.html?date=${dateGroup.date.toISOString().split('T')[0]}" class="view-all">Takvimde Gör</a>
+                                </div>
+                                <div class="task-day-content">
+                                    <div class="task-day-stats">
+                                        <div class="task-stat">
+                                            <span class="task-stat-value">${totalTasks}</span>
+                                            <span class="task-stat-label">Görev</span>
+                                        </div>
+                                        <div class="task-stat">
+                                            <span class="task-stat-value">${highPriorityTasks}</span>
+                                            <span class="task-stat-label">Yüksek</span>
+                                        </div>
+                                        <div class="task-stat">
+                                            <span class="task-stat-value">${completedTasks}/${totalTasks}</span>
+                                            <span class="task-stat-label">Tamamlandı</span>
+                                        </div>
+                                    </div>
+                                    <div class="task-progress-bar">
+                                        <div class="task-progress" style="width: ${completionRate}%"></div>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            // Tıklama olayı ekle
+                            taskCard.addEventListener('click', function(e) {
+                                // Takvim bağlantısına tıklanmadıysa görev listesini göster
+                                if (!e.target.classList.contains('view-all')) {
+                                    showTasksDetailModal(dateGroup.tasks, dateTitle);
+                                }
+                            });
+                            
+                            todayTasksContainer.appendChild(taskCard);
+                        });
+                    } else {
+                        // Görev yoksa boş durumu göster
+                        todayTasksContainer.style.display = 'none';
+                        noTasksMessage.style.display = 'flex';
+                    }
+                }
+            }
+            
+            // Görev detayları modalını göster
+            function showTasksDetailModal(tasks, dateTitle) {
+                // Mevcut modalı kontrol et
+                let taskDetailModal = document.getElementById('taskDetailModal');
+                
+                // Modal yoksa oluştur
+                if (!taskDetailModal) {
+                    taskDetailModal = document.createElement('div');
+                    taskDetailModal.id = 'taskDetailModal';
+                    taskDetailModal.className = 'modal task-detail-modal';
+                    document.body.appendChild(taskDetailModal);
+                }
+                
+                // Görevleri önceliğe göre sırala (yüksek > orta > düşük)
+                tasks.sort((a, b) => {
+                    const priorityOrder = { 'high': 0, 'medium': 1, 'low': 2 };
+                    return priorityOrder[a.priority] - priorityOrder[b.priority];
+                });
+                
+                // Modal içeriğini oluştur
+                taskDetailModal.innerHTML = `
+                    <div class="modal-content task-detail-modal-content">
+                        <div class="modal-header">
+                            <h2>${dateTitle} Görevleri</h2>
+                            <button class="close-modal" id="closeTaskDetailModal">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="task-list">
+                                ${tasks.map(task => {
+                                    // Öncelik sınıfı
+                                    let priorityClass = '';
+                                    let priorityText = '';
+                                    
+                                    switch(task.priority) {
+                                        case 'high':
+                                            priorityClass = 'priority-high';
+                                            priorityText = 'Yüksek';
+                                            break;
+                                        case 'medium':
+                                            priorityClass = 'priority-medium';
+                                            priorityText = 'Orta';
+                                            break;
+                                        case 'low':
+                                            priorityClass = 'priority-low';
+                                            priorityText = 'Düşük';
+                                            break;
+                                        default:
+                                            priorityClass = 'priority-medium';
+                                            priorityText = 'Orta';
+                                    }
+                                    
+                                    // Durum kontrolü
+                                    const isCompleted = task.status === 'completed';
+                                    
+                                    return `
+                                        <div class="task-item ${isCompleted ? 'completed' : ''}" data-id="${task.id}" data-status="${task.status}">
+                                            <label class="task-checkbox">
+                                                <input type="checkbox" ${isCompleted ? 'checked' : ''}>
+                                                <span class="checkmark"></span>
+                                            </label>
+                                            <div class="task-content">
+                                                <div class="task-title">${task.title}</div>
+                                                <div class="task-details">
+                                                    <span class="task-time">${task.time || 'Saat belirtilmemiş'}</span>
+                                                    <span class="task-priority ${priorityClass}">${priorityText}</span>
+                                                </div>
+                                                ${task.notes ? `<div class="task-notes">${task.notes}</div>` : ''}
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Modalı göster
+                taskDetailModal.style.display = 'flex';
+                
+                // Kapatma düğmesi olayı
+                const closeBtn = document.getElementById('closeTaskDetailModal');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function() {
+                        taskDetailModal.style.display = 'none';
+                    });
+                }
+                
+                // Modal dışına tıklama ile kapatma
+                taskDetailModal.addEventListener('click', function(e) {
+                    if (e.target === taskDetailModal) {
+                        taskDetailModal.style.display = 'none';
+                    }
+                });
+                
+                // Görev tamamlama/tamamlamama olayı
+                const checkboxes = taskDetailModal.querySelectorAll('.task-checkbox input');
+                checkboxes.forEach(checkbox => {
+                    checkbox.addEventListener('click', function(e) {
+                        e.stopPropagation(); // Tıklama olayının üst öğelere yayılmasını engelle
+                        
+                        const taskItem = this.closest('.task-item');
+                        const taskId = taskItem.dataset.id;
+                        const newStatus = this.checked ? 'completed' : 'not-started';
+                        
+                        console.log("Görev tıklandı:", taskId, "Yeni durum:", newStatus);
+                        
+                        // Görevi güncelle
+                        updateTaskStatus(taskId, newStatus);
+                        
+                        // Görünümü güncelle
+                        if (this.checked) {
+                            taskItem.classList.add('completed');
+                        } else {
+                            taskItem.classList.remove('completed');
+                        }
+                    });
+                });
+            }
+            
+            // Görev durumunu güncelle
+            function updateTaskStatus(taskId, newStatus) {
+                console.log("Görev durumu güncelleniyor:", taskId, newStatus);
+                
+                // Kullanıcı oturumunu kontrol et
+                const user = firebase.auth().currentUser;
+                
+                if (user) {
+                    // Firebase'de güncelle
+                    firebase.database().ref(`users/${user.uid}/tasks/${taskId}`).update({
+                        status: newStatus
+                    }).then(() => {
+                        console.log(`Görev durumu güncellendi: ${taskId} -> ${newStatus}`);
+                        
+                        // Kullanıcıya bildirim göster
+                        showNotification(newStatus === 'completed' ? 'Görev tamamlandı!' : 'Görev tamamlanmadı olarak işaretlendi.');
+                        
+                        // Görevleri yeniden yükle
+                        setTimeout(() => {
+                            loadTodayTasks();
+                        }, 500);
+                    }).catch(error => {
+                        console.error("Görev güncellenirken hata:", error);
+                        showNotification('Görev güncellenirken bir hata oluştu.', 'error');
+                    });
+                } else {
+                    // Misafir kullanıcı kontrolü
+                    const guestUser = localStorage.getItem('guestUser');
+                    
+                    if (guestUser) {
+                        try {
+                            const guestData = JSON.parse(guestUser);
+                            
+                            if (guestData.tasks && Array.isArray(guestData.tasks)) {
+                                // Görevi bul ve güncelle
+                                const taskIndex = guestData.tasks.findIndex(task => task.id === taskId);
+                                
+                                if (taskIndex !== -1) {
+                                    guestData.tasks[taskIndex].status = newStatus;
+                                    
+                                    // LocalStorage'a kaydet
+                                    localStorage.setItem('guestUser', JSON.stringify(guestData));
+                                    
+                                    console.log(`Misafir kullanıcı için görev durumu güncellendi: ${taskId} -> ${newStatus}`);
+                                    
+                                    // Kullanıcıya bildirim göster
+                                    showNotification(newStatus === 'completed' ? 'Görev tamamlandı!' : 'Görev tamamlanmadı olarak işaretlendi.');
+                                    
+                                    // Görevleri yeniden yükle
+                                    setTimeout(() => {
+                                        loadTodayTasks();
+                                    }, 500);
+                                } else {
+                                    console.error("Görev bulunamadı:", taskId);
+                                    showNotification('Görev bulunamadı.', 'error');
+                                }
+                            } else {
+                                console.error("Misafir kullanıcının görev verisi bulunamadı");
+                                showNotification('Görev verisi bulunamadı.', 'error');
+                            }
+                        } catch (error) {
+                            console.error("Misafir kullanıcı verisi işlenirken hata:", error);
+                            showNotification('Görev güncellenirken bir hata oluştu.', 'error');
+                        }
+                    } else {
+                        console.error("Görev güncellemek için giriş yapmalısınız");
+                        showNotification('Görev güncellemek için giriş yapmalısınız.', 'error');
+                    }
+                }
+            }
+            
+            // Bildirim gösterme fonksiyonu
+            function showNotification(message, type = 'success') {
+                // Mevcut bildirimi kontrol et
+                let notification = document.querySelector('.task-notification');
+                
+                // Bildirim yoksa oluştur
+                if (!notification) {
+                    notification = document.createElement('div');
+                    notification.className = 'task-notification';
+                    document.body.appendChild(notification);
+                }
+                
+                // Bildirim içeriğini ayarla
+                notification.textContent = message;
+                notification.className = `task-notification ${type}`;
+                
+                // Bildirimi göster
+                notification.style.display = 'block';
+                notification.style.opacity = '1';
+                
+                // 3 saniye sonra bildirimi gizle
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    setTimeout(() => {
+                        notification.style.display = 'none';
+                    }, 300);
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>

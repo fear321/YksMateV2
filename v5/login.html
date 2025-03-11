@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKSMate - Giriş Yap</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo(192).png">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Ana JavaScript -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    
+    <!-- Oturum Kontrolü -->
+    <script>
+        // Sayfa yüklendiğinde çalışacak
+        document.addEventListener('DOMContentLoaded', function() {
+            // Firebase yüklendiyse
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                // Oturum kalıcılığını LOCAL olarak ayarla
+                firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+                    .then(() => {
+                        console.log("Oturum kalıcılığı LOCAL olarak ayarlandı");
+                    })
+                    .catch((error) => {
+                        console.error("Oturum kalıcılığı ayarlanamadı:", error);
+                    });
+                
+                // Kullanıcı oturumunu kontrol et
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        // Kullanıcı giriş yapmış, ana sayfaya yönlendir
+                        console.log("Kullanıcı zaten giriş yapmış, ana sayfaya yönlendiriliyor...");
+                        
+                        // Kullanıcı bilgilerini Firestore'dan al
+                        firebase.firestore().collection('users').doc(user.uid).get()
+                            .then(doc => {
+                                if (doc.exists) {
+                                    const userData = doc.data();
+                                    // Kullanıcı bilgilerini sessionStorage'a kaydet
+                                    if (userData.name) sessionStorage.setItem("registerName", userData.name);
+                                    if (userData.examType) sessionStorage.setItem("registerExamType", userData.examType);
+                                    console.log("Kullanıcı bilgileri sessionStorage'a kaydedildi:", userData);
+                                }
+                                // Ana sayfaya yönlendir
+                                window.location.href = "index.html";
+                            })
+                            .catch(error => {
+                                console.error("Kullanıcı bilgileri alınırken hata:", error);
+                                // Hata olsa bile ana sayfaya yönlendir
+                                window.location.href = "index.html";
+                            });
+                    } else {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            // Misafir kullanıcı varsa ana sayfaya yönlendir
+                            console.log("Misafir kullanıcı bulundu, ana sayfaya yönlendiriliyor...");
+                            window.location.href = "index.html";
+                        } else {
+                            // Giriş ekranını göster
+                            document.getElementById("authContainer").style.display = "flex";
+                        }
+                    }
+                });
+                
+                // Beni Hatırla checkbox'ını varsayılan olarak işaretle
+                const rememberMeCheckbox = document.getElementById('rememberMe');
+                if (rememberMeCheckbox) {
+                    rememberMeCheckbox.checked = true;
+                }
+            } else {
+                console.error("Firebase yüklenemedi!");
+                alert("Sistem yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.");
+            }
+        });
+    </script>
+</head>
+<body class="light-theme">
+    <div class="container">
+        <!-- Giriş Ekranı -->
+        <div class="auth-container" id="authContainer">
+            <div class="auth-box">
+                <div class="logo">
+                    <img src="assets/images/logo(192).png" alt="YKSMate Logo" width="50" height="50">
+                    <h1>YKSMate</h1>
+                </div>
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="login">Giriş Yap</button>
+                    <button class="tab-btn" data-tab="register">Kayıt Ol</button>
+                </div>
+                
+                <!-- Giriş Formu -->
+                <div class="tab-content active" id="login">
+                    <form id="loginForm" onsubmit="return false;">
+                        <div class="input-group">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="loginEmail" placeholder="E-posta" required>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="loginPassword" placeholder="Şifre" required>
+                        </div>
+                        <div class="remember-me">
+                            <label>
+                                <input type="checkbox" id="rememberMe">
+                                <span>Beni Hatırla</span>
+                            </label>
+                        </div>
+                        <button type="button" id="loginButton" class="btn btn-primary">Giriş Yap</button>
+                    </form>
+                    <div class="divider">
+                        <span>veya</span>
+                    </div>
+                    <button id="guestLoginBtn" class="btn btn-secondary">
+                        <i class="fas fa-user"></i> Misafir Olarak Giriş Yap
+                    </button>
+                </div>
+                
+                <!-- Kayıt Formu -->
+                <div class="tab-content" id="register">
+                    <form id="registerForm" onsubmit="return false;">
+                        <div class="input-group">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="registerName" placeholder="Ad Soyad" required>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="registerEmail" placeholder="E-posta" required>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="registerPassword" placeholder="Şifre" required>
+                        </div>
+                        <div class="exam-selection">
+                            <h3>Sınav Türü Seçin</h3>
+                            <div class="exam-options">
+                                <label class="exam-option">
+                                    <input type="radio" name="examType" value="tyt" checked>
+                                    <span class="exam-label">TYT</span>
+                                </label>
+                                <label class="exam-option">
+                                    <input type="radio" name="examType" value="sayisal">
+                                    <span class="exam-label">Sayısal</span>
+                                </label>
+                                <label class="exam-option">
+                                    <input type="radio" name="examType" value="sozel">
+                                    <span class="exam-label">Sözel</span>
+                                </label>
+                                <label class="exam-option">
+                                    <input type="radio" name="examType" value="esitagirlik">
+                                    <span class="exam-label">Eşit Ağırlık</span>
+                                </label>
+                                <label class="exam-option">
+                                    <input type="radio" name="examType" value="dil">
+                                    <span class="exam-label">Dil</span>
+                                </label>
+                            </div>
+                        </div>
+                        <button type="button" id="registerButton" class="btn btn-primary">Kayıt Ol</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Misafir Giriş Modalı -->
+        <div class="modal" id="guestLoginModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Misafir Olarak Giriş Yap</h2>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="guestLoginForm" onsubmit="return false;">
+                        <div class="input-group">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="guestName" placeholder="Adınız" required>
+                        </div>
+                        <div class="exam-selection">
+                            <h3>Sınav Türü Seçin</h3>
+                            <div class="exam-options">
+                                <label class="exam-option">
+                                    <input type="radio" name="guestExamType" value="tyt" checked>
+                                    <span class="exam-label">TYT</span>
+                                </label>
+                                <label class="exam-option">
+                                    <input type="radio" name="guestExamType" value="sayisal">
+                                    <span class="exam-label">Sayısal</span>
+                                </label>
+                                <label class="exam-option">
+                                    <input type="radio" name="guestExamType" value="sozel">
+                                    <span class="exam-label">Sözel</span>
+                                </label>
+                                <label class="exam-option">
+                                    <input type="radio" name="guestExamType" value="esitagirlik">
+                                    <span class="exam-label">Eşit Ağırlık</span>
+                                </label>
+                                <label class="exam-option">
+                                    <input type="radio" name="guestExamType" value="dil">
+                                    <span class="exam-label">Dil</span>
+                                </label>
+                            </div>
+                        </div>
+                        <p class="note">Not: Misafir olarak giriş yaptığınızda verileriniz tarayıcınızda saklanacak ve çıkış yaptığınızda silinecektir.</p>
+                        <button type="button" id="guestLoginSubmitBtn" class="btn btn-primary">Giriş Yap</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

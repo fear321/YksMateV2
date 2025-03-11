@@ -1,0 +1,202 @@
+/* Tema Geçiş Animasyonları */
+.theme-transition {
+    transition: background-color 0.3s ease,
+                color 0.3s ease,
+                border-color 0.3s ease,
+                box-shadow 0.3s ease !important;
+}
+
+.theme-transition * {
+    transition: background-color 0.3s ease,
+                color 0.3s ease,
+                border-color 0.3s ease,
+                box-shadow 0.3s ease !important;
+}
+
+/* Tema Kartları */
+.theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.theme-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.theme-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.theme-card.active {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.theme-card-header {
+    height: 80px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+    color: white;
+}
+
+.theme-card-title {
+    text-align: center;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+/* Tema Renk Şemaları */
+.theme-light .theme-card-header {
+    background: linear-gradient(45deg, #4b2138, #5c2845);
+}
+
+.theme-purple .theme-card-header {
+    background: linear-gradient(45deg, #7c37a6, #9645c7);
+}
+
+.theme-blue .theme-card-header {
+    background: linear-gradient(45deg, #1da1f2, #4db5f5);
+}
+
+.theme-green .theme-card-header {
+    background: linear-gradient(45deg, #2e7d32, #388e3c);
+}
+
+.theme-dark .theme-card-header {
+    background: linear-gradient(45deg, #bb86fc, #c99fff);
+}
+
+/* Genel Tema Stilleri */
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* Sidebar Stilleri */
+.sidebar {
+    width: 250px;
+    min-width: 250px;
+    height: 100vh;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--sidebar-border);
+    position: fixed;
+    left: -250px;
+    top: 0;
+    z-index: 9999;
+    overflow-y: auto;
+    transition: left 0.3s ease;
+}
+
+.sidebar-open {
+    left: 0;
+}
+
+.main-content {
+    width: 100%;
+    margin-left: 0;
+    transition: margin-left 0.3s ease;
+}
+
+.content-pushed {
+    margin-left: 250px;
+}
+
+.sidebar-toggle {
+    display: block !important;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    margin-right: 10px;
+    color: var(--light-text);
+}
+
+.sidebar-nav a {
+    color: var(--sidebar-text);
+}
+
+.sidebar-nav a:hover {
+    background-color: var(--sidebar-hover);
+}
+
+.sidebar-nav li.active a {
+    background-color: var(--sidebar-active);
+    color: var(--sidebar-active-text);
+}
+
+/* Karanlık Tema Özel Stilleri */
+.theme-dark {
+    color-scheme: dark;
+}
+
+/* Responsive Tasarım */
+@media (max-width: 768px) {
+    .theme-grid {
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 12px;
+    }
+
+    .theme-card {
+        padding: 15px;
+    }
+
+    .theme-card-header {
+        height: 60px;
+    }
+
+    .theme-card-title {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .theme-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+    }
+
+    .theme-card {
+        padding: 12px;
+    }
+
+    .theme-card-header {
+        height: 50px;
+    }
+
+    .theme-card-title {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .sidebar {
+        left: -250px;
+    }
+    
+    .sidebar.active {
+        left: 0;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+@media (min-width: 769px) {
+    .sidebar-toggle {
+        display: block !important;
+    }
+} 

@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKSMate - Ayarlar</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo(192).png">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Ana JavaScript -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/theme-manager.js"></script>
+    <script src="js/app.js"></script>
+    
+    <!-- Oturum Kontrolü -->
+    <script src="js/appearance.js"></script>
+    
+    <!-- Oturum Kontrolü -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        firebase.database().ref('users/' + user.uid).once('value')
+                            .then((snapshot) => {
+                                const userData = snapshot.val();
+                                if (userData) {
+                                    document.getElementById("userName").textContent = userData.name || user.email.split('@')[0];
+                                    document.getElementById("userExamType").textContent = "Sınav Türü: " + getExamTypeText(userData.examType);
+                                    document.getElementById("tokenCount").textContent = userData.tokens + " Jeton";
+                                    
+                                    // Ayarlar formunu doldur
+                                    document.getElementById("settingsName").value = userData.name || '';
+                                    document.getElementById("settingsEmail").value = userData.email || user.email;
+                                    document.getElementById("settingsExamType").value = userData.examType || 'tyt';
+                                    document.getElementById("settingsNotifications").checked = userData.notifications !== false;
+                                    document.getElementById("settingsTheme").value = userData.theme || 'light';
+                                    document.getElementById("settingsLanguage").value = userData.language || 'tr';
+                                    
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Kullanıcı verileri alınırken hata:", error);
+                            });
+                    } else {
+                        window.location.href = "login.html";
+                    }
+                });
+            } else {
+                console.error("Firebase yüklenemedi!");
+                alert("Sistem yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.");
+            }
+        });
+        
+        function getExamTypeText(examType) {
+            switch(examType) {
+                case 'tyt': return 'TYT';
+                case 'sayisal': return 'Sayısal';
+                case 'sozel': return 'Sözel';
+                case 'esitagirlik': return 'Eşit Ağırlık';
+                case 'dil': return 'Dil';
+                default: return 'TYT';
+            }
+        }
+    </script>
+</head>
+<body class="light-theme">
+    <div class="container">
+        <div class="dashboard-container" id="dashboardContainer" style="display: none;">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <img src="assets/images/logo(192).png" alt="YKSMate Logo" class="sidebar-logo">
+                    <h2>YKSMate</h2>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <h3 id="userName">Kullanıcı Adı</h3>
+                        <p id="userExamType">Sınav Türü: TYT</p>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li>
+                            <a href="index.html"><i class="fas fa-home"></i> Ana Sayfa</a>
+                        </li>
+                        <li>
+                            <a href="exams.html"><i class="fas fa-file-alt"></i> Denemelerim</a>
+                        </li>
+                        <li>
+                            <a href="timer.html"><i class="fas fa-clock"></i> Zamanlayıcı</a>
+                        </li>
+                        <li>
+                            <a href="calendar.html"><i class="fas fa-calendar-alt"></i> Takvim</a>
+                        </li>
+                        <li>
+                            <a href="notes.html"><i class="fas fa-sticky-note"></i> Notlarım</a>
+                        </li>
+                        <li>
+                            <a href="community.html"><i class="fas fa-users"></i> Topluluk</a>
+                        </li>
+                        <li>
+                            <a href="ai.html"><i class="fas fa-robot"></i> MateAI</a>
+                        </li>
+                        <li>
+                            <a href="profile.html"><i class="fas fa-user-circle"></i> Profil</a>
+                        </li>
+                        <li class="active">
+                            <a href="settings.html"><i class="fas fa-cog"></i> Ayarlar</a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="token-info">
+                        <i class="fas fa-coins"></i>
+                        <span id="tokenCount">0 Jeton</span>
+                    </div>
+                    <button id="logoutBtn" class="btn btn-outline">
+                        <i class="fas fa-sign-out-alt"></i> Çıkış Yap
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ana İçerik -->
+            <div class="main-content">
+                <header class="content-header">
+                    <button id="sidebarToggle" class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Ara...">
+                    </div>
+                    <div class="header-actions">
+                        <button class="theme-toggle" id="themeToggle">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <div class="notifications">
+                            <button class="notification-btn">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge">3</span>
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Sayfa İçeriği -->
+                <div class="page-content">
+                    <h1 class="page-title">Ayarlar</h1>
+                    
+                    <!-- Hesap Ayarları -->
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Hesap Ayarları</h2>
+                        </div>
+                        <form id="accountSettingsForm" class="settings-form">
+                            <div class="form-group">
+                                <label for="settingsName">Ad Soyad</label>
+                                <input type="text" id="settingsName" name="name" placeholder="Ad Soyad">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="settingsEmail">E-posta</label>
+                                <input type="email" id="settingsEmail" name="email" placeholder="E-posta" disabled>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="settingsExamType">Sınav Türü</label>
+                                <select id="settingsExamType" name="examType">
+                                    <option value="tyt">TYT</option>
+                                    <option value="sayisal">Sayısal</option>
+                                    <option value="sozel">Sözel</option>
+                                    <option value="esitagirlik">Eşit Ağırlık</option>
+                                    <option value="dil">Dil</option>
+                                </select>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Hesap Bilgilerini Güncelle</button>
+                        </form>
+                    </div>
+                    
+                    <!-- Uygulama Ayarları -->
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Uygulama Ayarları</h2>
+                        </div>
+                        <form id="appSettingsForm" class="settings-form">
+                            <div class="form-group">
+                                <label for="settingsTheme">Tema</label>
+                                <select id="settingsTheme" name="theme">
+                                    <option value="light">Açık Tema</option>
+                                    <option value="dark">Koyu Tema</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="settingsLanguage">Dil</label>
+                                <select id="settingsLanguage" name="language">
+                                    <option value="tr">Türkçe</option>
+                                    <option value="en">English</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="settingsNotifications" name="notifications">
+                                    Bildirimleri Etkinleştir
+                                </label>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Uygulama Ayarlarını Güncelle</button>
+                        </form>
+                    </div>
+                    
+                    <!-- Görünüm Ayarları -->
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Görünüm Ayarları</h2>
+                        </div>
+                        <div class="settings-form">
+                            <!-- Tema Kartları -->
+                            <div class="theme-cards">
+                                <div class="theme-card" data-theme="light">
+                                    <div class="theme-preview light-preview"></div>
+                                    <span>Açık Tema</span>
+                                </div>
+                                <div class="theme-card" data-theme="dark">
+                                    <div class="theme-preview dark-preview"></div>
+                                    <span>Koyu Tema</span>
+                                </div>
+                                <div class="theme-card" data-theme="purple">
+                                    <div class="theme-preview purple-preview"></div>
+                                    <span>Mor Tema</span>
+                                </div>
+                            </div>
+
+                            <!-- Parlaklık Kontrolü -->
+                            <div class="opacity-control">
+                                <label>Parlaklık</label>
+                                <div class="slider-container">
+                                    <input type="range" id="opacitySlider" min="50" max="150" value="100">
+                                    <span id="opacityValue">100%</span>
+                                </div>
+                            </div>
+
+                            <!-- Saydamlık Kontrolü -->
+                            <div class="opacity-control">
+                                <label>Saydamlık</label>
+                                <div class="slider-container">
+                                    <input type="range" id="transparencySlider" min="50" max="100" value="100">
+                                    <span id="transparencyValue">100%</span>
+                                </div>
+                            </div>
+
+                            <!-- Bulanıklık Kontrolü -->
+                            <div class="opacity-control">
+                                <label>Bulanıklık</label>
+                                <div class="slider-container">
+                                    <input type="range" id="blurSlider" min="0" max="20" value="0">
+                                    <span id="blurValue">0px</span>
+                                </div>
+                            </div>
+
+                            <!-- Arkaplan Ayarları -->
+                            <div class="background-settings">
+                                <label>Arkaplan Fotoğrafı</label>
+                                <div class="background-preview" id="background-preview">
+                                    <div class="no-background">
+                                        <i class="fas fa-image"></i>
+                                        <p>Arkaplan fotoğrafı yok</p>
+                                    </div>
+                                </div>
+                                <div class="background-controls">
+                                    <input type="file" id="background-upload" accept="image/*" style="display: none;">
+                                    <button class="btn btn-primary" onclick="document.getElementById('background-upload').click()">
+                                        <i class="fas fa-upload"></i> Fotoğraf Yükle
+                                    </button>
+                                    <button class="btn btn-danger" id="remove-background" disabled>
+                                        <i class="fas fa-trash"></i> Kaldır
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hesap Silme -->
+                    <div class="section danger-zone">
+                        <div class="section-header">
+                            <h2>Tehlikeli Bölge</h2>
+                        </div>
+                        <div class="settings-form">
+                            <div class="warning-box">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <p>Bu bölgedeki işlemler geri alınamaz!</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="deleteAccountPassword">Mevcut Şifre</label>
+                                <input type="password" id="deleteAccountPassword" placeholder="Hesabınızı silmek için şifrenizi girin">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="deleteConfirmation">Onay</label>
+                                <input type="text" id="deleteConfirmation" placeholder="HESABIMI SİL yazın">
+                            </div>
+                            
+                            <button id="confirmDeleteAccountBtn" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Hesabı Sil
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Ayarlar JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentUser;
+            let userRef;
+
+            // Kullanıcı oturumunu kontrol et
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    currentUser = user;
+                    userRef = firebase.database().ref('users/' + user.uid);
+                    loadUserSettings();
+                }
+            });
+
+            // Kullanıcı ayarlarını yükle
+            function loadUserSettings() {
+                userRef.once('value').then(snapshot => {
+                    const userData = snapshot.val();
+                    if (userData) {
+                        // Profil bilgilerini form alanlarına doldur
+                        document.getElementById('settingsName').value = userData.name || '';
+                        document.getElementById('settingsEmail').value = currentUser.email;
+                        document.getElementById('settingsExamType').value = userData.examType || 'tyt';
+                        
+                        // Tema ayarlarını güncelle
+                        document.getElementById('settingsTheme').value = userData.theme || 'light';
+                        
+                        // Diğer ayarları güncelle
+                        document.getElementById('settingsNotifications').checked = userData.notifications !== false;
+                        document.getElementById('settingsLanguage').value = userData.language || 'tr';
+                        
+                        // Görünüm ayarlarını yükle
+                        loadAppearanceSettings(userData);
+                    }
+                })
+            }
+
+            // Görünüm ayarlarını yükle
+            function loadAppearanceSettings(userData) {
+                // Tema kartlarını güncelle
+                const themeCards = document.querySelectorAll('.theme-card');
+                themeCards.forEach(card => {
+                    if (card.dataset.theme === (userData.theme || 'light')) {
+                        card.classList.add('active');
+                    }
+                });
+                
+                // Parlaklık, saydamlık ve bulanıklık ayarlarını yükle
+                const opacitySlider = document.getElementById('opacitySlider');
+                const transparencySlider = document.getElementById('transparencySlider');
+                const blurSlider = document.getElementById('blurSlider');
+                
+                if (opacitySlider) {
+                    opacitySlider.value = userData.brightness || 100;
+                    document.getElementById('opacityValue').textContent = `${opacitySlider.value}%`;
+                    document.body.style.filter = `brightness(${opacitySlider.value / 100})`;
+                }
+                
+                if (transparencySlider) {
+                    transparencySlider.value = userData.transparency || 100;
+                    document.getElementById('transparencyValue').textContent = `${transparencySlider.value}%`;
+                    document.body.style.opacity = transparencySlider.value / 100;
+                }
+                
+                if (blurSlider) {
+                    blurSlider.value = userData.blur || 0;
+                    document.getElementById('blurValue').textContent = `${blurSlider.value}px`;
+                    applyBlurToCards(blurSlider.value);
+                }
+                
+                // Arkaplan fotoğrafını yükle
+                const savedBackgroundImage = localStorage.getItem('backgroundImage');
+                if (savedBackgroundImage) {
+                    document.body.classList.add('has-background');
+                    document.body.style.backgroundImage = `url(${savedBackgroundImage})`;
+                    document.getElementById('background-preview').innerHTML = `
+                        <img src="${savedBackgroundImage}" alt="Arkaplan Önizleme" style="width: 100%; height: 100%; object-fit: cover;">
+                    `;
+                    document.getElementById('remove-background').disabled = false;
+                }
+            }
+
+            // Form submit işlemleri
+            document.getElementById('accountSettingsForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                updateAccountSettings();
+            });
+            
+            document.getElementById('appSettingsForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                updateAppSettings();
+            });
+            
+            // Hesap ayarlarını güncelle
+            function updateAccountSettings() {
+                const user = firebase.auth().currentUser;
+                if (!user) return;
+                
+                const name = document.getElementById('settingsName').value;
+                const examType = document.getElementById('settingsExamType').value;
+                
+                firebase.database().ref('users/' + user.uid).update({
+                    name: name,
+                    examType: examType
+                }).then(() => {
+                    alert('Hesap bilgileri güncellendi!');
+                    
+                    // Kullanıcı adını güncelle
+                    document.getElementById('userName').textContent = name;
+                    document.getElementById('userExamType').textContent = getExamTypeText(examType);
+                    
+                    // LocalStorage'a kaydet
+                    localStorage.setItem('userExamType', examType);
+                }).catch(error => {
+                    alert('Hata: ' + error.message);
+                });
+            }
+            
+            // Uygulama ayarlarını güncelle
+            function updateAppSettings() {
+                const user = firebase.auth().currentUser;
+                if (!user) return;
+                
+                const theme = document.getElementById('settingsTheme').value;
+                const language = document.getElementById('settingsLanguage').value;
+                const notifications = document.getElementById('settingsNotifications').checked;
+                
+                firebase.database().ref('users/' + user.uid).update({
+                    theme: theme,
+                    language: language,
+                    notifications: notifications
+                }).then(() => {
+                    alert('Uygulama ayarları güncellendi!');
+                    if (theme !== document.body.className) {
+                        document.body.className = theme + '-theme';
+                        localStorage.setItem('theme', theme);
+                    }
+                }).catch(error => {
+                    alert('Hata: ' + error.message);
+                });
+            }
+            
+            // Hesap silme
+            const confirmDeleteAccountBtn = document.getElementById('confirmDeleteAccountBtn');
+            if (confirmDeleteAccountBtn) {
+                confirmDeleteAccountBtn.addEventListener('click', function() {
+                    const password = document.getElementById('deleteAccountPassword').value;
+                    const confirmation = document.getElementById('deleteConfirmation').value;
+                    
+                    if (!password || confirmation !== 'HESABIMI SİL') {
+                        alert('Lütfen tüm alanları doğru şekilde doldurun.');
+                        return;
+                    }
+                    
+                    if (confirm('Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz!')) {
+                        const credential = firebase.auth.EmailAuthProvider.credential(
+                            currentUser.email,
+                            password
+                        );
+                        
+                        currentUser.reauthenticateWithCredential(credential).then(() => {
+                            // Kullanıcı verilerini sil
+                            return userRef.remove();
+                        }).then(() => {
+                            // Hesabı sil
+                            return currentUser.delete();
+                        }).then(() => {
+                            alert('Hesabınız başarıyla silindi.');
+                            window.location.href = 'login.html';
+                        }).catch(error => {
+                            console.error('Hesap silinirken hata:', error);
+                            if (error.code === 'auth/wrong-password') {
+                                alert('Şifreniz yanlış.');
+                            } else {
+                                alert('Hesap silinirken bir hata oluştu.');
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // Çıkış işlemi
+            document.getElementById('logoutBtn').addEventListener('click', async function() {
+                try {
+                    const guestUser = localStorage.getItem('guestUser');
+                    if (guestUser) {
+                        if (confirm('Çıkış yapmak istediğinize emin misiniz? Misafir verileriniz silinecektir.')) {
+                            localStorage.removeItem('guestUser');
+                            window.location.href = "login.html";
+                        }
+                    } else {
+                        if (typeof firebase !== 'undefined' && firebase.auth) {
+                            await firebase.auth().signOut();
+                            window.location.href = "login.html";
+                        } else {
+                            throw new Error("Firebase yüklenemedi!");
+                        }
+                    }
+                } catch (error) {
+                    console.error('Çıkış hatası:', error);
+                    alert('Çıkış yaparken bir hata oluştu: ' + error.message);
+                }
+            });
+            
+            // Tema kartları işlemleri
+            const themeCards = document.querySelectorAll('.theme-card');
+            themeCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const theme = card.dataset.theme;
+                    document.body.className = `${theme}-theme`;
+                    localStorage.setItem('selectedTheme', theme);
+                    localStorage.setItem('theme', theme);
+                    
+                    // Aktif temayı vurgula
+                    themeCards.forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    
+                    // Tema toggle ikonunu güncelle
+                    const themeToggle = document.getElementById('themeToggle');
+                    if (themeToggle) {
+                        themeToggle.innerHTML = `<i class="fas fa-${theme === 'dark' ? 'sun' : 'moon'}"></i>`;
+                    }
+                    
+                    // Firebase'e kaydet
+                    if (currentUser) {
+                        userRef.update({ theme: theme });
+                    }
+                });
+            });
+            
+            // Parlaklık kontrolü
+            const opacitySlider = document.getElementById('opacitySlider');
+            if (opacitySlider) {
+                opacitySlider.addEventListener('input', () => {
+                    const value = opacitySlider.value;
+                    document.getElementById('opacityValue').textContent = `${value}%`;
+                    document.body.style.filter = `brightness(${value / 100})`;
+                    localStorage.setItem('selectedBrightness', value);
+                    
+                    if (currentUser) {
+                        userRef.update({ brightness: value });
+                    }
+                });
+            }
+            
+            // Saydamlık kontrolü
+            const transparencySlider = document.getElementById('transparencySlider');
+            if (transparencySlider) {
+                transparencySlider.addEventListener('input', () => {
+                    const value = transparencySlider.value;
+                    document.getElementById('transparencyValue').textContent = `${value}%`;
+                    document.body.style.opacity = value / 100;
+                    localStorage.setItem('selectedTransparency', value);
+                    
+                    if (currentUser) {
+                        userRef.update({ transparency: value });
+                    }
+                });
+            }
+            
+            // Bulanıklık kontrolü
+            const blurSlider = document.getElementById('blurSlider');
+            if (blurSlider) {
+                blurSlider.addEventListener('input', () => {
+                    const value = blurSlider.value;
+                    document.getElementById('blurValue').textContent = `${value}px`;
+                    applyBlurToCards(value);
+                    localStorage.setItem('selectedBlur', value);
+                    
+                    if (currentUser) {
+                        userRef.update({ blur: value });
+                    }
+                });
+            }
+            
+            // Bulanıklık uygulama fonksiyonu
+            function applyBlurToCards(blurValue) {
+                const sections = document.querySelectorAll('.section');
+                const cards = document.querySelectorAll('.theme-card, .setting-item, .opacity-control');
+                
+                sections.forEach(section => {
+                    section.style.backdropFilter = `blur(${blurValue}px)`;
+                    section.style.webkitBackdropFilter = `blur(${blurValue}px)`;
+                    
+                    if (parseInt(blurValue) > 0) {
+                        section.style.backgroundColor = 'rgba(var(--bg-secondary-rgb), 0.8)';
+                    } else {
+                        section.style.backgroundColor = 'var(--bg-secondary)';
+                    }
+                });
+                
+                cards.forEach(card => {
+                    card.style.backdropFilter = `blur(${blurValue}px)`;
+                    card.style.webkitBackdropFilter = `blur(${blurValue}px)`;
+                    
+                    if (parseInt(blurValue) > 0) {
+                        card.style.backgroundColor = 'rgba(var(--bg-primary-rgb), 0.8)';
+                    } else {
+                        card.style.backgroundColor = 'var(--bg-primary)';
+                    }
+                });
+            }
+            
+            // Arkaplan fotoğrafı yükleme
+            const backgroundUpload = document.getElementById('background-upload');
+            if (backgroundUpload) {
+                backgroundUpload.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file && file.type.match('image.*')) {
+                        const reader = new FileReader();
+                        
+                        reader.onload = function(e) {
+                            const imageUrl = e.target.result;
+                            
+                            // Önizleme güncelle
+                            document.getElementById('background-preview').innerHTML = `
+                                <img src="${imageUrl}" alt="Arkaplan Önizleme" style="width: 100%; height: 100%; object-fit: cover;">
+                            `;
+                            
+                            // Arkaplanı uygula
+                            document.body.style.backgroundImage = `url(${imageUrl})`;
+                            document.body.style.backgroundSize = 'cover';
+                            document.body.style.backgroundAttachment = 'fixed';
+                            document.body.style.backgroundPosition = 'center';
+                            
+                            // LocalStorage'a kaydet
+                            localStorage.setItem('backgroundImage', imageUrl);
+                            
+                            // Kaldır butonunu aktifleştir
+                            document.getElementById('remove-background').disabled = false;
+                            
+                            if (currentUser) {
+                                userRef.update({ backgroundImage: imageUrl });
+                            }
+                        };
+                        
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+            
+            // Arkaplan fotoğrafını kaldır
+            const removeBackgroundBtn = document.getElementById('remove-background');
+            if (removeBackgroundBtn) {
+                removeBackgroundBtn.addEventListener('click', function() {
+                    // Önizlemeyi temizle
+                    document.getElementById('background-preview').innerHTML = `
+                        <div class="no-background">
+                            <i class="fas fa-image"></i>
+                            <p>Arkaplan fotoğrafı yok</p>
+                        </div>
+                    `;
+                    
+                    // Arkaplanı temizle
+                    document.body.style.backgroundImage = '';
+                    
+                    // LocalStorage'dan kaldır
+                    localStorage.removeItem('backgroundImage');
+                    
+                    // Kaldır butonunu devre dışı bırak
+                    this.disabled = true;
+                    
+                    if (currentUser) {
+                        userRef.update({ backgroundImage: null });
+                    }
+                });
+            }
+        });
+    </script>
+
+    <!-- Tema Yönetimi -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tema değiştirme
+            const themeToggle = document.getElementById('themeToggle');
+            const settingsTheme = document.getElementById('settingsTheme');
+            
+            if (themeToggle && settingsTheme) {
+                // Başlangıç temasını ayarla
+                const currentTheme = localStorage.getItem('theme') || 'light';
+                document.body.className = currentTheme + '-theme';
+                settingsTheme.value = currentTheme;
+                
+                // Tema toggle ikonunu güncelle
+                themeToggle.innerHTML = `<i class="fas fa-${currentTheme === 'dark' ? 'sun' : 'moon'}"></i>`;
+                
+                // Tema değişikliğini dinle
+                themeToggle.addEventListener('click', function() {
+                    const isDark = document.body.className.includes('dark');
+                    const newTheme = isDark ? 'light' : 'dark';
+                    
+                    document.body.className = newTheme + '-theme';
+                    settingsTheme.value = newTheme;
+                    localStorage.setItem('theme', newTheme);
+                    
+                    // İkonu güncelle
+                    this.innerHTML = `<i class="fas fa-${newTheme === 'dark' ? 'sun' : 'moon'}"></i>`;
+                });
+            }
+        });
+    </script>
+
+    <!-- Sidebar Yönetimi -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            
+            if (sidebarToggle && sidebar && mainContent) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('sidebar-open');
+                    mainContent.classList.toggle('content-pushed');
+                    document.body.classList.toggle('sidebar-active');
+                });
+            }
+        });
+    </script>
+
+    <style>
+        /* Ayarlar sayfası stilleri */
+        .settings-form {
+            max-width: 600px;
+            margin: 1rem 0;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--light-text);
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--light-border);
+            border-radius: 8px;
+            background: var(--light-background);
+            color: var(--light-text);
+            font-size: 1rem;
+        }
+        
+        .form-group input:disabled {
+            background: var(--light-background-secondary);
+            cursor: not-allowed;
+        }
+        
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .checkbox-label input[type="checkbox"] {
+            width: auto;
+            margin-right: 0.5rem;
+        }
+        
+        /* Dark mode uyumluluğu */
+        .dark-theme .form-group label {
+            color: var(--dark-text);
+        }
+        
+        .dark-theme .form-group input,
+        .dark-theme .form-group select {
+            background: var(--dark-background);
+            border-color: var(--dark-border);
+            color: var(--dark-text);
+        }
+        
+        .dark-theme .form-group input:disabled {
+            background: var(--dark-background-secondary);
+        }
+
+        /* Tema kartları stilleri */
+        .theme-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .theme-card {
+            border: 2px solid var(--light-border);
+            border-radius: 8px;
+            padding: 1rem;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .theme-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .theme-card.active {
+            border-color: var(--primary-color);
+        }
+        
+        .theme-preview {
+            width: 100%;
+            height: 100px;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .light-preview { background-color: #ffffff; }
+        .dark-preview { background-color: #1a1a1a; }
+        .purple-preview { background-color: #6b46c1; }
+        
+        /* Slider kontrolleri */
+        .opacity-control {
+            margin-bottom: 1.5rem;
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .slider-container input[type="range"] {
+            flex: 1;
+        }
+        
+        /* Arkaplan ayarları */
+        .background-preview {
+            width: 100%;
+            height: 200px;
+            border: 2px dashed var(--light-border);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+        
+        .no-background {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--light-text-secondary);
+        }
+        
+        .no-background i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .background-controls {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        /* Tehlikeli bölge */
+        .danger-zone {
+            border: 1px solid var(--danger-color);
+            border-radius: 8px;
+        }
+        
+        .warning-box {
+            background-color: var(--danger-color-light);
+            color: var(--danger-color);
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .warning-box i {
+            font-size: 1.5rem;
+        }
+        
+        /* Dark mode uyumluluğu */
+        .dark-theme .theme-card {
+            border-color: var(--dark-border);
+        }
+        
+        .dark-theme .background-preview {
+            border-color: var(--dark-border);
+        }
+        
+        .dark-theme .no-background {
+            color: var(--dark-text-secondary);
+        }
+        
+        .dark-theme .danger-zone {
+            border-color: var(--danger-color-dark);
+        }
+        
+        .dark-theme .warning-box {
+            background-color: var(--danger-color-dark);
+        }
+
+        /* Sidebar sabit pozisyonu */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        .main-content {
+            margin-left: 250px; /* Sidebar genişliği kadar margin */
+            width: calc(100% - 250px);
+            min-height: 100vh;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.sidebar-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Görünüm ayarlarını tüm sayfalara uygula
+            const savedBrightness = localStorage.getItem('selectedBrightness') || 100;
+            const savedTransparency = localStorage.getItem('selectedTransparency') || 100;
+            const savedBlur = localStorage.getItem('selectedBlur') || 0;
+            const savedBackgroundImage = localStorage.getItem('backgroundImage');
+
+            // Parlaklık, saydamlık ve bulanıklık ayarlarını uygula
+            document.body.style.filter = `brightness(${savedBrightness / 100})`;
+            document.body.style.opacity = savedTransparency / 100;
+            
+            // Arkaplan fotoğrafını uygula
+            if (savedBackgroundImage) {
+                document.body.style.backgroundImage = `url(${savedBackgroundImage})`;
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundAttachment = 'fixed';
+                document.body.style.backgroundPosition = 'center';
+            }
+
+            // Bulanıklık efektini uygula
+            function applyBlurToElements() {
+                const sections = document.querySelectorAll('.section');
+                const cards = document.querySelectorAll('.theme-card, .setting-item, .opacity-control');
+                
+                sections.forEach(section => {
+                    section.style.backdropFilter = `blur(${savedBlur}px)`;
+                    section.style.webkitBackdropFilter = `blur(${savedBlur}px)`;
+                    
+                    if (parseInt(savedBlur) > 0) {
+                        section.style.backgroundColor = 'rgba(var(--bg-secondary-rgb), 0.8)';
+                    } else {
+                        section.style.backgroundColor = 'var(--bg-secondary)';
+                    }
+                });
+                
+                cards.forEach(card => {
+                    card.style.backdropFilter = `blur(${savedBlur}px)`;
+                    card.style.webkitBackdropFilter = `blur(${savedBlur}px)`;
+                    
+                    if (parseInt(savedBlur) > 0) {
+                        card.style.backgroundColor = 'rgba(var(--bg-primary-rgb), 0.8)';
+                    } else {
+                        card.style.backgroundColor = 'var(--bg-primary)';
+                    }
+                });
+            }
+
+            applyBlurToElements();
+        });
+    </script>
+</body>
+</html>
