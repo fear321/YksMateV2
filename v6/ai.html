@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKSMate - MateAI</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo(192).png">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Ana JavaScript -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth-check.js"></script>
+    <script src="js/theme-manager.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/ai.js"></script>
+
+</head>
+<body class="light-theme">
+    <div class="container">
+        <div class="dashboard-container" id="dashboardContainer" style="display: none;">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <img src="assets/images/logo(192).png" alt="YKSMate Logo" class="sidebar-logo">
+                    <h2>YKSMate</h2>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <a href="profile.html" style="text-decoration: none; color: inherit;">
+                            <h3 id="userName">Kullanıcı Adı</h3>
+                            <p id="userExamType">Bölüm: TYT</p>
+                        </a>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li>
+                            <a href="index.html"><i class="fas fa-home"></i> Ana Sayfa</a>
+                        </li>
+                        <li>
+                            <a href="exams.html"><i class="fas fa-file-alt"></i> Denemelerim</a>
+                        </li>
+                        <li>
+                            <a href="timer.html"><i class="fas fa-clock"></i> Zamanlayıcı</a>
+                        </li>
+                        <li>
+                            <a href="calendar.html"><i class="fas fa-calendar-alt"></i> Takvim</a>
+                        </li>
+                        <li>
+                            <a href="notes.html"><i class="fas fa-sticky-note"></i> Notlarım</a>
+                        </li>
+                        <li>
+                            <a href="community.html"><i class="fas fa-users"></i> Topluluk</a>
+                        </li>
+                        <li class="active">
+                            <a href="ai.html"><i class="fas fa-robot"></i> MateAI</a>
+                        </li>
+                        <li>
+                            <a href="profile.html"><i class="fas fa-user-circle"></i> Profil</a>
+                        </li>
+                        <li>
+                            <a href="settings.html"><i class="fas fa-cog"></i> Ayarlar</a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="token-info">
+                        <i class="fas fa-coins"></i>
+                        <span id="tokenCount">0 Jeton</span>
+                    </div>
+                    <button id="collapseToggle" class="collapse-toggle">
+                        <i class="fas fa-chevron-left"></i>
+                        <span>Menüyü Daralt</span>
+                    </button>
+                    <button id="logoutBtn" class="btn btn-outline">
+                        <i class="fas fa-sign-out-alt"></i> <span>Çıkış Yap</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sidebar Overlay -->
+            <div class="sidebar-overlay"></div>
+
+            <!-- Ana İçerik -->
+            <div class="main-content">
+                <header class="content-header">
+                    <button id="sidebarToggle" class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Ara...">
+                    </div>
+                    <div class="header-actions">
+                        <button class="theme-toggle" id="themeToggle">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <div class="notifications">
+                            <button class="notification-btn">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge">3</span>
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- AI Sayfa İçeriği -->
+                <div class="page-content">
+                    <div class="ai-page">
+                        <h1 class="page-title">MateAI</h1>
+                        
+                        <!-- AI Sohbet Alanı -->
+                        <div class="ai-chat-container">
+                            <div class="ai-chat-messages" id="aiChatMessages">
+                                <!-- Hoş geldin mesajı -->
+                                <div class="ai-message">
+                                    <div class="ai-avatar">
+                                        <i class="fas fa-robot"></i>
+                                    </div>
+                                    <div class="message-content">
+                                        <p>Merhaba! Ben MateAI, YKS hazırlık asistanınız. Size nasıl yardımcı olabilirim?</p>
+                                        <ul class="quick-suggestions">
+                                            <li>📚 Konu tekrarı yapmak istiyorum</li>
+                                            <li>📝 Soru çözmek istiyorum</li>
+                                            <li>📊 Deneme analizimi yap</li>
+                                            <li>📅 Çalışma programı oluştur</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Mesaj Gönderme Alanı -->
+                            <div class="ai-chat-input">
+                                <textarea id="aiMessageInput" placeholder="Mesajınızı yazın..." rows="1"></textarea>
+                                <button id="sendMessageBtn">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- AI Özellikleri -->
+                        <div class="ai-features">
+                            <h2>MateAI Özellikleri</h2>
+                            <div class="features-grid">
+                                <div class="feature-card">
+                                    <i class="fas fa-brain"></i>
+                                    <h3>Kişiselleştirilmiş Öğrenme</h3>
+                                    <p>Öğrenme stilinize ve hızınıza göre özelleştirilmiş içerikler</p>
+                                </div>
+                                <div class="feature-card">
+                                    <i class="fas fa-chart-line"></i>
+                                    <h3>Performans Analizi</h3>
+                                    <p>Deneme sınavlarınızın detaylı analizi ve gelişim önerileri</p>
+                                </div>
+                                <div class="feature-card">
+                                    <i class="fas fa-calendar-check"></i>
+                                    <h3>Çalışma Programı</h3>
+                                    <p>Hedeflerinize göre özelleştirilmiş çalışma programları</p>
+                                </div>
+                                <div class="feature-card">
+                                    <i class="fas fa-question-circle"></i>
+                                    <h3>Soru Çözümü</h3>
+                                    <p>Zorlandığınız soruların adım adım çözümleri</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Jeton Satın Alma Modalı -->
+    <div id="buyTokensModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Jeton Satın Al</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>MateAI ile sohbet etmek için jeton satın alabilirsiniz.</p>
+                <div class="token-packages">
+                    <div class="token-package">
+                        <div class="token-amount">10 Jeton</div>
+                        <div class="token-price">5 TL</div>
+                        <button class="btn btn-primary buy-token-btn" data-amount="10" data-price="5">Satın Al</button>
+                    </div>
+                    <div class="token-package">
+                        <div class="token-amount">50 Jeton</div>
+                        <div class="token-price">20 TL</div>
+                        <button class="btn btn-primary buy-token-btn" data-amount="50" data-price="20">Satın Al</button>
+                    </div>
+                    <div class="token-package">
+                        <div class="token-amount">100 Jeton</div>
+                        <div class="token-price">35 TL</div>
+                        <button class="btn btn-primary buy-token-btn" data-amount="100" data-price="35">Satın Al</button>
+                    </div>
+                </div>
+                <div class="premium-option">
+                    <h3>Premium Üyelik</h3>
+                    <p>Sınırsız AI kullanımı ve tüm özelliklere erişim</p>
+                    <div class="premium-price">Aylık 49.99 TL</div>
+                    <button class="btn btn-secondary" id="buyPremiumBtn">Premium Ol</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Oturum kontrolü
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        // Kullanıcı bilgilerini güncelle
+                        firebase.database().ref('users/' + user.uid).once('value')
+                            .then((snapshot) => {
+                                const userData = snapshot.val();
+                                if (userData) {
+                                    document.getElementById("userName").textContent = userData.name || user.email.split('@')[0];
+                                    document.getElementById("userExamType").textContent = "Bölüm: " + getExamTypeText(userData.examType);
+                                    document.getElementById("tokenCount").textContent = `${userData.tokens || 0} Jeton`;
+                                }
+                                document.getElementById("dashboardContainer").style.display = "flex";
+                            });
+                    } else {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            const guestData = JSON.parse(guestUser);
+                            document.getElementById("userName").textContent = guestData.name;
+                            document.getElementById("userExamType").textContent = "Bölüm: " + getExamTypeText(guestData.examType);
+                            document.getElementById("tokenCount").textContent = `${guestData.tokens || 0} Jeton`;
+                            document.getElementById("dashboardContainer").style.display = "flex";
+                        } else {
+                            window.location.href = "login.html";
+                        }
+                    }
+                });
+            }
+
+            // Mesaj gönderme işlevi
+            const messageInput = document.getElementById('aiMessageInput');
+            const sendButton = document.getElementById('sendMessageBtn');
+            const chatMessages = document.getElementById('aiChatMessages');
+
+            // Textarea yüksekliğini otomatik ayarla
+            messageInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+
+            // Mesaj gönderme
+            function sendMessage() {
+                const message = messageInput.value.trim();
+                if (message) {
+                    // Kullanıcı mesajını ekle
+                    const userMessageHtml = `
+                        <div class="user-message">
+                            <div class="message-content">
+                                <p>${message}</p>
+                            </div>
+                        </div>
+                    `;
+                    chatMessages.insertAdjacentHTML('beforeend', userMessageHtml);
+
+                    // Mesaj alanını temizle
+                    messageInput.value = '';
+                    messageInput.style.height = 'auto';
+
+                    // Sohbeti en alta kaydır
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                    // AI yanıtını simüle et
+                    setTimeout(() => {
+                        const aiMessageHtml = `
+                            <div class="ai-message">
+                                <div class="ai-avatar">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div class="message-content">
+                                    <p>Bu özellik yakında aktif olacak. Şu anda geliştirme aşamasındayız.</p>
+                                </div>
+                            </div>
+                        `;
+                        chatMessages.insertAdjacentHTML('beforeend', aiMessageHtml);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }, 1000);
+                }
+            }
+
+            // Gönder butonuna tıklama
+            sendButton.addEventListener('click', sendMessage);
+
+            // Enter tuşuna basma
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Hızlı öneriler için tıklama olayları
+            document.querySelectorAll('.quick-suggestions li').forEach(suggestion => {
+                suggestion.addEventListener('click', function() {
+                    messageInput.value = this.textContent;
+                    sendMessage();
+                });
+            });
+
+            // Modal kapatma butonları için event listener
+            document.querySelectorAll('.close-modal').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.modal').forEach(modal => {
+                        modal.style.display = 'none';
+                    });
+                });
+            });
+
+            // Jeton satın alma butonları için event listener
+            document.querySelectorAll('.buy-token-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const amount = parseInt(btn.dataset.amount);
+                    const price = parseFloat(btn.dataset.price);
+                    buyTokens(amount, price);
+                });
+            });
+
+            // Premium üyelik butonu için event listener
+            document.getElementById('buyPremiumBtn').addEventListener('click', () => {
+                alert('Premium üyelik özelliği yakında eklenecek!');
+            });
+        });
+
+        // Sınav türü metni alma fonksiyonu
+        function getExamTypeText(examType) {
+            switch(examType) {
+                case 'tyt': return 'TYT';
+                case 'sayisal': return 'Sayısal';
+                case 'sozel': return 'Sözel';
+                case 'esitagirlik': return 'Eşit Ağırlık';
+                case 'dil': return 'Dil';
+                default: return 'TYT';
+            }
+        }
+    </script>
+</body>
+</html> 

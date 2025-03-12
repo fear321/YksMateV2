@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKSMate - Ders Notları</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo(192).png">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Ana JavaScript -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth-check.js"></script>
+    <script src="js/theme-manager.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/notes.js"></script>
+    
+    <style>
+        /* Not Sayfası Özel Stilleri */
+        .notes-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 20px;
+            height: 100%;
+        }
+        
+        .subject-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--light-border);
+        }
+        
+        .dark-theme .subject-tabs {
+            border-bottom: 1px solid var(--dark-border);
+        }
+        
+        .subject-tab {
+            padding: 10px 15px;
+            background-color: var(--light-card-bg);
+            border: 1px solid var(--light-border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .dark-theme .subject-tab {
+            background-color: var(--dark-card-bg);
+            border: 1px solid var(--dark-border);
+            color: var(--dark-text);
+        }
+        
+        .subject-tab:hover {
+            background-color: var(--light-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark-theme .subject-tab:hover {
+            background-color: var(--dark-hover);
+        }
+        
+        .subject-tab.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .subject-tab i {
+            font-size: 16px;
+        }
+        
+        .notebook-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            background-color: var(--light-card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            min-height: 400px;
+        }
+        
+        .dark-theme .notebook-container {
+            background-color: var(--dark-card-bg);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .notebook-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .notebook-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .notebook-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .notebook-actions button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 5px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .notebook-actions button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .notebook-content {
+            flex: 1;
+            padding: 20px;
+            background-image: linear-gradient(#e5e5f7 0.8px, transparent 0.8px), linear-gradient(90deg, #e5e5f7 0.8px, transparent 0.8px);
+            background-size: 20px 20px;
+            position: relative;
+        }
+        
+        .dark-theme .notebook-content {
+            background-image: linear-gradient(#2a2a3c 0.8px, transparent 0.8px), linear-gradient(90deg, #2a2a3c 0.8px, transparent 0.8px);
+        }
+        
+        .note-editor {
+            width: 100%;
+            height: 100%;
+            min-height: 300px;
+            border: none;
+            background: transparent;
+            resize: none;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--light-text);
+            padding: 10px;
+        }
+        
+        .dark-theme .note-editor {
+            color: var(--dark-text);
+        }
+        
+        .note-editor:focus {
+            outline: none;
+        }
+        
+        .notebook-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: var(--light-card-bg);
+            border-top: 1px solid var(--light-border);
+        }
+        
+        .dark-theme .notebook-footer {
+            background-color: var(--dark-card-bg);
+            border-top: 1px solid var(--dark-border);
+        }
+        
+        .word-count {
+            font-size: 14px;
+            color: var(--light-text);
+        }
+        
+        .dark-theme .word-count {
+            color: var(--dark-text);
+        }
+        
+        .save-status {
+            font-size: 14px;
+            color: var(--success-color);
+        }
+        
+        @media (max-width: 768px) {
+            .subject-tabs {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                padding-bottom: 15px;
+            }
+            
+            .subject-tab {
+                white-space: nowrap;
+            }
+            
+            .notebook-header {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+            
+            .notebook-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+    </style>
+    
+    <!-- Oturum Kontrolü -->
+    <script>
+        // Sayfa yüklendiğinde çalışacak
+        document.addEventListener('DOMContentLoaded', function() {
+            // Firebase yüklendiyse
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                console.log("Firebase yüklendi, oturum kontrolü yapılıyor...");
+                // Kullanıcı oturumunu kontrol et
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        console.log("Kullanıcı giriş yapmış:", user.uid);
+                        
+                        // Kullanıcı bilgilerini getir
+                        firebase.database().ref('users/' + user.uid).once('value')
+                            .then((snapshot) => {
+                                const userData = snapshot.val();
+                                if (userData) {
+                                    // Kullanıcı verileri varsa
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = userData.name || user.email.split('@')[0];
+                                    
+                                    // Sınav türünü güncelle
+                                    document.getElementById("userExamType").textContent = "" + getExamTypeText(userData.examType);
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                    
+                                    // Notları yükle
+                                    loadUserNotes(user.uid);
+                                } else {
+                                    // Kullanıcı verileri yoksa e-postadan isim oluştur
+                                    const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = name;
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Kullanıcı verileri alınırken hata:", error);
+                                
+                                // E-postadan isim oluştur
+                                const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                
+                                // Kullanıcı adını güncelle
+                                document.getElementById("userName").textContent = name;
+                                
+                                // Dashboard'u göster
+                                document.getElementById("dashboardContainer").style.display = "flex";
+                            });
+                    } else {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            // Misafir kullanıcı varsa
+                            const guestData = JSON.parse(guestUser);
+                            
+                            // Kullanıcı adını güncelle
+                            document.getElementById("userName").textContent = guestData.name;
+                            document.getElementById("userExamType").textContent = "Sınav Türü: " + getExamTypeText(guestData.examType);
+                            
+                            // Dashboard'u göster
+                            document.getElementById("dashboardContainer").style.display = "flex";
+                        } else {
+                            // Giriş sayfasına yönlendir
+                            console.log("Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...");
+                            window.location.href = "login.html";
+                        }
+                    }
+                });
+            } else {
+                console.error("Firebase yüklenemedi!");
+                alert("Sistem yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.");
+            }
+        });
+        
+        // Sınav türü metni alma fonksiyonu
+        function getExamTypeText(examType) {
+            switch(examType) {
+                case 'tyt': return 'TYT';
+                case 'ayt': return 'AYT';
+                case 'ydt': return 'YDT';
+                case 'tyt-ayt': return 'TYT-AYT';
+                case 'tyt-ayt-ydt': return 'TYT-AYT-YDT';
+                default: return 'Belirtilmemiş';
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="dashboard-container" id="dashboardContainer" style="display: none;">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="assets/images/logo(192).png" alt="YKSMate Logo">
+                </div>
+                <h2>YKSMate</h2>
+            </div>
+            
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-details">
+                    <h3 id="userName">Kullanıcı</h3>
+                    <p id="userExamType">Sınav Türü: TYT</p>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="index.html"><i class="fas fa-home"></i> <span>Ana Sayfa</span></a></li>
+                    <li><a href="exams.html"><i class="fas fa-file-alt"></i> <span>Denemelerim</span></a></li>
+                    <li><a href="calendar.html"><i class="fas fa-calendar-alt"></i> <span>Takvim</span></a></li>
+                    <li><a href="timer.html"><i class="fas fa-clock"></i> <span>Zamanlayıcı</span></a></li>
+                    <li class="active"><a href="notes.html"><i class="fas fa-sticky-note"></i> <span>Notlarım</span></a></li>
+                    <li><a href="community.html"><i class="fas fa-users"></i> <span>Topluluk</span></a></li>
+                    <li><a href="ai.html"><i class="fas fa-robot"></i> <span>YKS Asistan</span></a></li>
+                    <li><a href="profile.html"><i class="fas fa-user-circle"></i> <span>Profil</span></a></li>
+                    <li><a href="settings.html"><i class="fas fa-cog"></i> <span>Ayarlar</span></a></li>
+                </ul>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="token-info">
+                    <i class="fas fa-coins"></i>
+                    <span>Token: <strong id="userTokens">0</strong></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ana İçerik -->
+        <div class="main-content">
+            <div class="content-header">
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Notlarda ara...">
+                </div>
+                
+                <div class="header-actions">
+                    <button class="theme-toggle" id="themeToggle">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    
+                    <div class="action-separator"></div>
+                    
+                    <div class="notifications">
+                        <button class="notification-btn" id="notificationBtn">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge">3</span>
+                        </button>
+                        
+                        <div class="notification-dropdown" id="notificationDropdown">
+                            <div class="notification-header">
+                                <h3>Bildirimler</h3>
+                                <button class="mark-all-read">Tümünü Okundu İşaretle</button>
+                            </div>
+                            
+                            <div class="notification-list">
+                                <div class="notification-item unread">
+                                    <div class="notification-icon">
+                                        <i class="fas fa-bell"></i>
+                                    </div>
+                                    <div class="notification-content">
+                                        <p>Yeni bir deneme eklediniz</p>
+                                        <span class="notification-time">2 saat önce</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="notification-item unread">
+                                    <div class="notification-icon">
+                                        <i class="fas fa-calendar-check"></i>
+                                    </div>
+                                    <div class="notification-content">
+                                        <p>Yarın için planlanmış bir etkinliğiniz var</p>
+                                        <span class="notification-time">5 saat önce</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="notification-item unread">
+                                    <div class="notification-icon">
+                                        <i class="fas fa-trophy"></i>
+                                    </div>
+                                    <div class="notification-content">
+                                        <p>Haftalık hedefinize ulaştınız!</p>
+                                        <span class="notification-time">1 gün önce</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="notification-footer">
+                                <a href="#">Tüm Bildirimleri Gör</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="page-content">
+                <div class="page active">
+                    <div class="page-title">
+                        <h1>Ders </h1>
+                    </div>
+                    
+                    <div class="notes-container">
+                        <div class="subject-tabs" id="subjectTabs">
+                            <!-- Ders sekmeleri dinamik olarak JavaScript ile eklenecek -->
+                        </div>
+                        
+                        <div class="notebook-container">
+                            <div class="notebook-header">
+                                <h2 id="currentSubject">Matematik Notları</h2>
+                                <div class="notebook-actions">
+                                    <button id="printNote" title="Yazdır"><i class="fas fa-print"></i></button>
+                                    <button id="downloadNote" title="İndir"><i class="fas fa-download"></i></button>
+                                    <button id="shareNote" title="Paylaş"><i class="fas fa-share-alt"></i></button>
+                                </div>
+                            </div>
+                            
+                            <div class="notebook-content">
+                                <textarea id="noteEditor" class="note-editor" placeholder="Notlarınızı buraya yazın..."></textarea>
+                            </div>
+                            
+                            <div class="notebook-footer">
+                                <div class="word-count">0 kelime</div>
+                                <div class="save-status">Otomatik kaydedildi</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
