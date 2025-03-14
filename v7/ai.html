@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKSMate - MateAI</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo(192).png">
+    
+    <style>
+        .ai-chat-container {
+            max-height: 70vh;
+            min-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            background-color: #f9f9f9;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .chat-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #333;
+        }
+        
+        .clear-chat-btn {
+            padding: 5px 10px;
+            font-size: 0.85rem;
+            background-color: transparent;
+            border: 1px solid #dc3545;
+            color: #dc3545;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .clear-chat-btn:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .clear-chat-btn i {
+            font-size: 0.8rem;
+        }
+        
+        .ai-chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            scroll-behavior: smooth;
+            width: 100%;
+        }
+        
+        .ai-chat-input {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #eee;
+            background-color: #f9f9f9;
+            border-radius: 0 0 10px 10px;
+        }
+        
+        .ai-chat-input textarea {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            padding: 10px 15px;
+            resize: none;
+            font-family: 'Poppins', sans-serif;
+            max-height: 100px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: normal;
+            word-break: normal;
+            line-height: 1.5;
+            font-size: 1rem;
+            overflow-wrap: break-word;
+            text-rendering: optimizeLegibility;
+        }
+        
+        .ai-chat-input button {
+            background-color: #4a6cf7;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            margin-left: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+        
+        .ai-chat-input button:hover {
+            background-color: #3a5ce5;
+        }
+        
+        /* Mesaj stilleri */
+        .user-message, .ai-message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+            width: 100%;
+        }
+        
+        .user-message {
+            justify-content: flex-end;
+            width: 100%;
+            text-align: right;
+        }
+        
+        .user-message .message-content {
+            background-color: #4a6cf7;
+            color: white;
+            border-radius: 18px 18px 0 18px;
+            padding: 10px 15px;
+            max-width: 85%;
+            min-width: 60px;
+            word-wrap: normal;
+            word-break: normal;
+            white-space: normal;
+            display: inline-block;
+            text-align: right;
+            hyphens: none;
+            overflow-wrap: break-word;
+            box-sizing: border-box;
+            width: auto;
+            letter-spacing: normal;
+            margin-left: auto;
+        }
+        
+        .user-message .message-content p {
+            text-align: right;
+        }
+        
+        .ai-message .message-content {
+            background-color: #f1f1f1;
+            border-radius: 18px 18px 18px 0;
+            padding: 10px 15px;
+            max-width: 85%;
+            min-width: 60px;
+            word-wrap: normal;
+            word-break: normal;
+            white-space: normal;
+            display: block;
+            text-align: left;
+            hyphens: none;
+            overflow-wrap: break-word;
+            box-sizing: border-box;
+            width: auto;
+            letter-spacing: normal;
+        }
+        
+        .message-content p {
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+            white-space: normal;
+            word-break: normal;
+            overflow-wrap: break-word;
+            hyphens: none;
+            text-align: left;
+            width: 100%;
+            letter-spacing: normal;
+            font-kerning: normal;
+            font-variant-ligatures: normal;
+        }
+            
+        .ai-avatar {
+            background-color: #4a6cf7;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+        }
+        
+        /* Hızlı öneriler */
+        .quick-suggestions {
+            list-style: none;
+            padding: 0;
+            margin-top: 10px;
+        }
+        
+        .quick-suggestions li {
+            background-color: #e9ecef;
+            padding: 8px 12px;
+            border-radius: 15px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 0.9em;
+        }
+        
+        .quick-suggestions li:hover {
+            background-color: #d6dbe0;
+        }
+        
+        /* Temizle butonu */
+        .clear-chat-btn {
+            margin-top: 10px;
+            align-self: center;
+        }
+        
+        /* Karanlık tema uyumluluğu */
+        .dark-theme .ai-chat-container {
+            background-color: #2a2a2a;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .dark-theme .chat-header {
+            background-color: #333;
+            border-bottom: 1px solid #444;
+        }
+        
+        .dark-theme .chat-header h3 {
+            color: #eee;
+        }
+        
+        .dark-theme .ai-chat-input {
+            border-top: 1px solid #444;
+            background-color: #333;
+        }
+        
+        .dark-theme .ai-chat-input textarea {
+            background-color: #444;
+            border-color: #555;
+            color: #eee;
+        }
+        
+        .dark-theme .ai-message .message-content {
+            background-color: #444;
+            color: #eee;
+        }
+        
+        .dark-theme .quick-suggestions li {
+            background-color: #444;
+            color: #eee;
+        }
+        
+        .dark-theme .quick-suggestions li:hover {
+            background-color: #555;
+        }
+    </style>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Ana JavaScript -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth-check.js"></script>
+    <script src="js/theme-manager.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/ai.js"></script>
+
+</head>
+<body class="light-theme">
+    <div class="container">
+        <div class="dashboard-container" id="dashboardContainer" style="display: none;">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <img src="assets/images/logo(192).png" alt="YKSMate Logo" class="sidebar-logo">
+                    <h2>YKSMate</h2>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <a href="profile.html" style="text-decoration: none; color: inherit;">
+                            <h3 id="userName">Kullanıcı Adı</h3>
+                            <p id="userExamType">Bölüm: TYT</p>
+                        </a>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li>
+                            <a href="index.html"><i class="fas fa-home"></i> Ana Sayfa</a>
+                        </li>
+                        <li>
+                            <a href="exams.html"><i class="fas fa-file-alt"></i> Denemelerim</a>
+                        </li>
+                        <li>
+                            <a href="timer.html"><i class="fas fa-clock"></i> Zamanlayıcı</a>
+                        </li>
+                        <li>
+                            <a href="calendar.html"><i class="fas fa-calendar-alt"></i> Takvim</a>
+                        </li>
+                        <li>
+                            <a href="notes.html"><i class="fas fa-sticky-note"></i> Notlarım</a>
+                        </li>
+                        <li>
+                            <a href="community.html"><i class="fas fa-users"></i> Topluluk</a>
+                        </li>
+                        <li>
+                            <a href="friends.html"><i class="fas fa-user-friends"></i> Arkadaşlarım</a>
+                        </li>
+                        <li>
+                            <a href="messages.html"><i class="fas fa-comment"></i> Mesajlar</a>
+                        </li>
+                        <li class="active">
+                            <a href="ai.html"><i class="fas fa-robot"></i> MateAI</a>
+                        </li>
+                        <li>
+                            <a href="profile.html"><i class="fas fa-user-circle"></i> Profil</a>
+                        </li>
+                        <li>
+                            <a href="settings.html"><i class="fas fa-cog"></i> Ayarlar</a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="token-info">
+                        <i class="fas fa-coins"></i>
+                        <span id="tokenCount">0 Jeton</span>
+                    </div>
+                    <button id="collapseToggle" class="collapse-toggle">
+                        <i class="fas fa-chevron-left"></i>
+                        <span>Menüyü Daralt</span>
+                    </button>
+                    <button id="logoutBtn" class="btn btn-outline">
+                        <i class="fas fa-sign-out-alt"></i> <span>Çıkış Yap</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sidebar Overlay -->
+            <div class="sidebar-overlay"></div>
+
+            <!-- Ana İçerik -->
+            <div class="main-content">
+                <header class="content-header">
+                    <button id="sidebarToggle" class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Ara...">
+                    </div>
+                    <div class="header-actions">
+                        <button class="theme-toggle" id="themeToggle">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <div class="notifications">
+                            <button class="notification-btn">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge">3</span>
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- AI Sayfa İçeriği -->
+                <div class="page-content">
+                    <div class="ai-page">
+                        <h1 class="page-title">MateAI</h1>
+                        
+                        <!-- AI Sohbet Alanı -->
+                        <div class="ai-chat-container">
+                            <div class="chat-header">
+                                <h3>Sohbet</h3>
+                                <button id="clearChatBtn" class="btn btn-outline clear-chat-btn">
+                                    <i class="fas fa-trash"></i> Sohbeti Temizle
+                                </button>
+                            </div>
+                            <div class="ai-chat-messages" id="aiChatMessages">
+                                <!-- Hoş geldin mesajı -->
+                                <div class="ai-message">
+                                    <div class="ai-avatar">
+                                        <i class="fas fa-robot"></i>
+                                    </div>
+                                    <div class="message-content">
+                                        <p>Merhaba! Ben MateAI, YKS hazırlık asistanınız. Size nasıl yardımcı olabilirim?</p>
+                                        <ul class="quick-suggestions">
+                                            <li>📚 Konu tekrarı yapmak istiyorum</li>
+                                            <li>📝 Soru çözmek istiyorum</li>
+                                            <li>📊 Deneme analizimi yap</li>
+                                            <li>📅 Çalışma programı oluştur</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Mesaj Gönderme Alanı -->
+                            <div class="ai-chat-input">
+                                <textarea id="aiMessageInput" placeholder="Mesajınızı yazın..." rows="1"></textarea>
+                                <button id="sendMessageBtn">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- AI Özellikleri -->
+                        <div class="ai-features">
+                            <h2>MateAI Özellikleri</h2>
+                            <div class="features-grid">
+                                <div class="feature-card">
+                                    <i class="fas fa-brain"></i>
+                                    <h3>Kişiselleştirilmiş Öğrenme</h3>
+                                    <p>Öğrenme stilinize ve hızınıza göre özelleştirilmiş içerikler</p>
+                                </div>
+                                <div class="feature-card">
+                                    <i class="fas fa-chart-line"></i>
+                                    <h3>Performans Analizi</h3>
+                                    <p>Deneme sınavlarınızın detaylı analizi ve gelişim önerileri</p>
+                                </div>
+                                <div class="feature-card">
+                                    <i class="fas fa-calendar-check"></i>
+                                    <h3>Çalışma Programı</h3>
+                                    <p>Hedeflerinize göre özelleştirilmiş çalışma programları</p>
+                                </div>
+                                <div class="feature-card">
+                                    <i class="fas fa-question-circle"></i>
+                                    <h3>Soru Çözümü</h3>
+                                    <p>Zorlandığınız soruların adım adım çözümleri</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Jeton Satın Alma Modalı -->
+    <div id="buyTokensModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Jeton Satın Al</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>MateAI ile sohbet etmek için jeton satın alabilirsiniz.</p>
+                <div class="token-packages">
+                    <div class="token-package">
+                        <div class="token-amount">10 Jeton</div>
+                        <div class="token-price">5 TL</div>
+                        <button class="btn btn-primary buy-token-btn" data-amount="10" data-price="5">Satın Al</button>
+                    </div>
+                    <div class="token-package">
+                        <div class="token-amount">50 Jeton</div>
+                        <div class="token-price">20 TL</div>
+                        <button class="btn btn-primary buy-token-btn" data-amount="50" data-price="20">Satın Al</button>
+                    </div>
+                    <div class="token-package">
+                        <div class="token-amount">100 Jeton</div>
+                        <div class="token-price">35 TL</div>
+                        <button class="btn btn-primary buy-token-btn" data-amount="100" data-price="35">Satın Al</button>
+                    </div>
+                </div>
+                <div class="premium-option">
+                    <h3>Premium Üyelik</h3>
+                    <p>Sınırsız AI kullanımı ve tüm özelliklere erişim</p>
+                    <div class="premium-price">Aylık 49.99 TL</div>
+                    <button class="btn btn-secondary" id="buyPremiumBtn">Premium Ol</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global sohbet geçmişi değişkeni
+        let chatHistory = [];
+        
+        // Yapay zekanın hafızası için özel değişkenler
+        let aiMemory = {
+            rememberedNumbers: [],
+            rememberedNames: [],
+            rememberedFacts: {},
+            lastAction: null
+        };
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Sayfa yüklendi, sohbet geçmişi yüklenecek");
+            
+            // Oturum kontrolü
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        // Kullanıcı bilgilerini güncelle
+                        firebase.database().ref('users/' + user.uid).once('value')
+                            .then((snapshot) => {
+                                const userData = snapshot.val();
+                                if (userData) {
+                                    document.getElementById("userName").textContent = userData.name || user.email.split('@')[0];
+                                    document.getElementById("userExamType").textContent = "Bölüm: " + getExamTypeText(userData.examType);
+                                    document.getElementById("tokenCount").textContent = `${userData.tokens || 0} Jeton`;
+                                }
+                                document.getElementById("dashboardContainer").style.display = "flex";
+                                
+                                // Sohbet geçmişini yükle
+                                loadChatHistory();
+                            });
+                    } else {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            const guestData = JSON.parse(guestUser);
+                            document.getElementById("userName").textContent = guestData.name;
+                            document.getElementById("userExamType").textContent = "Bölüm: " + getExamTypeText(guestData.examType);
+                            document.getElementById("tokenCount").textContent = `${guestData.tokens || 0} Jeton`;
+                            document.getElementById("dashboardContainer").style.display = "flex";
+                            
+                            // Sohbet geçmişini yükle
+                            loadChatHistory();
+                        } else {
+                            window.location.href = "login.html";
+                        }
+                    }
+                });
+            } else {
+                console.log("Firebase tanımlı değil, misafir modunda devam ediliyor");
+                document.getElementById("dashboardContainer").style.display = "flex";
+                loadChatHistory();
+            }
+            
+            // Mesaj gönderme işlevi
+            const messageInput = document.getElementById('aiMessageInput');
+            const sendButton = document.getElementById('sendMessageBtn');
+            const chatMessages = document.getElementById('aiChatMessages');
+
+            // Textarea yüksekliğini otomatik ayarla
+            messageInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+
+            // Sohbet geçmişini localStorage'dan yükle
+            function loadChatHistory() {
+                console.log("Sohbet geçmişi yükleniyor...");
+                try {
+                    const savedHistory = localStorage.getItem('aiChatHistory');
+                    const savedMemory = localStorage.getItem('aiMemory');
+                    
+                    if (savedHistory) {
+                        console.log("Kaydedilmiş sohbet geçmişi bulundu");
+                        chatHistory = JSON.parse(savedHistory);
+                        
+                        if (savedMemory) {
+                            console.log("Kaydedilmiş AI hafızası bulundu");
+                            aiMemory = JSON.parse(savedMemory);
+                            console.log("Yüklenen AI hafızası:", aiMemory);
+                            
+                            // Hafıza nesnesi yapısını kontrol et ve eksik alanları ekle
+                            if (!aiMemory.hasOwnProperty('lastAction')) {
+                                console.log("lastAction özelliği ekleniyor");
+                                aiMemory.lastAction = null;
+                            }
+                            
+                            if (!aiMemory.hasOwnProperty('rememberedNumbers')) {
+                                console.log("rememberedNumbers özelliği ekleniyor");
+                                aiMemory.rememberedNumbers = [];
+                            }
+                            
+                            if (!aiMemory.hasOwnProperty('rememberedNames')) {
+                                console.log("rememberedNames özelliği ekleniyor");
+                                aiMemory.rememberedNames = [];
+                            }
+                            
+                            if (!aiMemory.hasOwnProperty('rememberedFacts')) {
+                                console.log("rememberedFacts özelliği ekleniyor");
+                                aiMemory.rememberedFacts = {};
+                            }
+                        }
+                        
+                        // Geçmiş mesajları ekrana yükle
+                        chatMessages.innerHTML = ''; // Önce varsayılan hoşgeldin mesajını temizle
+                        
+                        chatHistory.forEach(message => {
+                            if (message.role === 'user') {
+                                // HTML karakterlerini güvenli hale getir
+                                const safeContent = message.content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                                
+                                const userMessageHtml = `
+                                    <div class="user-message">
+                                        <div class="message-content">
+                                            <p>${safeContent}</p>
+                                        </div>
+                                    </div>
+                                `;
+                                chatMessages.insertAdjacentHTML('beforeend', userMessageHtml);
+                            } else {
+                                // HTML karakterlerini güvenli hale getir
+                                const safeContent = message.content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                                
+                                const aiMessageHtml = `
+                                    <div class="ai-message">
+                                        <div class="ai-avatar">
+                                            <i class="fas fa-robot"></i>
+                                        </div>
+                                        <div class="message-content">
+                                            <p>${safeContent}</p>
+                                        </div>
+                                    </div>
+                                `;
+                                chatMessages.insertAdjacentHTML('beforeend', aiMessageHtml);
+                            }
+                        });
+                        
+                        // Sohbeti en alta kaydır
+                        setTimeout(() => {
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }, 100);
+                    } else {
+                        console.log("Kaydedilmiş sohbet geçmişi bulunamadı, yeni oluşturuluyor");
+                        // Geçmiş yoksa, hoşgeldin mesajını ekle
+                        chatHistory = [{
+                            role: 'assistant',
+                            content: 'Merhaba! Ben MateAI, YKS hazırlık asistanınız. Size nasıl yardımcı olabilirim?'
+                        }];
+                        
+                        // Geçmişi kaydet
+                        saveChatHistory();
+                    }
+                } catch (error) {
+                    console.error("Sohbet geçmişi yüklenirken hata oluştu:", error);
+                    // Hata durumunda yeni bir sohbet başlat
+                    chatHistory = [{
+                        role: 'assistant',
+                        content: 'Merhaba! Ben MateAI, YKS hazırlık asistanınız. Size nasıl yardımcı olabilirim?'
+                    }];
+                    saveChatHistory();
+                }
+                
+                // Hızlı öneriler için tıklama olayları
+                document.querySelectorAll('.quick-suggestions li').forEach(suggestion => {
+                    suggestion.addEventListener('click', function() {
+                        messageInput.value = this.textContent;
+                        sendMessage();
+                    });
+                });
+            }
+            
+            // Mesaj gönderme
+            function sendMessage() {
+                const message = messageInput.value.trim();
+                if (message) {
+                    // HTML karakterlerini güvenli hale getir
+                    const safeMessage = message.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    
+                    // Kullanıcı mesajını ekle
+                    const userMessageHtml = `
+                        <div class="user-message">
+                            <div class="message-content">
+                                <p>${safeMessage}</p>
+                            </div>
+                        </div>
+                    `;
+                    chatMessages.insertAdjacentHTML('beforeend', userMessageHtml);
+                    
+                    // Kullanıcı mesajını geçmişe ekle
+                    chatHistory.push({
+                        role: 'user',
+                        content: message,
+                        timestamp: Date.now()
+                    });
+
+                    // Mesaj alanını temizle
+                    messageInput.value = '';
+                    messageInput.style.height = 'auto';
+
+                    // Sohbeti en alta kaydır
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                    // AI yanıtını simüle et
+                    setTimeout(() => {
+                        // Basit bir bağlam anlama mekanizması
+                        let aiResponse = generateAIResponse(message, chatHistory);
+                        
+                        // HTML karakterlerini güvenli hale getir
+                        const safeResponse = aiResponse.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        
+                        const aiMessageHtml = `
+                            <div class="ai-message">
+                                <div class="ai-avatar">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div class="message-content">
+                                    <p>${safeResponse}</p>
+                                </div>
+                            </div>
+                        `;
+                        chatMessages.insertAdjacentHTML('beforeend', aiMessageHtml);
+                        
+                        // Sohbeti en alta kaydır (animasyonlu)
+                        setTimeout(() => {
+                            chatMessages.scrollTo({
+                                top: chatMessages.scrollHeight,
+                                behavior: 'smooth'
+                            });
+                        }, 50);
+                        
+                        // AI yanıtını geçmişe ekle
+                        chatHistory.push({
+                            role: 'assistant',
+                            content: aiResponse,
+                            timestamp: Date.now()
+                        });
+                        
+                        // Geçmişi kaydet
+                        saveChatHistory();
+                    }, 1000);
+                }
+            }
+
+            // Gönder butonuna tıklama
+            sendButton.addEventListener('click', sendMessage);
+
+            // Enter tuşuna basma
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Modal kapatma butonları için event listener
+            document.querySelectorAll('.close-modal').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.modal').forEach(modal => {
+                        modal.style.display = 'none';
+                    });
+                });
+            });
+
+            // Jeton satın alma butonları için event listener
+            document.querySelectorAll('.buy-token-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const amount = parseInt(btn.dataset.amount);
+                    const price = parseFloat(btn.dataset.price);
+                    buyTokens(amount, price);
+                });
+            });
+
+            // Premium üyelik butonu için event listener
+            document.getElementById('buyPremiumBtn').addEventListener('click', () => {
+                alert('Premium üyelik özelliği yakında eklenecek!');
+            });
+            
+            // Sohbet geçmişini temizleme butonu ekle
+            const clearChatButton = document.getElementById('clearChatBtn');
+            clearChatButton.addEventListener('click', () => {
+                if (confirm('Sohbet geçmişini temizlemek istediğinize emin misiniz?')) {
+                    // Sohbet geçmişini temizle
+                    chatHistory = [{
+                        role: 'assistant',
+                        content: 'Merhaba! Ben MateAI, YKS hazırlık asistanınız. Size nasıl yardımcı olabilirim?'
+                    }];
+                    
+                    // AI hafızasını da temizle
+                    aiMemory = {
+                        rememberedNumbers: [],
+                        rememberedNames: [],
+                        rememberedFacts: {},
+                        lastAction: null
+                    };
+                    
+                    // Geçmişi kaydet
+                    saveChatHistory();
+                    
+                    // Ekranı güncelle
+                    chatMessages.innerHTML = '';
+                    const welcomeMessage = 'Merhaba! Ben MateAI, YKS hazırlık asistanınız. Size nasıl yardımcı olabilirim?';
+                    const safeWelcomeMessage = welcomeMessage.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    
+                    const aiMessageHtml = `
+                        <div class="ai-message">
+                            <div class="ai-avatar">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="message-content">
+                                <p>${safeWelcomeMessage}</p>
+                                <ul class="quick-suggestions">
+                                    <li>📚 Konu tekrarı yapmak istiyorum</li>
+                                    <li>📝 Soru çözmek istiyorum</li>
+                                    <li>📊 Deneme analizimi yap</li>
+                                    <li>📅 Çalışma programı oluştur</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                    chatMessages.insertAdjacentHTML('beforeend', aiMessageHtml);
+                    
+                    // Hızlı öneriler için event listener ekle
+                    document.querySelectorAll('.quick-suggestions li').forEach(suggestion => {
+                        suggestion.addEventListener('click', function() {
+                            messageInput.value = this.textContent;
+                            sendMessage();
+                        });
+                    });
+                }
+            });
+        });
+
+        // Sınav türü metni alma fonksiyonu
+        function getExamTypeText(examType) {
+            switch(examType) {
+                case 'tyt': return 'TYT';
+                case 'sayisal': return 'Sayısal';
+                case 'sozel': return 'Sözel';
+                case 'esitagirlik': return 'Eşit Ağırlık';
+                case 'dil': return 'Dil';
+                default: return 'TYT';
+            }
+        }
+
+        // Sohbet geçmişini localStorage'a kaydet
+        function saveChatHistory() {
+            try {
+                console.log("Sohbet geçmişi kaydediliyor...");
+                localStorage.setItem('aiChatHistory', JSON.stringify(chatHistory));
+                localStorage.setItem('aiMemory', JSON.stringify(aiMemory));
+                console.log("Sohbet geçmişi başarıyla kaydedildi");
+            } catch (error) {
+                console.error("Sohbet geçmişi kaydedilirken hata oluştu:", error);
+            }
+        }
+        
+        // Basit bir AI yanıt üretme fonksiyonu
+        function generateAIResponse(message, history) {
+            const lowerMessage = message.toLowerCase();
+            
+            // Önceki mesajları kontrol et
+            let previousUserMessages = history.filter(msg => msg.role === 'user').map(msg => msg.content);
+            let previousAIMessages = history.filter(msg => msg.role === 'assistant').map(msg => msg.content);
+            
+            // Sayı tutma kontrolü
+            if (lowerMessage.includes('aklından') && lowerMessage.includes('tut') && 
+                (lowerMessage.includes('sayı') || lowerMessage.includes('numara') || /\d+/.test(lowerMessage))) {
+                // Sayıyı bul
+                const numberMatch = lowerMessage.match(/\d+/);
+                if (numberMatch) {
+                    const number = numberMatch[0];
+                    aiMemory.rememberedNumbers.push(number);
+                    aiMemory.lastAction = "number_remembered";
+                    console.log("Sayı hafızaya alındı:", number);
+                    return `Tamamdır, ${number} sayısını aklımda tuttum! Başka bir şey yapmamı ister misin?`;
+                } else {
+                    return "Hangi sayıyı aklımda tutmamı istersin?";
+                }
+            }
+            
+            // Tutulan sayıyı söyleme kontrolü
+            if ((lowerMessage.includes('söyle') || lowerMessage.includes('neydi') || lowerMessage.includes('hatırla') || 
+                 lowerMessage === 'şimdi söyle' || lowerMessage === 'söyle şimdi' || lowerMessage === 'şimdi söyle bakalım') && 
+                (lowerMessage.includes('sayı') || lowerMessage.includes('numara') || lowerMessage.includes('tuttuğun') || 
+                 aiMemory.lastAction === "number_remembered" || aiMemory.lastAction === "waiting_for_number_request")) {
+                if (aiMemory.rememberedNumbers.length > 0) {
+                    const lastNumber = aiMemory.rememberedNumbers[aiMemory.rememberedNumbers.length - 1];
+                    aiMemory.lastAction = "number_told";
+                    console.log("Tutulan sayı söylendi:", lastNumber);
+                    return `Aklımda tuttuğum son sayı: ${lastNumber}`;
+                } else {
+                    return "Henüz aklımda tuttuğum bir sayı yok.";
+                }
+            }
+            
+            // Basit "söyle" komutu kontrolü - sayı tutma senaryosunda
+            if ((lowerMessage === 'söyle' || lowerMessage === 'söyle bakalım' || lowerMessage === 'şimdi söyle' || 
+                 lowerMessage === 'hadi söyle' || lowerMessage === 'söyle hadi') && 
+                (aiMemory.lastAction === "waiting_for_number_request" || aiMemory.lastAction === "number_remembered")) {
+                if (aiMemory.rememberedNumbers.length > 0) {
+                    const lastNumber = aiMemory.rememberedNumbers[aiMemory.rememberedNumbers.length - 1];
+                    aiMemory.lastAction = "number_told";
+                    console.log("Basit 'söyle' komutuyla tutulan sayı söylendi:", lastNumber);
+                    return `Aklımda tuttuğum sayı: ${lastNumber}`;
+                } else {
+                    return "Henüz aklımda tuttuğum bir sayı yok.";
+                }
+            }
+            
+            // Kullanıcı daha önce benzer bir soru sormuş mu kontrol et
+            let hasPreviousQuestion = false;
+            let previousQuestionIndex = -1;
+            
+            for (let i = 0; i < previousUserMessages.length - 1; i++) {
+                if (previousUserMessages[i].toLowerCase().includes(lowerMessage) || 
+                    lowerMessage.includes(previousUserMessages[i].toLowerCase())) {
+                    hasPreviousQuestion = true;
+                    previousQuestionIndex = i;
+                    break;
+                }
+            }
+            
+            if (hasPreviousQuestion && previousQuestionIndex >= 0) {
+                return `Daha önce benzer bir soru sormuştunuz. Size şöyle yanıt vermiştim: "${previousAIMessages[previousQuestionIndex]}"`;
+            }
+            
+            // Selamlama kontrolü
+            if (lowerMessage.includes('merhaba') || lowerMessage.includes('selam')) {
+                // Kullanıcı daha önce selamlaşmış mı kontrol et
+                const hasGreeted = previousUserMessages.some(msg => 
+                    msg.toLowerCase().includes('merhaba') || msg.toLowerCase().includes('selam')
+                );
+                
+                if (hasGreeted && previousUserMessages.length > 1) {
+                    return 'Tekrar merhaba! Başka nasıl yardımcı olabilirim?';
+                } else {
+                    return 'Merhaba! Size nasıl yardımcı olabilirim?';
+                }
+            }
+            
+            // İsim sorgusu kontrolü
+            if (lowerMessage.includes('ismin ne') || lowerMessage.includes('adın ne') || lowerMessage.includes('kimsin')) {
+                return 'Ben MateAI, YKS hazırlık sürecinizde size yardımcı olmak için tasarlanmış yapay zeka asistanıyım.';
+            }
+            
+            // Teşekkür kontrolü
+            if (lowerMessage.includes('teşekkür') || lowerMessage.includes('sağol')) {
+                return 'Rica ederim! Başka bir konuda yardıma ihtiyacınız olursa bana sorabilirsiniz.';
+            }
+            
+            // "Tamam" yanıtı kontrolü
+            if (lowerMessage === 'tamam' || lowerMessage === 'tamam.' || lowerMessage === 'tamamdır' || 
+                lowerMessage === 'ok' || lowerMessage === 'okay' || lowerMessage === 'peki') {
+                // Son AI mesajını kontrol et
+                if (previousAIMessages.length > 0) {
+                    const lastAIMessage = previousAIMessages[previousAIMessages.length - 1].toLowerCase();
+                    
+                    // Sayı tutma senaryosu
+                    if (lastAIMessage.includes('aklımda tuttum')) {
+                        aiMemory.lastAction = "waiting_for_number_request";
+                        console.log("Sayı tutuldu, kullanıcı 'tamam' dedi, söyleme talebi bekleniyor");
+                        return 'Peki, neyi söylememi istersin?';
+                    }
+                }
+                
+                // Sayı tutma senaryosu için son kullanıcı mesajını kontrol et
+                const lastUserMessages = previousUserMessages.slice(-3);
+                for (const msg of lastUserMessages) {
+                    if (msg.toLowerCase().includes('aklından') && msg.toLowerCase().includes('tut') && 
+                        (msg.toLowerCase().includes('sayı') || msg.toLowerCase().includes('numara'))) {
+                        aiMemory.lastAction = "waiting_for_number_request";
+                        console.log("Sayı tutma senaryosu tespit edildi, söyleme talebi bekleniyor");
+                        return 'Ne söylememi istersin?';
+                    }
+                }
+                
+                return 'Tamam! Başka bir konuda yardımcı olabilir miyim?';
+            }
+            
+            // Konu tekrarı kontrolü
+            if (lowerMessage.includes('konu tekrarı') || lowerMessage.includes('çalışmak istiyorum')) {
+                // Hangi ders belirtilmiş mi kontrol et
+                const subjects = ['matematik', 'fizik', 'kimya', 'biyoloji', 'türkçe', 'tarih', 'coğrafya', 'felsefe'];
+                let mentionedSubject = null;
+                
+                for (const subject of subjects) {
+                    if (lowerMessage.includes(subject)) {
+                        mentionedSubject = subject;
+                        break;
+                    }
+                }
+                
+                if (mentionedSubject) {
+                    return `${mentionedSubject.charAt(0).toUpperCase() + mentionedSubject.slice(1)} için size özel bir çalışma planı oluşturabilirim. Günde kaç saat çalışmayı planlıyorsunuz?`;
+                } else {
+                    return 'Hangi dersi çalışmak istiyorsunuz? Size özel çalışma planı oluşturabilirim.';
+                }
+            }
+            
+            // Soru çözme kontrolü
+            if (lowerMessage.includes('soru çöz') || lowerMessage.includes('test')) {
+                return 'Hangi dersten soru çözmek istiyorsunuz? Size uygun zorlukta sorular önerebilirim.';
+            }
+            
+            // Çalışma programı kontrolü
+            if (lowerMessage.includes('program') || lowerMessage.includes('plan')) {
+                // Saat belirtilmiş mi kontrol et
+                if (lowerMessage.includes('saat')) {
+                    return 'Çalışma programınızı oluşturmak için biraz daha bilgiye ihtiyacım var. Hangi derslere ağırlık vermek istiyorsunuz?';
+                } else {
+                    return 'Size özel bir çalışma programı oluşturabilirim. Günde kaç saat çalışmayı planlıyorsunuz?';
+                }
+            }
+            
+            // Varsayılan yanıt
+            return 'Bu konuda size yardımcı olmak isterim. Daha spesifik bilgi verebilir misiniz?';
+        }
+    </script>
+</body>
+</html> 
