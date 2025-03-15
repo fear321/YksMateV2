@@ -23,12 +23,277 @@
     
     <!-- Ana JavaScript -->
     <script src="js/firebase-config.js"></script>
+    <script src="js/auth-check.js"></script>
+    <script src="js/theme-manager.js"></script>
     <script src="js/app.js"></script>
+    
+    <!-- Arkaplan Fotoğrafı Stili -->
+    <style>
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* Arkaplan fotoğrafı için pseudo-element */
+        body.has-background::before {
+            background-color: var(--bg-primary);
+            opacity: 0.5; /* Varsayılan opaklık */
+            z-index: -1;
+        }
+        
+        /* Bulanıklık efekti için stil */
+        body.has-background::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            pointer-events: none;
+        }
+        
+        /* Döngüsel AI Önerileri Stilleri */
+        .ai-suggestion-cycle {
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 5px 0;
+            margin: 0;
+            border-radius: 0;
+            border-left: none !important;
+            font-size: 0.95em;
+            position: relative;
+            overflow: hidden;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .dark-theme .ai-suggestion-cycle {
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-left: none !important;
+        }
+        
+        .suggestion-item {
+            display: flex;
+            align-items: center;
+            position: absolute;
+            width: 100%;
+            left: 0;
+            opacity: 0;
+            padding: 0 5px;
+            box-sizing: border-box;
+            transition: opacity 0.5s ease-in-out;
+        }
+        
+        .suggestion-item.active {
+            opacity: 1;
+        }
+        
+        .suggestion-icon {
+            margin-right: 15px;
+            font-size: 1.3em;
+            color: #4a90e2;
+            flex-shrink: 0;
+        }
+        
+        .dark-theme .suggestion-icon {
+            color: #64b5f6;
+        }
+        
+        .suggestion-text {
+            flex: 1;
+            line-height: 1.3;
+            word-break: normal;
+            overflow-wrap: break-word;
+            hyphens: none;
+            font-size: 14px;
+            max-width: 100%;
+            white-space: normal;
+            background-color: transparent;
+        }
+        
+        .suggestion-highlight {
+            font-weight: 600;
+            color: #2c6ecb;
+            white-space: normal;
+            word-break: normal;
+            background-color: transparent;
+        }
+        
+        .dark-theme .suggestion-highlight {
+            color: #90caf9;
+        }
+        
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(10px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-10px); }
+        }
+        
+        #aiSuggestionCard {
+            cursor: pointer;
+        }
+        
+        #aiSuggestionCard:hover .ai-suggestion-cycle {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Son stat card için düzenlemeler */
+        .stats-container .stat-card:last-child {
+            grid-column: 1 / -1;
+            margin-top: 15px;
+            display: flex;
+            align-items: flex-start;
+            padding: 20px;
+            background-color: rgba(var(--primary-rgb), 0.1);
+            border: 1px solid var(--primary-color);
+            min-height: 120px;
+        }
+        
+        .stats-container .stat-card:last-child .stat-info {
+            display: block;
+            width: calc(100% - 70px);
+        }
+        
+        .stats-container .stat-card:last-child .stat-info h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            display: block;
+            width: 100%;
+        }
+        
+        .stats-container .stat-card:last-child .ai-suggestion-cycle {
+            width: 100%;
+            min-width: 300px;
+            background-color: transparent;
+            margin: 0;
+            padding: 0 0 0 10px;
+        }
+        
+        /* Bulanıklık efekti için stil */
+        body.has-background::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            pointer-events: none;
+        }
+        
+        /* Döngüsel AI Önerileri Stilleri */
+        .ai-suggestion-cycle {
+            background-color: #f0f8ff;
+            border-left: 3px solid #4a90e2;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-size: 0.9em;
+            position: relative;
+            overflow: hidden;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .dark-theme .ai-suggestion-cycle {
+            background-color: #2a3a4a;
+            border-left: 3px solid #64b5f6;
+        }
+        
+        .suggestion-item {
+            display: flex;
+            align-items: center;
+            position: absolute;
+            width: 100%;
+            left: 0;
+            opacity: 0;
+        }
+        
+        .suggestion-item.active {
+            opacity: 1;
+        }
+        
+        .suggestion-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+            color: #4a90e2;
+        }
+        
+        .dark-theme .suggestion-icon {
+            color: #64b5f6;
+        }
+        
+        .suggestion-text {
+            flex: 1;
+        }
+        
+        .suggestion-highlight {
+            font-weight: 600;
+            color: #2c6ecb;
+        }
+        
+        .dark-theme .suggestion-highlight {
+            color: #90caf9;
+        }
+        
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(10px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-10px); }
+        }
+        
+        #aiSuggestionCard {
+            cursor: pointer;
+        }
+        
+        #aiSuggestionCard:hover .ai-suggestion-cycle {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
     
     <!-- Oturum Kontrolü -->
     <script>
         // Sayfa yüklendiğinde çalışacak
         document.addEventListener('DOMContentLoaded', function() {
+            // Arkaplan fotoğrafı kontrolü
+            const savedBackground = localStorage.getItem('backgroundImage');
+            if (savedBackground) {
+                document.body.style.backgroundImage = `url(${savedBackground})`;
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundAttachment = 'fixed';
+                document.body.style.backgroundPosition = 'center';
+                document.body.classList.add('has-background');
+                
+                // Arkaplan opaklığı
+                const savedBackgroundOpacity = localStorage.getItem('backgroundOpacity') || '50';
+                applyBackgroundOpacity(savedBackgroundOpacity);
+                
+                // Arkaplan bulanıklığı
+                const savedBackgroundBlur = localStorage.getItem('backgroundBlur') || '0';
+                applyBackgroundBlur(savedBackgroundBlur);
+            }
+            
             // Firebase yüklendiyse
             if (typeof firebase !== 'undefined' && firebase.app) {
                 console.log("Firebase yüklendi, oturum kontrolü yapılıyor...");
@@ -48,7 +313,7 @@
                                     // Kullanıcı adını güncelle
                                     document.getElementById("userName").textContent = userData.name || user.email.split('@')[0];
                                     document.getElementById("welcomeUserName").textContent = userData.name || user.email.split('@')[0];
-                                    
+                                     
                                     // Sınav türünü güncelle
                                     document.getElementById("userExamType").textContent = "" + getExamTypeText(userData.examType);
                                     
@@ -101,43 +366,9 @@
                                 document.getElementById("dashboardContainer").style.display = "flex";
                             });
                     } else {
-                        console.log("Kullanıcı giriş yapmamış, misafir kontrolü yapılıyor...");
-                        // Misafir kullanıcı kontrolü
-                        const guestUser = localStorage.getItem('guestUser');
-                        if (guestUser) {
-                            console.log("Misafir kullanıcı bulundu");
-                            const guestData = JSON.parse(guestUser);
-                            
-                            // Kullanıcı adını güncelle
-                            document.getElementById("userName").textContent = guestData.name;
-                            document.getElementById("welcomeUserName").textContent = guestData.name;
-                            document.getElementById("userExamType").textContent = "Bölüm: " + getExamTypeText(guestData.examType);
-                            
-                            // Dashboard'u göster
-                            document.getElementById("dashboardContainer").style.display = "flex";
-                            
-                            // İstatistik verilerini güncelle
-                            document.getElementById("totalExams").textContent = guestData.totalExams || 0;
-                            document.getElementById("totalStudyTime").textContent = guestData.totalStudyTime ? `${guestData.totalStudyTime} saat` : "0 saat";
-                            document.getElementById("completedTasks").textContent = guestData.completedTasks ? `${guestData.completedTasks}/${guestData.totalTasks || 0}` : "0/0";
-                            
-                            // Ortalama net bilgisini güncelle
-                            updateAverageScores(guestData);
-                            
-                            document.getElementById("aiNotifications").textContent = guestData.aiNotifications ? `${guestData.aiNotifications} öneri` : "0 öneri";
-                            
-                            if (guestData.exams && guestData.exams.length > 0) {
-                                // Denemeleri göster
-                                showRecentExams(guestData.exams);
-                                // Grafik göster
-                                showExamGraph(guestData.exams);
-                            } else {
-                                console.log("Misafir kullanıcının deneme verisi yok");
-                            }
-                        } else {
-                            console.log("Misafir kullanıcı bulunamadı, giriş sayfasına yönlendiriliyor...");
-                            window.location.href = "login.html";
-                        }
+                        console.log("Kullanıcı giriş yapmamış, login sayfasına yönlendiriliyor...");
+                        // Kullanıcı giriş yapmamışsa login sayfasına yönlendir
+                        window.location.href = "login.html";
                     }
                 });
             } else {
@@ -320,6 +551,99 @@
                 scoreElement.textContent = userData.averageScore ? userData.averageScore.toFixed(2) : "0.0";
                 container.appendChild(scoreElement);
             }
+        }
+        
+        /**
+         * Arkaplan opaklığını uygular
+         * @param {string} opacity - Opaklık değeri (0-100)
+         */
+        function applyBackgroundOpacity(opacity) {
+            // Arkaplan için bir pseudo-element oluştur
+            const style = document.createElement('style');
+            style.id = 'backgroundOpacityStyle';
+            
+            // Varsa önceki stili kaldır
+            const existingStyle = document.getElementById('backgroundOpacityStyle');
+            if (existingStyle) {
+                existingStyle.remove();
+            }
+            
+            // Yeni stili ekle
+            style.textContent = `
+                body::before {
+                    content: '';
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: var(--bg-primary);
+                    opacity: ${1 - opacity/100};
+                    z-index: -1;
+                    pointer-events: none;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        /**
+         * Arkaplan bulanıklığını uygular
+         * @param {string} blur - Bulanıklık değeri (0-20px)
+         */
+        function applyBackgroundBlur(blur) {
+            // Arkaplan bulanıklığı için bir stil oluştur
+            const style = document.createElement('style');
+            style.id = 'backgroundBlurStyle';
+            
+            // Varsa önceki stili kaldır
+            const existingStyle = document.getElementById('backgroundBlurStyle');
+            if (existingStyle) {
+                existingStyle.remove();
+            }
+            
+            // Yeni stili ekle
+            style.textContent = `
+                body.has-background {
+                    position: relative;
+                }
+                
+                body.has-background::after {
+                    content: '';
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    z-index: -2;
+                    backdrop-filter: blur(${blur}px);
+                    -webkit-backdrop-filter: blur(${blur}px);
+                    pointer-events: none;
+                }
+                
+                /* Sidebar için bulanıklık efekti */
+                .sidebar {
+                    backdrop-filter: blur(${blur}px);
+                    -webkit-backdrop-filter: blur(${blur}px);
+                    background-color: rgba(var(--bg-primary-rgb, 255, 255, 255), 0.7) !important;
+                }
+                
+                .dark-theme .sidebar {
+                    background-color: rgba(30, 30, 46, 0.7) !important;
+                }
+                
+                .purple-theme .sidebar {
+                    background-color: rgba(245, 240, 245, 0.7) !important;
+                }
+                
+                .blue-theme .sidebar {
+                    background-color: rgba(240, 245, 249, 0.7) !important;
+                }
+                
+                .green-theme .sidebar {
+                    background-color: rgba(240, 249, 245, 0.7) !important;
+                }
+            `;
+            document.head.appendChild(style);
         }
     </script>
     
@@ -1001,6 +1325,12 @@
                             <a href="community.html"><i class="fas fa-users"></i> Topluluk</a>
                         </li>
                         <li>
+                            <a href="friends.html"><i class="fas fa-user-friends"></i> Arkadaşlarım</a>
+                        </li>
+                        <li>
+                            <a href="messages.html"><i class="fas fa-comment"></i> Mesajlar</a>
+                        </li>
+                        <li>
                             <a href="ai.html"><i class="fas fa-robot"></i> MateAI</a>
                         </li>
                         <li>
@@ -1121,15 +1451,14 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="stat-card" onclick="window.location.href='ai.html';" style="cursor: pointer;">
+                            <div class="stat-card" id="aiSuggestionCard">
                                 <div class="stat-icon">
                                     <i class="fas fa-robot"></i>
                                 </div>
                                 <div class="stat-info">
-                                    <h3 id="aiNotifications">0 öneri</h3>
-                                    <p>AI Önerileri</p>
+                                    <div id="aiSuggestionCycle" class="ai-suggestion-cycle">
+                                        <!-- Öneri içeriği JavaScript ile doldurulacak -->
                                 </div>
-                                <div class="input-container">
                                 </div>
                             </div>
                         </div>
@@ -1941,26 +2270,9 @@
                                 console.error("Kullanıcı verileri alınırken hata:", error);
                             });
                     } else {
-                        console.log("Kullanıcı giriş yapmamış, misafir kontrolü yapılıyor...");
-                        // Misafir kullanıcı kontrolü
-                        const guestUser = localStorage.getItem('guestUser');
-                        if (guestUser) {
-                            console.log("Misafir kullanıcı bulundu");
-                            const guestData = JSON.parse(guestUser);
-                            if (guestData.exams && guestData.exams.length > 0) {
-                                // Denemeleri göster
-                                showRecentExams(guestData.exams);
-                                // Grafik göster
-                                showExamGraph(guestData.exams);
-                            } else {
-                                console.log("Misafir kullanıcının deneme verisi yok");
-                            }
-                            
-                            // Misafir kullanıcının görevlerini yükle
-                            loadTodayTasks(null, guestData);
-                        } else {
-                            console.log("Misafir kullanıcı bulunamadı, giriş sayfasına yönlendiriliyor...");
-                        }
+                        console.log("Kullanıcı giriş yapmamış, login sayfasına yönlendiriliyor...");
+                        // Kullanıcı giriş yapmamışsa login sayfasına yönlendir
+                        window.location.href = "login.html";
                     }
                 });
             } else {
@@ -2584,597 +2896,707 @@
         const lastStatCard = document.querySelector('.stats-container .stat-card:last-child');
         
         lastStatCard.addEventListener('click', function() {
-            this.classList.toggle('expanded');
+            window.location.href = 'ai.html';
         });
+        
+        // AI Önerileri Döngüsü
+        initAISuggestionCycle();
     });
-    </script>
     
-    <!-- Görevler için JavaScript -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log("Görevler için JavaScript yükleniyor...");
-            
-            // DOM elementleri
-            const addTaskBtn = document.getElementById('addTaskBtn');
-            const addTaskLink = document.querySelector('.add-task-link');
-            const addTaskModal = document.getElementById('addTaskModal');
-            const closeTaskModal = document.getElementById('closeTaskModal');
-            const cancelTaskBtn = document.getElementById('cancelTaskBtn');
-            const addTaskForm = document.getElementById('addTaskForm');
-            const todayTasksContainer = document.getElementById('todayTasksContainer');
-            const noTasksMessage = document.getElementById('noTasksMessage');
-            
-            // Bugünün tarihini al
-            const today = new Date();
-            const todayFormatted = today.toISOString().split('T')[0];
-            
-            // Tarih alanını bugünün tarihine ayarla
-            if (document.getElementById('taskDate')) {
-                document.getElementById('taskDate').value = todayFormatted;
-            }
-            
-            // Sayfa yüklendiğinde bugünkü görevleri yükle
-            setTimeout(() => {
-                console.log("Sayfa yüklendi, görevler yükleniyor...");
-                loadTodayTasks();
-            }, 1000);
-            
-            // Modal açma fonksiyonları
-            if (addTaskBtn) {
-                addTaskBtn.addEventListener('click', function() {
-                    addTaskModal.style.display = 'flex';
-                });
-            }
-            
-            if (addTaskLink) {
-                addTaskLink.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    addTaskModal.style.display = 'flex';
-                });
-            }
-            
-            // Modal kapatma fonksiyonları
-            if (closeTaskModal) {
-                closeTaskModal.addEventListener('click', function() {
-                    addTaskModal.style.display = 'none';
-                });
-            }
-            
-            if (cancelTaskBtn) {
-                cancelTaskBtn.addEventListener('click', function() {
-                    addTaskModal.style.display = 'none';
-                });
-            }
-            
-            // Modal dışına tıklama ile kapatma
-            window.addEventListener('click', function(event) {
-                if (event.target === addTaskModal) {
-                    addTaskModal.style.display = 'none';
-                }
-            });
-            
-            // Form gönderme
-            if (addTaskForm) {
-                addTaskForm.addEventListener('submit', async function(e) {
-                    e.preventDefault();
-                    
-                    try {
-                        // Form verilerini al
-                        const title = document.getElementById('taskTitle').value;
-                        const date = document.getElementById('taskDate').value;
-                        const time = document.getElementById('taskTime').value || '';
-                        const priority = document.getElementById('taskPriority').value;
-                        const notes = document.getElementById('taskNotes').value || '';
-                        
-                        // Zorunlu alanları kontrol et
-                        if (!title || !date) {
-                            alert('Lütfen tüm zorunlu alanları doldurun.');
-                            return;
-                        }
-                        
-                        // Görev verisi oluştur
-                        const taskData = {
-                            title: title,
-                            date: date,
-                            time: time,
-                            priority: priority,
-                            notes: notes,
-                            status: 'not-started',
-                            createdAt: new Date().toISOString()
-                        };
-                        
-                        // Kullanıcı oturumunu kontrol et
-                        const user = firebase.auth().currentUser;
-                        
-                        if (user) {
-                            // Kullanıcı giriş yapmış, Firebase'e kaydet
-                            const taskRef = firebase.database().ref('users/' + user.uid + '/tasks').push();
-                            await taskRef.set(taskData);
-                            
-                            console.log("Görev kaydedildi:", taskData);
-                            alert("Görev başarıyla kaydedildi!");
-                            
-                            // Modalı kapat
-                            addTaskModal.style.display = 'none';
-                            
-                            // Görevleri yeniden yükle
-                            loadTodayTasks();
-                        } else {
-                            // Misafir kullanıcı kontrolü
-                            const guestUser = localStorage.getItem('guestUser');
-                            
-                            if (guestUser) {
-                                // Misafir kullanıcı için localStorage'a kaydet
-                                const guestData = JSON.parse(guestUser);
+    // AI Önerileri Döngüsü Başlatma
+    function initAISuggestionCycle() {
+        const suggestionCycle = document.getElementById('aiSuggestionCycle');
+        if (!suggestionCycle) return;
+        
+        // Kullanıcı verilerini al
+        let userData = null;
+        let userTasks = [];
+        
+        // Kullanıcı oturumunu kontrol et
+        const user = firebase.auth().currentUser;
+        
+        if (user) {
+            // Firebase'den kullanıcı verilerini al
+            firebase.database().ref('users/' + user.uid).once('value')
+                    .then((snapshot) => {
+                    userData = snapshot.val();
                                 
-                                // Görevler dizisi yoksa oluştur
-                                if (!guestData.tasks) {
-                                    guestData.tasks = [];
-                                }
-                                
-                                // Görev ID'si oluştur
-                                const taskId = 'task_' + Date.now();
-                                taskData.id = taskId;
-                                
-                                // Görevi ekle
-                                guestData.tasks.push(taskData);
-                                
-                                // LocalStorage'a kaydet
-                                localStorage.setItem('guestUser', JSON.stringify(guestData));
-                                
-                                console.log("Misafir kullanıcı için görev kaydedildi:", taskData);
-                                alert("Görev başarıyla kaydedildi!");
-                                
-                                // Modalı kapat
-                                addTaskModal.style.display = 'none';
-                                
-                                // Görevleri yeniden yükle
-                                loadTodayTasks();
-                            } else {
-                                alert("Görev eklemek için giriş yapmalısınız!");
-                            }
-                        }
-                    } catch (error) {
-                        console.error("Görev kaydedilirken hata:", error);
-                        alert("Görev kaydedilirken bir hata oluştu: " + error.message);
-                    }
-                });
-            }
-            
-            // Sayfa yüklendiğinde bugünkü görevleri yükle
-            loadTodayTasks();
-            
-            // Bugünkü görevleri yükleme fonksiyonu
-            function loadTodayTasks(userId = null, guestData = null) {
-                console.log("Bugünkü görevler yükleniyor...");
-                
-                if (userId) {
-                    // Kullanıcı giriş yapmış, Firebase'den görevleri al
-                    console.log("Kullanıcı ID ile görevler yükleniyor:", userId);
-                    firebase.database().ref('users/' + userId + '/tasks').once('value')
-                        .then((snapshot) => {
-                            const tasksData = snapshot.val();
-                            console.log("Görevler alındı:", tasksData);
-                            showTodayTasks(tasksData);
-                        })
-                        .catch(error => {
-                            console.error("Görevler alınırken hata:", error);
-                        });
-                } else if (guestData) {
-                    // Misafir kullanıcı verileri doğrudan parametre olarak geldi
-                    console.log("Misafir kullanıcı görevleri yükleniyor:", guestData.tasks);
-                    showTodayTasks(guestData.tasks);
-                } else {
-                    // Kullanıcı oturumunu kontrol et
-                    const user = firebase.auth().currentUser;
-                    
-                    if (user) {
-                        // Kullanıcı giriş yapmış, Firebase'den görevleri al
-                        console.log("Mevcut kullanıcı ile görevler yükleniyor:", user.uid);
-                        firebase.database().ref('users/' + user.uid + '/tasks').once('value')
+                                // Görevleri al
+                                return firebase.database().ref('users/' + user.uid + '/tasks').once('value');
+                            })
                             .then((snapshot) => {
                                 const tasksData = snapshot.val();
-                                console.log("Görevler alındı:", tasksData);
-                                showTodayTasks(tasksData);
+                                
+                                if (tasksData) {
+                                    // Object formatındaki görevleri diziye çevir
+                                    Object.keys(tasksData).forEach(key => {
+                                        userTasks.push({
+                                            id: key,
+                                            ...tasksData[key]
+                                        });
+                                    });
+                                }
+                    
+                    // Önerileri başlat
+                    startSuggestionCycle(userData, userTasks);
                             })
                             .catch(error => {
-                                console.error("Görevler alınırken hata:", error);
+                                console.error("Kullanıcı verileri alınırken hata:", error);
+                    
+                    // Hata durumunda misafir kullanıcı verilerini kontrol et
+                    checkGuestUserData();
                             });
                     } else {
-                        // Misafir kullanıcı kontrolü
+            // Misafir kullanıcı verilerini kontrol et
+            checkGuestUserData();
+        }
+        
+        // Misafir kullanıcı verilerini kontrol et
+        function checkGuestUserData() {
                         const guestUser = localStorage.getItem('guestUser');
-                        
+                            
                         if (guestUser) {
                             const guestData = JSON.parse(guestUser);
-                            console.log("LocalStorage'dan misafir kullanıcı görevleri yükleniyor:", guestData.tasks);
-                            showTodayTasks(guestData.tasks);
-                        } else {
-                            console.log("Görev yüklenecek kullanıcı bulunamadı");
-                        }
-                    }
-                }
+                userData = guestData;
+                userTasks = guestData.tasks || [];
+                
+                // Önerileri başlat
+                startSuggestionCycle(userData, userTasks);
+            } else {
+                // Veri yoksa boş öneriler göster
+                startSuggestionCycle(null, []);
             }
+        }
+    }
+    
+    // Öneri Döngüsünü Başlat
+    function startSuggestionCycle(userData, userTasks) {
+        const suggestionCycle = document.getElementById('aiSuggestionCycle');
+        if (!suggestionCycle) return;
+        
+        console.log("Öneri döngüsü başlatılıyor. Veriler:", { userData, userTasks });
+        
+        // Önerileri oluştur
+        const suggestions = [];
+        
+        // 1. Öneri: Net Ortalamaları
+        suggestions.push(createNetAverageSuggestion(userData));
+        
+        // 2. Öneri: Son İki Deneme Karşılaştırması
+        suggestions.push(createLastExamsComparison(userData));
+        
+        // 3. Öneri: Yaklaşan Görevler
+        suggestions.push(createUpcomingTasksSuggestion(userTasks));
+        
+        // 4. Öneri: AI Önerileri
+        if (userData && userData.exams) {
+            const aiSuggestions = generateAISuggestions(
+                Array.isArray(userData.exams) ? userData.exams : Object.values(userData.exams || {}),
+                userData.subjects || {},
+                userTasks || []
+            );
             
-            // Bugünkü görevleri gösterme fonksiyonu
-            function showTodayTasks(tasks) {
-                console.log("Görevler gösteriliyor:", tasks);
+            // AI önerilerinden rastgele 2 tanesini ekle
+            const shuffledAiSuggestions = [...aiSuggestions]
+                .sort(() => 0.5 - Math.random())
+                .slice(0, 2);
                 
-                // Görevleri kontrol et
-                let tasksList = [];
+            shuffledAiSuggestions.forEach(suggestionText => {
+                const suggestionItem = document.createElement('div');
+                suggestionItem.className = 'suggestion-item';
                 
-                // Görevler null veya undefined ise boş dizi kullan
-                if (!tasks) {
-                    console.log("Görev verisi bulunamadı");
-                    tasks = [];
-                }
+                // Öneri metnini analiz et ve önemli kelimeleri vurgula
+                const processedText = highlightKeywords(suggestionText);
                 
-                // Firebase'den gelen veriler için
-                if (typeof tasks === 'object' && !Array.isArray(tasks) && tasks !== null) {
-                    // Object formatındaki görevleri diziye çevir
-                    Object.keys(tasks).forEach(key => {
-                        tasksList.push({
-                            id: key,
-                            ...tasks[key]
-                        });
-                    });
-                    console.log("Object formatındaki görevler diziye çevrildi:", tasksList);
-                } else if (Array.isArray(tasks)) {
-                    // Zaten dizi formatında ise doğrudan kullan (misafir kullanıcı için)
-                    tasksList = tasks;
-                    console.log("Dizi formatındaki görevler kullanılıyor:", tasksList);
-                }
-                
-                // Bugünün tarihini al
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                
-                // Görevleri tarihe göre grupla
-                const tasksByDate = {};
-                
-                tasksList.forEach(task => {
-                    const taskDate = new Date(task.date);
-                    taskDate.setHours(0, 0, 0, 0);
-                    
-                    // Tarih anahtarını oluştur (YYYY-MM-DD formatında)
-                    const dateKey = task.date;
-                    
-                    // Tarih için dizi yoksa oluştur
-                    if (!tasksByDate[dateKey]) {
-                        tasksByDate[dateKey] = {
-                            date: taskDate,
-                            tasks: []
-                        };
-                    }
-                    
-                    // Görevi tarih grubuna ekle
-                    tasksByDate[dateKey].tasks.push(task);
-                });
-                
-                // Tarihleri diziye çevir ve sırala (bugün ve gelecek tarihler önce)
-                let datesList = Object.values(tasksByDate);
-                
-                // Tarihleri sırala (bugün, gelecek, geçmiş)
-                datesList.sort((a, b) => {
-                    // Bugün en üstte
-                    const aIsToday = a.date.getTime() === today.getTime();
-                    const bIsToday = b.date.getTime() === today.getTime();
-                    
-                    if (aIsToday && !bIsToday) return -1;
-                    if (!aIsToday && bIsToday) return 1;
-                    
-                    // Bugün değilse, gelecek tarihler geçmiş tarihlerden önce
-                    const aIsFuture = a.date.getTime() > today.getTime();
-                    const bIsFuture = b.date.getTime() > today.getTime();
-                    
-                    if (aIsFuture && !bIsFuture) return -1;
-                    if (!aIsFuture && bIsFuture) return 1;
-                    
-                    // Aynı kategorideyse (gelecek veya geçmiş), yakın tarih önce
-                    return a.date.getTime() - b.date.getTime();
-                });
-                
-                // En fazla 3 gün göster
-                datesList = datesList.slice(0, 3);
-                
-                // Görev listesini göster
-                if (todayTasksContainer && noTasksMessage) {
-                    if (datesList.length > 0) {
-                        // Görevleri göster
-                        todayTasksContainer.innerHTML = '';
-                        todayTasksContainer.style.display = 'block';
-                        noTasksMessage.style.display = 'none';
-                        
-                        // Her tarih için görevleri göster
-                        datesList.forEach((dateGroup, groupIndex) => {
-                            // Tarih formatını ayarla
-                            const dateObj = dateGroup.date;
-                            const isToday = dateObj.getTime() === today.getTime();
-                            const isTomorrow = new Date(today.getTime() + 86400000).getTime() === dateObj.getTime();
-                            
-                            let dateTitle = '';
-                            if (isToday) {
-                                dateTitle = 'Bugün';
-                            } else if (isTomorrow) {
-                                dateTitle = 'Yarın';
-                            } else {
-                                dateTitle = `${dateObj.getDate().toString().padStart(2, '0')}.${(dateObj.getMonth() + 1).toString().padStart(2, '0')}.${dateObj.getFullYear()}`;
-                            }
-                            
-                            // Görev istatistiklerini hesapla
-                            const totalTasks = dateGroup.tasks.length;
-                            const highPriorityTasks = dateGroup.tasks.filter(task => task.priority === 'high').length;
-                            const completedTasks = dateGroup.tasks.filter(task => task.status === 'completed').length;
-                            const completionRate = Math.round((completedTasks / totalTasks) * 100);
-                            
-                            // Görev kartını oluştur
-                            const taskCard = document.createElement('div');
-                            taskCard.className = 'task-day-card';
-                            taskCard.dataset.date = dateGroup.date.toISOString().split('T')[0];
-                            
-                            // Kart içeriği
-                            taskCard.innerHTML = `
-                                <div class="task-day-header">
-                                    <h3>${dateTitle}</h3>
-                                    <a href="calendar.html?date=${dateGroup.date.toISOString().split('T')[0]}" class="view-all">Takvimde Gör</a>
-                                </div>
-                                <div class="task-day-content">
-                                    <div class="task-day-stats">
-                                        <div class="task-stat">
-                                            <span class="task-stat-value">${totalTasks}</span>
-                                            <span class="task-stat-label">Görev</span>
-                                        </div>
-                                        <div class="task-stat">
-                                            <span class="task-stat-value">${highPriorityTasks}</span>
-                                            <span class="task-stat-label">Yüksek</span>
-                                        </div>
-                                        <div class="task-stat">
-                                            <span class="task-stat-value">${completedTasks}/${totalTasks}</span>
-                                            <span class="task-stat-label">Tamamlandı</span>
-                                        </div>
-                                    </div>
-                                    <div class="task-progress-bar">
-                                        <div class="task-progress" style="width: ${completionRate}%"></div>
-                                    </div>
-                                </div>
-                            `;
-                            
-                            // Tıklama olayı ekle
-                            taskCard.addEventListener('click', function(e) {
-                                // Takvim bağlantısına tıklanmadıysa görev listesini göster
-                                if (!e.target.classList.contains('view-all')) {
-                                    showTasksDetailModal(dateGroup.tasks, dateTitle);
-                                }
-                            });
-                            
-                            todayTasksContainer.appendChild(taskCard);
-                        });
-                    } else {
-                        // Görev yoksa boş durumu göster
-                        todayTasksContainer.style.display = 'none';
-                        noTasksMessage.style.display = 'flex';
-                    }
-                }
-            }
-            
-            // Görev detayları modalını göster
-            function showTasksDetailModal(tasks, dateTitle) {
-                // Mevcut modalı kontrol et
-                let taskDetailModal = document.getElementById('taskDetailModal');
-                
-                // Modal yoksa oluştur
-                if (!taskDetailModal) {
-                    taskDetailModal = document.createElement('div');
-                    taskDetailModal.id = 'taskDetailModal';
-                    taskDetailModal.className = 'modal task-detail-modal';
-                    document.body.appendChild(taskDetailModal);
-                }
-                
-                // Görevleri önceliğe göre sırala (yüksek > orta > düşük)
-                tasks.sort((a, b) => {
-                    const priorityOrder = { 'high': 0, 'medium': 1, 'low': 2 };
-                    return priorityOrder[a.priority] - priorityOrder[b.priority];
-                });
-                
-                // Modal içeriğini oluştur
-                taskDetailModal.innerHTML = `
-                    <div class="modal-content task-detail-modal-content">
-                        <div class="modal-header">
-                            <h2>${dateTitle} Görevleri</h2>
-                            <button class="close-modal" id="closeTaskDetailModal">&times;</button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="task-list">
-                                ${tasks.map(task => {
-                                    // Öncelik sınıfı
-                                    let priorityClass = '';
-                                    let priorityText = '';
-                                    
-                                    switch(task.priority) {
-                                        case 'high':
-                                            priorityClass = 'priority-high';
-                                            priorityText = 'Yüksek';
-                                            break;
-                                        case 'medium':
-                                            priorityClass = 'priority-medium';
-                                            priorityText = 'Orta';
-                                            break;
-                                        case 'low':
-                                            priorityClass = 'priority-low';
-                                            priorityText = 'Düşük';
-                                            break;
-                                        default:
-                                            priorityClass = 'priority-medium';
-                                            priorityText = 'Orta';
-                                    }
-                                    
-                                    // Durum kontrolü
-                                    const isCompleted = task.status === 'completed';
-                                    
-                                    return `
-                                        <div class="task-item ${isCompleted ? 'completed' : ''}" data-id="${task.id}" data-status="${task.status}">
-                                            <label class="task-checkbox">
-                                                <input type="checkbox" ${isCompleted ? 'checked' : ''}>
-                                                <span class="checkmark"></span>
-                                            </label>
-                                            <div class="task-content">
-                                                <div class="task-title">${task.title}</div>
-                                                <div class="task-details">
-                                                    <span class="task-time">${task.time || 'Saat belirtilmemiş'}</span>
-                                                    <span class="task-priority ${priorityClass}">${priorityText}</span>
-                                                </div>
-                                                ${task.notes ? `<div class="task-notes">${task.notes}</div>` : ''}
-                                            </div>
-                                        </div>
-                                    `;
-                                }).join('')}
-                            </div>
-                        </div>
-                    </div>
+                suggestionItem.innerHTML = `
+                    <div class="suggestion-icon"><i class="fas fa-robot"></i></div>
                 `;
                 
-                // Modalı göster
-                taskDetailModal.style.display = 'flex';
+                suggestions.push(suggestionItem);
+            });
+        }
+        
+        console.log("Oluşturulan öneriler:", suggestions.length);
+        
+        // Önerileri ekle
+        suggestionCycle.innerHTML = '';
+        suggestions.forEach((suggestion, index) => {
+            // Tüm önerileri gizli olarak ekle
+            suggestion.style.opacity = "0";
+            suggestion.style.transition = "opacity 0.5s ease-in-out";
+            suggestion.classList.remove('active');
+            suggestionCycle.appendChild(suggestion);
+        });
+        
+        // İlk öneriyi göster, diğerlerini gizle
+        if (suggestions.length > 0) {
+            // Biraz gecikme ile ilk öneriyi göster
+            setTimeout(() => {
+                suggestions[0].style.opacity = "1";
+                suggestions[0].classList.add('active');
                 
-                // Kapatma düğmesi olayı
-                const closeBtn = document.getElementById('closeTaskDetailModal');
-                if (closeBtn) {
-                    closeBtn.addEventListener('click', function() {
-                        taskDetailModal.style.display = 'none';
-                    });
-                }
-                
-                // Modal dışına tıklama ile kapatma
-                taskDetailModal.addEventListener('click', function(e) {
-                    if (e.target === taskDetailModal) {
-                        taskDetailModal.style.display = 'none';
-                    }
-                });
-                
-                // Görev tamamlama/tamamlamama olayı
-                const checkboxes = taskDetailModal.querySelectorAll('.task-checkbox input');
-                checkboxes.forEach(checkbox => {
-                    checkbox.addEventListener('click', function(e) {
-                        e.stopPropagation(); // Tıklama olayının üst öğelere yayılmasını engelle
-                        
-                        const taskItem = this.closest('.task-item');
-                        const taskId = taskItem.dataset.id;
-                        const newStatus = this.checked ? 'completed' : 'not-started';
-                        
-                        console.log("Görev tıklandı:", taskId, "Yeni durum:", newStatus);
-                        
-                        // Görevi güncelle
-                        updateTaskStatus(taskId, newStatus);
-                        
-                        // Görünümü güncelle
-                        if (this.checked) {
-                            taskItem.classList.add('completed');
-                        } else {
-                            taskItem.classList.remove('completed');
-                        }
-                    });
-                });
-            }
+                // Öneri yüksekliğine göre container'ı ayarla
+                adjustContainerHeight(suggestions[0]);
+            }, 500);
+        }
+        
+        // Döngüyü başlat
+        let currentIndex = 0;
+        
+        setInterval(() => {
+            // Mevcut öneriyi gizle
+            suggestions[currentIndex].style.opacity = "0";
+            suggestions[currentIndex].classList.remove('active');
             
-            // Görev durumunu güncelle
-            function updateTaskStatus(taskId, newStatus) {
-                console.log("Görev durumu güncelleniyor:", taskId, newStatus);
-                
-                // Kullanıcı oturumunu kontrol et
-                const user = firebase.auth().currentUser;
-                
-                if (user) {
-                    // Firebase'de güncelle
-                    firebase.database().ref(`users/${user.uid}/tasks/${taskId}`).update({
-                        status: newStatus
-                    }).then(() => {
-                        console.log(`Görev durumu güncellendi: ${taskId} -> ${newStatus}`);
-                        
-                        // Kullanıcıya bildirim göster
-                        showNotification(newStatus === 'completed' ? 'Görev tamamlandı!' : 'Görev tamamlanmadı olarak işaretlendi.');
-                        
-                        // Görevleri yeniden yükle
-                        setTimeout(() => {
-                            loadTodayTasks();
-                        }, 500);
-                    }).catch(error => {
-                        console.error("Görev güncellenirken hata:", error);
-                        showNotification('Görev güncellenirken bir hata oluştu.', 'error');
-                    });
-                } else {
-                    // Misafir kullanıcı kontrolü
-                    const guestUser = localStorage.getItem('guestUser');
-                    
-                    if (guestUser) {
-                        try {
-                            const guestData = JSON.parse(guestUser);
-                            
-                            if (guestData.tasks && Array.isArray(guestData.tasks)) {
-                                // Görevi bul ve güncelle
-                                const taskIndex = guestData.tasks.findIndex(task => task.id === taskId);
-                                
-                                if (taskIndex !== -1) {
-                                    guestData.tasks[taskIndex].status = newStatus;
-                                    
-                                    // LocalStorage'a kaydet
-                                    localStorage.setItem('guestUser', JSON.stringify(guestData));
-                                    
-                                    console.log(`Misafir kullanıcı için görev durumu güncellendi: ${taskId} -> ${newStatus}`);
-                                    
-                                    // Kullanıcıya bildirim göster
-                                    showNotification(newStatus === 'completed' ? 'Görev tamamlandı!' : 'Görev tamamlanmadı olarak işaretlendi.');
-                                    
-                                    // Görevleri yeniden yükle
-                                    setTimeout(() => {
-                                        loadTodayTasks();
-                                    }, 500);
-                                } else {
-                                    console.error("Görev bulunamadı:", taskId);
-                                    showNotification('Görev bulunamadı.', 'error');
-                                }
-                            } else {
-                                console.error("Misafir kullanıcının görev verisi bulunamadı");
-                                showNotification('Görev verisi bulunamadı.', 'error');
-                            }
-                        } catch (error) {
-                            console.error("Misafir kullanıcı verisi işlenirken hata:", error);
-                            showNotification('Görev güncellenirken bir hata oluştu.', 'error');
-                        }
-                    } else {
-                        console.error("Görev güncellemek için giriş yapmalısınız");
-                        showNotification('Görev güncellemek için giriş yapmalısınız.', 'error');
-                    }
-                }
-            }
+            // Sonraki öneriye geç
+            currentIndex = (currentIndex + 1) % suggestions.length;
             
-            // Bildirim gösterme fonksiyonu
-            function showNotification(message, type = 'success') {
-                // Mevcut bildirimi kontrol et
-                let notification = document.querySelector('.task-notification');
+            // Biraz gecikme ile yeni öneriyi göster
+            setTimeout(() => {
+                suggestions[currentIndex].style.opacity = "1";
+                suggestions[currentIndex].classList.add('active');
                 
-                // Bildirim yoksa oluştur
-                if (!notification) {
-                    notification = document.createElement('div');
-                    notification.className = 'task-notification';
-                    document.body.appendChild(notification);
-                }
-                
-                // Bildirim içeriğini ayarla
-                notification.textContent = message;
-                notification.className = `task-notification ${type}`;
-                
-                // Bildirimi göster
-                notification.style.display = 'block';
-                notification.style.opacity = '1';
-                
-                // 3 saniye sonra bildirimi gizle
-                setTimeout(() => {
-                    notification.style.opacity = '0';
-                    setTimeout(() => {
-                        notification.style.display = 'none';
-                    }, 300);
-                }, 3000);
+                // Öneri yüksekliğine göre container'ı ayarla
+                adjustContainerHeight(suggestions[currentIndex]);
+            }, 500);
+            
+        }, 5000); // 5 saniye aralıkla değiştir
+    }
+    
+    // Container yüksekliğini ayarla
+    function adjustContainerHeight(suggestion) {
+        const suggestionCycle = document.getElementById('aiSuggestionCycle');
+        const suggestionCard = document.getElementById('aiSuggestionCard');
+        
+        if (suggestionCycle && suggestionCard && suggestion) {
+            const suggestionHeight = suggestion.offsetHeight;
+            suggestionCycle.style.height = (suggestionHeight + 10) + 'px';
+            
+            // Stat card yüksekliğini de ayarla
+            const statCard = suggestionCard.closest('.stat-card');
+            if (statCard) {
+                const statInfoHeight = statCard.querySelector('.stat-info')?.offsetHeight || 0;
+                const totalHeight = suggestionHeight + statInfoHeight + 40; // Padding için ek alan
+                statCard.style.minHeight = totalHeight + 'px';
+            }
+        }
+    }
+    
+    // Önemli kelimeleri vurgula
+    function highlightKeywords(text) {
+        // Vurgulanacak anahtar kelimeler
+        const keywords = [
+            'artış', 'düşüş', 'başarılı', 'zorlandınız', 'odaklanmalısınız',
+            'gözden geçirmenizi', 'dengeli', 'planlı', 'tekrar', 'zayıf',
+            'güçlü', 'tamamlamışsınız', 'unutmayın'
+        ];
+        
+        // Konu adlarını ve sayıları bul ve vurgula
+        let processedText = text;
+        
+        // Tırnak içindeki metinleri vurgula (konu adları)
+        processedText = processedText.replace(/"([^"]+)"/g, '<span class="suggestion-highlight">$1</span>');
+        
+        // Sayıları vurgula
+        processedText = processedText.replace(/(\d+(\.\d+)?)/g, '<span class="suggestion-highlight">$1</span>');
+        
+        // Anahtar kelimeleri vurgula
+        keywords.forEach(keyword => {
+            const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+            processedText = processedText.replace(regex, `<span class="suggestion-keyword">$&</span>`);
+        });
+        
+        return processedText;
+    }
+    
+    // Net Ortalamaları Önerisi Oluştur
+    function createNetAverageSuggestion(userData) {
+        const suggestion = document.createElement('div');
+        suggestion.className = 'suggestion-item';
+        
+        console.log("Net ortalamaları önerisi oluşturuluyor. Kullanıcı verileri:", userData);
+        
+        if (!userData || !userData.exams || (typeof userData.exams === 'object' && Object.keys(userData.exams).length === 0) || 
+            (Array.isArray(userData.exams) && userData.exams.length === 0)) {
+            
+            console.log("Deneme sonucu bulunamadı");
+            
+            suggestion.innerHTML = `
+                <div class="suggestion-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="suggestion-text">
+                    Henüz deneme sonucunuz bulunmuyor. <span class="suggestion-highlight">Deneme ekleyerek</span> performansınızı takip edebilirsiniz.
+                </div>
+            `;
+            
+            return suggestion;
+        }
+        
+        // Denemeleri diziye çevir
+        let examsList = [];
+        if (typeof userData.exams === 'object' && !Array.isArray(userData.exams)) {
+            Object.keys(userData.exams).forEach(key => {
+                examsList.push({
+                    id: key,
+                    ...userData.exams[key]
+                });
+            });
+        } else if (Array.isArray(userData.exams)) {
+            examsList = userData.exams;
+        }
+        
+        console.log("Deneme listesi oluşturuldu:", examsList);
+        
+        // Sınav türlerine göre denemeleri ayır ve ortalama hesapla
+        let tytExams = [];
+        let aytExams = [];
+        let ydtExams = [];
+        
+        examsList.forEach(exam => {
+            const examType = exam.type ? exam.type.toLowerCase() : 'tyt';
+            
+            if (examType.includes('tyt')) {
+                tytExams.push(exam);
+            } else if (examType.includes('ayt') || examType.includes('sayisal') || 
+                      examType.includes('sozel') || examType.includes('esitagirlik')) {
+                aytExams.push(exam);
+            } else if (examType.includes('ydt') || examType.includes('dil')) {
+                ydtExams.push(exam);
+            } else {
+                // Bilinmeyen tür, varsayılan olarak TYT'ye ekle
+                tytExams.push(exam);
             }
         });
-    </script>
+        
+        console.log("Sınav türlerine göre ayrıldı:", { tyt: tytExams.length, ayt: aytExams.length, ydt: ydtExams.length });
+        
+        // Ortalama netler
+        const tytAvg = tytExams.length > 0 ? 
+            tytExams.reduce((sum, exam) => sum + (exam.totalNet || 0), 0) / tytExams.length : 0;
+        
+        const aytAvg = aytExams.length > 0 ? 
+            aytExams.reduce((sum, exam) => sum + (exam.totalNet || 0), 0) / aytExams.length : 0;
+        
+        const ydtAvg = ydtExams.length > 0 ? 
+            ydtExams.reduce((sum, exam) => sum + (exam.totalNet || 0), 0) / ydtExams.length : 0;
+        
+        // Öneri metni oluştur
+        let suggestionText = '';
+        let icon = 'chart-line';
+        
+        if (tytExams.length > 0 || aytExams.length > 0 || ydtExams.length > 0) {
+            suggestionText = '<div class="suggestion-text">Ortalama netleriniz: ';
+            
+            if (tytExams.length > 0) {
+                suggestionText += `<span class="suggestion-highlight">TYT: ${tytAvg.toFixed(1)}</span> `;
+            }
+            
+            if (aytExams.length > 0) {
+                suggestionText += `<span class="suggestion-highlight">AYT: ${aytAvg.toFixed(1)}</span> `;
+            }
+            
+            if (ydtExams.length > 0) {
+                suggestionText += `<span class="suggestion-highlight">YDT: ${ydtAvg.toFixed(1)}</span> `;
+            }
+            
+            // Son sınavdaki ilerleme
+            if (examsList.length >= 2) {
+                const sortedExams = [...examsList].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+                const lastExam = sortedExams[0];
+                const prevExam = sortedExams[1];
+                
+                if (lastExam && prevExam && lastExam.totalNet !== undefined && prevExam.totalNet !== undefined) {
+                    const diff = lastExam.totalNet - prevExam.totalNet;
+                    
+                    if (diff > 0) {
+                        suggestionText += `<br>Son sınavınızda <span class="suggestion-highlight">${diff.toFixed(1)}</span> net artış gösterdiniz. Bu tempoyu koruyun!`;
+                        icon = 'arrow-trend-up';
+                    } else if (diff < 0) {
+                        suggestionText += `<br>Son sınavınızda <span class="suggestion-highlight">${Math.abs(diff).toFixed(1)}</span> net düşüş var. Çalışma stratejinizi gözden geçirin.`;
+                        icon = 'arrow-trend-down';
+                    } else {
+                        suggestionText += `<br>Son sınavınızda net değişimi olmadı. Farklı çalışma teknikleri deneyebilirsiniz.`;
+                    }
+                }
+            }
+            
+            suggestionText += '</div>';
+        } else {
+            suggestionText = `
+                <div class="suggestion-text">
+                    Henüz deneme sonucunuz bulunmuyor. <span class="suggestion-highlight">Deneme ekleyerek</span> performansınızı takip edebilirsiniz.
+                </div>
+            `;
+        }
+        
+        suggestion.innerHTML = `
+            <div class="suggestion-icon"><i class="fas fa-${icon}"></i></div>
+            ${suggestionText}
+        `;
+        
+        return suggestion;
+    }
+    
+    // Son İki Deneme Karşılaştırması Önerisi Oluştur
+    function createLastExamsComparison(userData) {
+        const suggestion = document.createElement('div');
+        suggestion.className = 'suggestion-item';
+        
+        console.log("Son iki deneme karşılaştırması önerisi oluşturuluyor. Kullanıcı verileri:", userData);
+        
+        if (!userData || !userData.exams || (typeof userData.exams === 'object' && Object.keys(userData.exams).length === 0) || 
+            (Array.isArray(userData.exams) && userData.exams.length === 0)) {
+            
+            console.log("Deneme sonucu bulunamadı");
+            
+            suggestion.innerHTML = `
+                <div class="suggestion-icon"><i class="fas fa-chart-bar"></i></div>
+                <div class="suggestion-text">
+                    Henüz deneme sonucunuz bulunmuyor. <span class="suggestion-highlight">Deneme ekleyerek</span> ilerlemenizi takip edebilirsiniz.
+                </div>
+            `;
+            
+            return suggestion;
+        }
+        
+        // Denemeleri diziye çevir
+        let examsList = [];
+        if (typeof userData.exams === 'object' && !Array.isArray(userData.exams)) {
+            Object.keys(userData.exams).forEach(key => {
+                examsList.push({
+                    id: key,
+                    ...userData.exams[key]
+                });
+            });
+        } else if (Array.isArray(userData.exams)) {
+            examsList = userData.exams;
+        }
+        
+        console.log("Deneme listesi oluşturuldu:", examsList);
+        
+        // En az 2 deneme olmalı
+        if (examsList.length < 2) {
+            suggestion.innerHTML = `
+                <div class="suggestion-icon"><i class="fas fa-chart-bar"></i></div>
+                <div class="suggestion-text">
+                    Karşılaştırma yapabilmek için en az <span class="suggestion-highlight">2 deneme</span> eklemelisiniz.
+                </div>
+            `;
+            
+            return suggestion;
+        }
+        
+        // Denemeleri tarihe göre sırala (en yeniden en eskiye)
+        examsList.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+        
+        // Son iki denemeyi al
+        const lastExam = examsList[0];
+        const prevExam = examsList[1];
+        
+        console.log("Son iki deneme:", { lastExam, prevExam });
+        
+        // Deneme tarihlerini formatla
+        const lastExamDate = new Date(lastExam.date);
+        const prevExamDate = new Date(prevExam.date);
+        
+        const formatDate = (date) => {
+            return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()}`;
+        };
+        
+        const lastExamDateStr = formatDate(lastExamDate);
+        const prevExamDateStr = formatDate(prevExamDate);
+        
+        // Net farkını hesapla
+        const netDiff = (lastExam.totalNet || 0) - (prevExam.totalNet || 0);
+        
+        // Öneri metni oluştur
+        let suggestionText = '';
+        let icon = 'chart-bar';
+        
+        if (netDiff > 0) {
+            suggestionText = `
+                <div class="suggestion-text">
+                    <span class="suggestion-highlight">${lastExamDateStr}</span> tarihli son sınavınızda, 
+                    <span class="suggestion-highlight">${prevExamDateStr}</span> tarihli sınavınıza göre 
+                    <span class="suggestion-highlight">${netDiff.toFixed(1)}</span> net artış gösterdiniz. 
+                    Bu tempoyu koruyun!
+                </div>
+            `;
+            icon = 'arrow-trend-up';
+        } else if (netDiff < 0) {
+            suggestionText = `
+                <div class="suggestion-text">
+                    <span class="suggestion-highlight">${lastExamDateStr}</span> tarihli son sınavınızda, 
+                    <span class="suggestion-highlight">${prevExamDateStr}</span> tarihli sınavınıza göre 
+                    <span class="suggestion-highlight">${Math.abs(netDiff).toFixed(1)}</span> net düşüş var. 
+                    Çalışma stratejinizi gözden geçirmenizi öneririz.
+                </div>
+            `;
+            icon = 'arrow-trend-down';
+        } else {
+            suggestionText = `
+                <div class="suggestion-text">
+                    <span class="suggestion-highlight">${lastExamDateStr}</span> tarihli son sınavınızda, 
+                    <span class="suggestion-highlight">${prevExamDateStr}</span> tarihli sınavınıza göre 
+                    net değişimi olmadı. Farklı çalışma teknikleri deneyebilirsiniz.
+                </div>
+            `;
+        }
+        
+        suggestion.innerHTML = `
+            <div class="suggestion-icon"><i class="fas fa-${icon}"></i></div>
+            ${suggestionText}
+        `;
+        
+        return suggestion;
+    }
+    
+    // Yaklaşan Görevler Önerisi Oluştur
+    function createUpcomingTasksSuggestion(userTasks) {
+        const suggestion = document.createElement('div');
+        suggestion.className = 'suggestion-item';
+        
+        console.log("Yaklaşan görevler önerisi oluşturuluyor. Görev verileri:", userTasks);
+        
+        if (!userTasks || userTasks.length === 0) {
+            console.log("Görev bulunamadı");
+            
+            suggestion.innerHTML = `
+                <div class="suggestion-icon"><i class="fas fa-tasks"></i></div>
+                <div class="suggestion-text">
+                    Yaklaşan göreviniz bulunmuyor. <span class="suggestion-highlight">Görev ekleyerek</span> çalışma planınızı oluşturabilirsiniz.
+                </div>
+            `;
+            
+            return suggestion;
+        }
+        
+        // Bugünün tarihini al
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Yaklaşan görevleri bul (tamamlanmamış ve bugün veya sonrası)
+        const upcomingTasks = userTasks.filter(task => {
+            if (!task.date) return false;
+            
+            const taskDate = new Date(task.date);
+            taskDate.setHours(0, 0, 0, 0);
+            return taskDate >= today && !task.completed;
+        });
+        
+        console.log("Yaklaşan görevler:", upcomingTasks);
+        
+        // Yaklaşan görev yoksa
+        if (upcomingTasks.length === 0) {
+            suggestion.innerHTML = `
+                <div class="suggestion-icon"><i class="fas fa-tasks"></i></div>
+                <div class="suggestion-text">
+                    Yaklaşan göreviniz bulunmuyor. <span class="suggestion-highlight">Görev ekleyerek</span> çalışma planınızı oluşturabilirsiniz.
+                </div>
+            `;
+            
+            return suggestion;
+        }
+        
+        // Tarihe göre sırala
+        upcomingTasks.sort((a, b) => {
+            const dateA = new Date(a.date);
+            const dateB = new Date(b.date);
+            return dateA - dateB;
+        });
+        
+        // En yakın görevi al
+        const nextTask = upcomingTasks[0];
+        const taskDate = new Date(nextTask.date);
+        
+        // Tarih formatını ayarla
+        const isToday = taskDate.getTime() === today.getTime();
+        const isTomorrow = new Date(today.getTime() + 86400000).getTime() === taskDate.getTime();
+        
+        let dateText = '';
+        if (isToday) {
+            dateText = 'bugün';
+        } else if (isTomorrow) {
+            dateText = 'yarın';
+        } else {
+            dateText = `${taskDate.getDate().toString().padStart(2, '0')}.${(taskDate.getMonth() + 1).toString().padStart(2, '0')}.${taskDate.getFullYear()}`;
+        }
+        
+        // Görev önceliğine göre ikon rengi
+        let priorityColor = '#4caf50'; // Düşük öncelik
+        if (nextTask.priority === 'high') {
+            priorityColor = '#f44336'; // Yüksek öncelik
+        } else if (nextTask.priority === 'medium') {
+            priorityColor = '#ff9800'; // Orta öncelik
+        }
+        
+        // Görev mesajını oluştur
+        suggestion.innerHTML = `
+            <div class="suggestion-icon"><i class="fas fa-calendar-check" style="color: ${priorityColor};"></i></div>
+            <div class="suggestion-text">
+                <span class="suggestion-highlight">${dateText}</span> için planlanmış göreviniz: 
+                <span class="suggestion-highlight">${nextTask.title}</span>
+            </div>
+        `;
+        
+        return suggestion;
+    }
+    
+    // AI Önerileri Oluştur
+    function generateAISuggestions(exams, subjects, tasks) {
+        console.log("AI önerileri oluşturuluyor. Veriler:", { 
+            exams: exams ? exams.length : 0, 
+            subjects: subjects ? Object.keys(subjects).length : 0, 
+            tasks: tasks ? tasks.length : 0 
+        });
+        
+        const suggestions = [];
+        
+        // Varsayılan önerileri ekle
+        suggestions.push(...getDefaultSuggestions());
+        
+        // Sınav verilerini analiz et
+        if (exams && exams.length > 0) {
+            console.log("Sınav verileri analiz ediliyor:", exams);
+            // Son sınavı bul
+            const latestExam = exams.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))[0];
+            
+            // Zayıf konuları bul
+            if (latestExam && latestExam.subjects) {
+                const weakSubjects = Object.entries(latestExam.subjects)
+                    .sort((a, b) => (a[1].net || 0) - (b[1].net || 0))
+                    .slice(0, 2)
+                    .map(entry => entry[0]);
+                    
+                if (weakSubjects.length > 0) {
+                    suggestions.push(`Son sınavınızda "${weakSubjects[0]}" konusunda zorlandınız. Bu konuya daha fazla zaman ayırmanızı öneririz.`);
+                }
+                
+                // Güçlü konuları bul
+                const strongSubjects = Object.entries(latestExam.subjects)
+                    .sort((a, b) => (b[1].net || 0) - (a[1].net || 0))
+                    .slice(0, 2)
+                    .map(entry => entry[0]);
+                     
+                 if (strongSubjects.length > 0 && strongSubjects[0] !== weakSubjects[0]) {
+                     suggestions.push(`"${strongSubjects[0]}" konusunda başarılısınız. Bu başarınızı diğer konulara da yansıtmaya çalışın.`);
+                 }
+             }
+             
+             // Net ortalamasını hesapla
+             const avgNet = exams.reduce((sum, exam) => sum + (exam.totalNet || 0), 0) / exams.length;
+             
+             // Son 3 sınavdaki ilerlemeyi kontrol et
+             if (exams.length >= 3) {
+                 const last3Exams = exams.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0)).slice(0, 3);
+                 const netTrend = (last3Exams[0].totalNet || 0) - (last3Exams[2].totalNet || 0);
+                 
+                 if (netTrend > 5) {
+                     suggestions.push(`Son 3 sınavınızda ${netTrend.toFixed(1)} net artış gösterdiniz. Bu tempoyu koruyun!`);
+                 } else if (netTrend > 0) {
+                     suggestions.push(`Son 3 sınavınızda ${netTrend.toFixed(1)} net artış gösterdiniz. İyi gidiyorsunuz, daha da iyileştirebilirsiniz.`);
+                 } else if (netTrend < -5) {
+                     suggestions.push(`Son 3 sınavınızda ${Math.abs(netTrend).toFixed(1)} net düşüş var. Çalışma stratejinizi acilen gözden geçirmenizi öneririz.`);
+                 } else if (netTrend < 0) {
+                     suggestions.push(`Son 3 sınavınızda ${Math.abs(netTrend).toFixed(1)} net düşüş var. Çalışma stratejinizi gözden geçirmenizi öneririz.`);
+                 } else {
+                     suggestions.push(`Son 3 sınavınızda net sayınız sabit kalmış. Performansınızı artırmak için farklı çalışma teknikleri deneyebilirsiniz.`);
+                 }
+             } else {
+                 suggestions.push("Daha fazla deneme sınavı ekleyerek ilerlemenizi takip edebilirsiniz.");
+             }
+         } else {
+             console.log("Sınav verisi bulunamadı");
+             suggestions.push("Henüz deneme sınavı eklememişsiniz. Deneme ekleyerek performansınızı takip edebilirsiniz.");
+         }
+         
+         // Konu verilerini analiz et
+         if (subjects && Object.keys(subjects).length > 0) {
+             console.log("Konu verileri analiz ediliyor:", subjects);
+             // En az çalışılan konuları bul
+             const subjectStudyTimes = Object.entries(subjects)
+                 .map(([name, data]) => ({
+                     name,
+                     totalTime: data.studyTime || 0
+                 }))
+                 .sort((a, b) => a.totalTime - b.totalTime);
+                 
+             if (subjectStudyTimes.length > 0) {
+                 const leastStudied = subjectStudyTimes[0];
+                 suggestions.push(`"${leastStudied.name}" konusuna daha az zaman ayırmışsınız. Bu konuya daha fazla odaklanmanızı öneririz.`);
+                 
+                 // En çok çalışılan konu
+                 const mostStudied = subjectStudyTimes[subjectStudyTimes.length - 1];
+                 if (mostStudied.name !== leastStudied.name) {
+                     suggestions.push(`"${mostStudied.name}" konusuna en çok zamanı ayırmışsınız. Bu konudaki bilgilerinizi pekiştirmek için düzenli tekrar yapmayı unutmayın.`);
+                 }
+             }
+         } else {
+             console.log("Konu verisi bulunamadı");
+             suggestions.push("Henüz konu çalışma verisi eklememişsiniz. Konulara çalışma süresi ekleyerek daha kişiselleştirilmiş öneriler alabilirsiniz.");
+         }
+         
+         // Görev verilerini analiz et
+         if (tasks && tasks.length > 0) {
+             console.log("Görev verileri analiz ediliyor:", tasks);
+             // Yaklaşan görevleri bul
+             const today = new Date();
+             today.setHours(0, 0, 0, 0);
+             
+             const upcomingTasks = tasks.filter(task => {
+                 if (!task.date) return false;
+                 
+                 const taskDate = new Date(task.date);
+                 taskDate.setHours(0, 0, 0, 0);
+                 return taskDate >= today && !task.completed;
+             });
+             
+             // Tarihe göre sırala
+             upcomingTasks.sort((a, b) => {
+                 const dateA = new Date(a.date);
+                 const dateB = new Date(b.date);
+                 return dateA - dateB;
+             });
+             
+             if (upcomingTasks.length > 0) {
+                 // En yakın görevi al
+                 const nextTask = upcomingTasks[0];
+                 const taskDate = new Date(nextTask.date);
+                 
+                 // Tarih formatını ayarla
+                 const isToday = taskDate.getTime() === today.getTime();
+                 const isTomorrow = new Date(today.getTime() + 86400000).getTime() === taskDate.getTime();
+                 
+                 let dateText = '';
+                 if (isToday) {
+                     dateText = 'bugün';
+                 } else if (isTomorrow) {
+                     dateText = 'yarın';
+                 } else {
+                     dateText = `${taskDate.getDate().toString().padStart(2, '0')}.${(taskDate.getMonth() + 1).toString().padStart(2, '0')}.${taskDate.getFullYear()}`;
+                 }
+                 
+                 suggestions.push(`${dateText} için planlanmış "${nextTask.title}" görevinizi unutmayın.`);
+             } else {
+                 suggestions.push("Yaklaşan göreviniz bulunmuyor. Yeni görevler ekleyerek çalışma planınızı oluşturabilirsiniz.");
+             }
+         } else {
+             console.log("Görev verisi bulunamadı");
+             suggestions.push("Henüz görev eklememişsiniz. Görev ekleyerek çalışma planınızı oluşturabilirsiniz.");
+         }
+         
+         return suggestions;
+     }
+     
+     // Varsayılan AI Önerileri
+     function getDefaultSuggestions() {
+         return [
+             "Deneme sınavlarınızı düzenli olarak analiz ederek zayıf konularınızı belirleyin.",
+             "Günlük çalışma planınızı oluşturun ve buna sadık kalın.",
+             "Düzenli tekrar yapmak, bilgilerin kalıcı olmasını sağlar.",
+             "Sınavdan önce yeterli uyku almak performansınızı artırır.",
+             "Çalışırken kısa molalar vermek verimliliği artırır."
+         ];
+     }
+</script>
 </body>
 </html>
