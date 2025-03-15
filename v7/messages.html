@@ -414,6 +414,76 @@
         .dark-theme .no-friends-info {
             color: #aaa;
         }
+        
+        /* Mobil görünüm için stil düzenlemeleri */
+        @media (max-width: 992px) {
+            .messages-container {
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .friends-list-container {
+                width: 100%;
+                position: absolute;
+                top: 0;
+                left: 0;
+                height: 100%;
+                z-index: 2;
+                transition: transform 0.3s ease;
+                transform: translateX(0);
+            }
+            
+            .chat-area-container {
+                width: 100%;
+                position: absolute;
+                top: 0;
+                left: 0;
+                height: 100%;
+                z-index: 1;
+                transition: transform 0.3s ease;
+                transform: translateX(100%);
+            }
+            
+            .show-chat .friends-list-container {
+                transform: translateX(-100%);
+            }
+            
+            .show-chat .chat-area-container {
+                transform: translateX(0);
+            }
+            
+            .back-button {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                background: none;
+                border: none;
+                color: #4a6cf7;
+                cursor: pointer;
+                font-size: 1rem;
+                padding: 0;
+                margin-right: 10px;
+            }
+            
+            .back-button i {
+                font-size: 1.2rem;
+            }
+            
+            .chat-header {
+                display: flex;
+                align-items: center;
+            }
+            
+            .chat-header h3 {
+                flex: 1;
+            }
+        }
+        
+        @media (min-width: 993px) {
+            .back-button {
+                display: none;
+            }
+        }
     </style>
     
     <!-- Firebase -->
@@ -547,6 +617,9 @@
                             <!-- Mesajlaşma Alanı -->
                             <div class="chat-area-container">
                                 <div class="chat-header">
+                                    <button class="back-button" id="backToFriendsList">
+                                        <i class="fas fa-arrow-left"></i> Geri
+                                    </button>
                                     <h3 id="chatFriendName">Arkadaş Seçin</h3>
                                     <button id="clearChatBtn" class="btn btn-outline clear-chat-btn">
                                         <i class="fas fa-trash"></i> Sohbeti Temizle
@@ -637,10 +710,102 @@
                                 // Yeni mesajları dinle
                                 listenForNewMessages(user.uid);
                                 
+                                // Her saniyede bir son mesajları güncelle
+                                startLastMessageRefresher(user.uid);
+                                
                                 if (friendId) {
                                     // Arkadaş bilgilerini yükle ve sohbeti başlat
                                     loadFriendInfo(friendId);
+                                    
+                                    // Mobil görünümde mesaj alanını göster
+                                    if (window.innerWidth <= 992) {
+                                        document.querySelector('.messages-container').classList.add('show-chat');
+                                    }
                                 }
+                                
+                                // Geri tuşuna tıklama olayını ekle
+                                document.getElementById('backToFriendsList').addEventListener('click', function() {
+                                    // Mesaj alanını gizle
+                                    document.querySelector('.messages-container').classList.remove('show-chat');
+                                    
+                                    // URL'den friend parametresini kaldır
+                                    const newUrl = window.location.pathname;
+                                    window.history.pushState({}, '', newUrl);
+                                    
+                                    // Aktif arkadaş seçimini kaldır
+                                    document.querySelectorAll('.friend-item').forEach(item => {
+                                        item.classList.remove('active');
+                                    });
+                                    
+                                    // Mesaj alanını sıfırla
+                                    document.getElementById('chatFriendName').textContent = 'Arkadaş Seçin';
+                                    document.getElementById('messageInput').disabled = true;
+                                    document.getElementById('sendMessageBtn').disabled = true;
+                                    document.getElementById('chatMessages').innerHTML = '<div class="no-messages-info"><p>Mesajlaşmak için sol taraftan bir arkadaş seçin veya arkadaşlar sayfasından yeni arkadaşlar ekleyin.</p></div>';
+                                    
+                                    // Mevcut arkadaş ID'sini sıfırla
+                                    currentFriendId = null;
+                                });
+                                
+                                // Pencere boyutu değiştiğinde görünümü ayarla
+                                window.addEventListener('resize', function() {
+                                    const messagesContainer = document.querySelector('.messages-container');
+                                    const activeFriend = document.querySelector('.friend-item.active');
+                                    
+                                    if (window.innerWidth > 992) {
+                                        // Desktop görünümünde her zaman her iki alanı da göster
+                                        messagesContainer.classList.remove('show-chat');
+                                    } else if (activeFriend && !messagesContainer.classList.contains('show-chat')) {
+                                        // Mobil görünümde aktif bir arkadaş varsa ve mesaj alanı gizliyse göster
+                                        messagesContainer.classList.add('show-chat');
+                                    }
+                                });
+                                
+                                // Tarayıcının geri tuşuna basıldığında URL'yi kontrol et
+                                window.addEventListener('popstate', function(event) {
+                                    // URL'den friend parametresini kontrol et
+                                    const urlParams = new URLSearchParams(window.location.search);
+                                    const friendId = urlParams.get('friend');
+                                    
+                                    if (!friendId) {
+                                        // Friend parametresi yoksa arkadaş listesini göster
+                                        document.querySelector('.messages-container').classList.remove('show-chat');
+                                        
+                                        // Aktif arkadaş seçimini kaldır
+                                        document.querySelectorAll('.friend-item').forEach(item => {
+                                            item.classList.remove('active');
+                                        });
+                                        
+                                        // Mesaj alanını sıfırla
+                                        document.getElementById('chatFriendName').textContent = 'Arkadaş Seçin';
+                                        document.getElementById('messageInput').disabled = true;
+                                        document.getElementById('sendMessageBtn').disabled = true;
+                                        document.getElementById('chatMessages').innerHTML = '<div class="no-messages-info"><p>Mesajlaşmak için sol taraftan bir arkadaş seçin veya arkadaşlar sayfasından yeni arkadaşlar ekleyin.</p></div>';
+                                        
+                                        // Mevcut arkadaş ID'sini sıfırla
+                                        currentFriendId = null;
+                                    } else {
+                                        // Friend parametresi varsa o arkadaşın mesajlarını göster
+                                        const friendItem = document.querySelector(`.friend-item[data-friend-id="${friendId}"]`);
+                                        if (friendItem) {
+                                            // Aktif sınıfını diğer öğelerden kaldır
+                                            document.querySelectorAll('.friend-item').forEach(item => {
+                                                item.classList.remove('active');
+                                            });
+                                            
+                                            // Bu öğeye aktif sınıfını ekle
+                                            friendItem.classList.add('active');
+                                            
+                                            // Arkadaş bilgilerini yükle ve sohbeti başlat
+                                            loadFriendInfo(friendId);
+                                            
+                                            // Mobil görünümde mesaj alanını göster
+                                            if (window.innerWidth <= 992) {
+                                                document.querySelector('.messages-container').classList.add('show-chat');
+                                            }
+                                        }
+                                    }
+                                });
                             })
                             .catch(error => {
                                 console.error("Kullanıcı bilgileri yüklenirken hata:", error);
@@ -723,12 +888,19 @@
                                 // Bu öğeye aktif sınıfını ekle
                                 this.classList.add('active');
                                 
+                                // Arkadaş ID'sini al
+                                const friendId = this.getAttribute('data-friend-id');
+                                
                                 // Arkadaş bilgilerini yükle ve sohbeti başlat
                                 loadFriendInfo(friendId);
                                 
                                 // URL'yi güncelle (sayfa yenilenmeden)
-                                const newUrl = window.location.pathname + '?friend=' + friendId;
-                                window.history.pushState({path: newUrl}, '', newUrl);
+                                window.history.pushState({}, '', `?friend=${friendId}`);
+                                
+                                // Mobil görünümde mesaj alanını göster
+                                if (window.innerWidth <= 992) {
+                                    document.querySelector('.messages-container').classList.add('show-chat');
+                                }
                             });
                             
                             friendsList.appendChild(friendItem);
@@ -777,21 +949,41 @@
                                 });
                             
                             // Son mesaj bilgisini kontrol et
-                            firebase.database().ref(`lastMessages/${userId}_${friendId}`).once('value')
+                            const chatId = [userId, friendId].sort().join('_');
+                            
+                            // Doğrudan mesajlardan son mesajı bul
+                            firebase.database().ref('messages/' + chatId)
+                                .orderByChild('timestamp')
+                                .limitToLast(1)
+                                .once('value')
                                 .then((messageSnapshot) => {
-                                    const lastMessageData = messageSnapshot.val();
-                                    
-                                    if (lastMessageData) {
-                                        // Son mesaj bilgisini ekle
-                                        const friendInfo = friendItem.querySelector('.friend-info');
-                                        if (friendInfo) {
-                                            friendInfo.insertAdjacentHTML('beforeend', `<p class="last-message">${lastMessageData.content}</p>`);
-                                        }
+                                    if (messageSnapshot.exists()) {
+                                        let lastMessage = null;
                                         
-                                        // Okunmamış mesaj sayısını kontrol et
-                                        if (lastMessageData.senderId === friendId && !lastMessageData.read) {
-                                            // Okunmamış mesaj sayısını ekle
-                                            friendItem.insertAdjacentHTML('beforeend', `<div class="unread-badge">1</div>`);
+                                        messageSnapshot.forEach((childSnapshot) => {
+                                            lastMessage = childSnapshot.val();
+                                        });
+                                        
+                                        if (lastMessage) {
+                                            // Mesajı deşifre et
+                                            let messageContent = lastMessage.content;
+                                            if (lastMessage.type === 'encrypted') {
+                                                try {
+                                                    messageContent = atob(lastMessage.content); // Base64 decoding
+                                                } catch (error) {
+                                                    console.error("Mesaj deşifre edilirken hata:", error);
+                                                    messageContent = "Mesaj okunamadı";
+                                                }
+                                            }
+                                            
+                                            // Son mesaj bilgisini ekle
+                                            const friendInfo = friendItem.querySelector('.friend-info');
+                                            if (friendInfo) {
+                                                friendInfo.insertAdjacentHTML('beforeend', `<p class="last-message">${messageContent}</p>`);
+                                            }
+                                            
+                                            // Okunmamış mesaj sayısını hesaplama ve güncelleme
+                                            updateUnreadMessageCount(chatId, friendId, userId);
                                         }
                                     }
                                 })
@@ -851,6 +1043,172 @@
                 this.style.height = (this.scrollHeight) + 'px';
             });
 
+            // Yeni mesajları dinleme
+            function listenForNewMessages(userId) {
+                console.log("Yeni mesaj dinleyicileri başlatılıyor...");
+                
+                // Tüm mesaj koleksiyonlarını dinle
+                firebase.database().ref('messages').on('child_added', function(chatSnapshot) {
+                    const chatId = chatSnapshot.key;
+                    const chatParts = chatId.split('_');
+                    
+                    // Eğer bu sohbet kullanıcıya ait değilse, atla
+                    if (!chatParts.includes(userId)) return;
+                    
+                    console.log("Yeni mesaj koleksiyonu algılandı:", chatId);
+                    
+                    // Arkadaş ID'sini bul
+                    const friendId = chatParts[0] === userId ? chatParts[1] : chatParts[0];
+                    
+                    // Arkadaş listesini güncelle
+                    updateFriendLastMessage(userId, friendId);
+                });
+                
+                // Mesaj değişikliklerini dinle
+                firebase.database().ref('messages').on('child_changed', function(chatSnapshot) {
+                    const chatId = chatSnapshot.key;
+                    const chatParts = chatId.split('_');
+                    
+                    // Eğer bu sohbet kullanıcıya ait değilse, atla
+                    if (!chatParts.includes(userId)) return;
+                    
+                    console.log("Mesaj değişikliği algılandı:", chatId);
+                    
+                    // Arkadaş ID'sini bul
+                    const friendId = chatParts[0] === userId ? chatParts[1] : chatParts[0];
+                    
+                    // Arkadaş listesini güncelle
+                    updateFriendLastMessage(userId, friendId);
+                    
+                    // Eğer bu arkadaşla aktif bir sohbet varsa
+                    if (friendId === currentFriendId) {
+                        // Yeni mesajları kontrol et ve UI'a ekle
+                        updateActiveChatMessages(chatId, userId, friendId);
+                    }
+                });
+                
+                // Yeni mesajları dinle
+                firebase.database().ref('messages').on('child_changed', function(chatSnapshot) {
+                    const chatId = chatSnapshot.key;
+                    const chatParts = chatId.split('_');
+                    
+                    // Eğer bu sohbet kullanıcıya ait değilse, atla
+                    if (!chatParts.includes(userId)) return;
+                    
+                    // Arkadaş ID'sini bul
+                    const friendId = chatParts[0] === userId ? chatParts[1] : chatParts[0];
+                    
+                    // Eğer bu arkadaşla aktif bir sohbet varsa
+                    if (friendId === currentFriendId) {
+                        // Mesajları okundu olarak işaretle
+                        markMessagesAsRead(friendId);
+                    }
+                });
+            }
+            
+            // Arkadaşın son mesajını güncelle
+            function updateFriendLastMessage(userId, friendId) {
+                console.log("Arkadaş son mesajı güncelleniyor:", friendId);
+                
+                const chatId = [userId, friendId].sort().join('_');
+                
+                // Son mesajı bul
+                firebase.database().ref('messages/' + chatId)
+                    .orderByChild('timestamp')
+                    .limitToLast(1)
+                    .once('value')
+                    .then((messageSnapshot) => {
+                        if (messageSnapshot.exists()) {
+                            let lastMessage = null;
+                            
+                            messageSnapshot.forEach((childSnapshot) => {
+                                lastMessage = childSnapshot.val();
+                            });
+                            
+                            if (lastMessage) {
+                                // Mesajı deşifre et
+                                let messageContent = lastMessage.content;
+                                if (lastMessage.type === 'encrypted') {
+                                    try {
+                                        messageContent = atob(lastMessage.content); // Base64 decoding
+                                    } catch (error) {
+                                        console.error("Mesaj deşifre edilirken hata:", error);
+                                        messageContent = "Mesaj okunamadı";
+                                    }
+                                }
+                                
+                                // Son mesajı arkadaş listesinde güncelle
+                                updateLastMessageInFriendsList(friendId, messageContent);
+                                
+                                // Okunmamış mesaj sayısını güncelle
+                                if (lastMessage.senderId === friendId && !lastMessage.read && friendId !== currentFriendId) {
+                                    updateUnreadMessageCount(chatId, friendId, userId);
+                                } else {
+                                    // Her durumda okunmamış mesaj sayısını kontrol et
+                                    updateUnreadMessageCount(chatId, friendId, userId);
+                                }
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Son mesaj bilgisi yüklenirken hata:", error);
+                    });
+            }
+            
+            // Aktif sohbetteki mesajları güncelle
+            function updateActiveChatMessages(chatId, userId, friendId) {
+                console.log("Aktif sohbet mesajları güncelleniyor");
+                
+                firebase.database().ref('messages/' + chatId)
+                    .orderByChild('timestamp')
+                    .once('value')
+                    .then((snapshot) => {
+                        const messages = snapshot.val();
+                        
+                        if (!messages) return;
+                        
+                        // Mesajları temizle
+                        chatMessages.innerHTML = '';
+                        
+                        // Mesajları ekle
+                        Object.keys(messages).forEach(key => {
+                            const message = messages[key];
+                            const isUserMessage = message.senderId === userId;
+                            
+                            // Mesajı deşifre et
+                            let messageContent = message.content;
+                            if (message.type === 'encrypted') {
+                                try {
+                                    messageContent = atob(message.content); // Base64 decoding
+                                } catch (error) {
+                                    console.error("Mesaj deşifre edilirken hata:", error);
+                                    messageContent = "Mesaj okunamadı";
+                                }
+                            }
+                            
+                            const messageHTML = isUserMessage ? 
+                                `<div class="user-message" data-message-id="${key}">
+                                    <div class="message-content">
+                                        <p>${messageContent}</p>
+                                    </div>
+                                </div>` :
+                                `<div class="friend-message" data-message-id="${key}">
+                                    <div class="friend-avatar">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div class="message-content">
+                                        <p>${messageContent}</p>
+                                    </div>
+                                </div>`;
+                            
+                            chatMessages.insertAdjacentHTML('beforeend', messageHTML);
+                        });
+                        
+                        // Sohbeti en alta kaydır
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    });
+            }
+            
             // Mesaj gönderme
             function sendMessage() {
                 const message = messageInput.value.trim();
@@ -878,27 +1236,34 @@
                     // Sohbet ID'sini oluştur (küçük ID önce olacak şekilde)
                     const chatId = [userId, currentFriendId].sort().join('_');
                     
-                    // Mesajı veritabanına ekle
+                    // Mesajı önce UI'a ekle (daha hızlı yanıt için)
+                    const messageHTML = `
+                        <div class="user-message">
+                            <div class="message-content">
+                                <p>${message}</p>
+                            </div>
+                        </div>`;
+                    
+                    chatMessages.insertAdjacentHTML('beforeend', messageHTML);
+                    
+                    // Sohbeti en alta kaydır (animasyon olmadan)
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    // Arkadaş listesindeki son mesajı anında güncelle
+                    updateLastMessageInFriendsList(currentFriendId, message);
+                    
+                    // Yeni mesajı ekle
                     firebase.database().ref('messages/' + chatId).push(messageData)
-                        .then(() => {
-                            console.log("Mesaj başarıyla gönderildi");
-                            
-                            // Son mesaj bilgisini güncelle
-                            const lastMessageData = {
-                                senderId: userId,
-                                content: message, // Son mesaj şifrelenmemiş olarak gösterilsin
-                                timestamp: firebase.database.ServerValue.TIMESTAMP,
-                                read: false
-                            };
-                            
-                            // Kullanıcı için son mesaj
-                            firebase.database().ref(`lastMessages/${userId}_${currentFriendId}`).set(lastMessageData);
-                            
-                            // Arkadaş için son mesaj
-                            firebase.database().ref(`lastMessages/${currentFriendId}_${userId}`).set(lastMessageData);
+                        .then((ref) => {
+                            console.log("Mesaj başarıyla gönderildi, ID:", ref.key);
                             
                             // Bildirim gönder
                             sendNotification(currentFriendId, message);
+                            
+                            // Mesaj değişikliğini tetiklemek için özel bir güncelleme yap
+                            const updateData = {};
+                            updateData[ref.key + '/timestamp'] = firebase.database.ServerValue.TIMESTAMP;
+                            firebase.database().ref('messages/' + chatId).update(updateData);
                         })
                         .catch(error => {
                             console.error("Mesaj gönderilirken hata:", error);
@@ -975,12 +1340,12 @@
                         }
                         
                         const messageHTML = isUserMessage ? 
-                            `<div class="user-message">
+                            `<div class="user-message" data-message-id="${key}">
                                 <div class="message-content">
                                     <p>${messageContent}</p>
                                 </div>
                             </div>` :
-                            `<div class="friend-message">
+                            `<div class="friend-message" data-message-id="${key}">
                                 <div class="friend-avatar">
                                     <i class="fas fa-user"></i>
                                 </div>
@@ -992,7 +1357,7 @@
                         chatMessages.insertAdjacentHTML('beforeend', messageHTML);
                     });
                     
-                    // Sohbeti en alta kaydır
+                    // Sohbeti en alta kaydır (animasyon olmadan)
                     chatMessages.scrollTop = chatMessages.scrollHeight;
                     
                     // Mesajları okundu olarak işaretle
@@ -1008,34 +1373,35 @@
                 const chatId = [userId, friendId].sort().join('_');
                 
                 // Veritabanındaki tüm mesajları kontrol et
-                firebase.database().ref('messages/' + chatId).orderByChild('senderId').equalTo(friendId).once('value')
+                firebase.database().ref('messages/' + chatId)
+                    .orderByChild('senderId')
+                    .equalTo(friendId)
+                    .once('value')
                     .then((snapshot) => {
                         const messages = snapshot.val();
                         if (!messages) return;
                         
                         // Her bir mesajı okundu olarak işaretle
+                        const updates = {};
                         Object.keys(messages).forEach(key => {
                             const message = messages[key];
                             if (!message.read) {
-                                firebase.database().ref('messages/' + chatId + '/' + key).update({
-                                    read: true
-                                });
+                                updates[key + '/read'] = true;
                             }
                         });
                         
-                        // Son mesaj bilgisini güncelle
-                        firebase.database().ref(`lastMessages/${userId}_${friendId}`).once('value')
-                            .then((lastMessageSnapshot) => {
-                                const lastMessage = lastMessageSnapshot.val();
-                                if (lastMessage && lastMessage.senderId === friendId && !lastMessage.read) {
-                                    firebase.database().ref(`lastMessages/${userId}_${friendId}`).update({
-                                        read: true
-                                    });
-                                }
-                            });
-                        
-                        // Okunmamış mesaj sayısını güncelle
-                        updateUnreadBadge(friendId, 0);
+                        // Toplu güncelleme yap
+                        if (Object.keys(updates).length > 0) {
+                            firebase.database().ref('messages/' + chatId).update(updates)
+                                .then(() => {
+                                    console.log("Mesajlar okundu olarak işaretlendi");
+                                    // Okunmamış mesaj sayısını güncelle
+                                    updateUnreadBadge(friendId, 0);
+                                })
+                                .catch(error => {
+                                    console.error("Mesajlar okundu olarak işaretlenirken hata:", error);
+                                });
+                        }
                     });
             }
             
@@ -1054,69 +1420,6 @@
                         friendItem.insertAdjacentHTML('beforeend', `<div class="unread-badge">${count}</div>`);
                     }
                 }
-            }
-            
-            // Yeni mesajları dinleme
-            function listenForNewMessages(userId) {
-                // Kullanıcının tüm son mesajlarını dinle
-                firebase.database().ref(`lastMessages`).orderByKey().startAt(userId + '_').endAt(userId + '_\uf8ff').on('child_added', (snapshot) => {
-                    const lastMessageData = snapshot.val();
-                    const key = snapshot.key;
-                    
-                    // Mesaj kullanıcıdan değilse ve okunmadıysa
-                    if (lastMessageData && lastMessageData.senderId !== userId && !lastMessageData.read) {
-                        // Arkadaş ID'sini al
-                        const friendId = key.split('_')[1];
-                        
-                        // Eğer bu arkadaşla sohbet açık değilse, okunmamış mesaj sayısını güncelle
-                        if (friendId !== currentFriendId) {
-                            // Okunmamış mesaj sayısını hesapla
-                            firebase.database().ref('messages/' + [userId, friendId].sort().join('_'))
-                                .orderByChild('senderId').equalTo(friendId).orderByChild('read').equalTo(false)
-                                .once('value', (messagesSnapshot) => {
-                                    const unreadCount = messagesSnapshot.numChildren();
-                                    updateUnreadBadge(friendId, unreadCount);
-                                });
-                        }
-                    }
-                });
-                
-                // Son mesaj değişikliklerini dinle
-                firebase.database().ref(`lastMessages`).orderByKey().startAt(userId + '_').endAt(userId + '_\uf8ff').on('child_changed', (snapshot) => {
-                    const lastMessageData = snapshot.val();
-                    const key = snapshot.key;
-                    
-                    // Mesaj kullanıcıdan değilse
-                    if (lastMessageData && lastMessageData.senderId !== userId) {
-                        // Arkadaş ID'sini al
-                        const friendId = key.split('_')[1];
-                        
-                        // Arkadaş listesindeki son mesajı güncelle
-                        const friendItem = document.querySelector(`.friend-item[data-friend-id="${friendId}"]`);
-                        if (friendItem) {
-                            const lastMessageElement = friendItem.querySelector('.last-message');
-                            if (lastMessageElement) {
-                                lastMessageElement.textContent = lastMessageData.content;
-                            } else {
-                                const friendInfo = friendItem.querySelector('.friend-info');
-                                if (friendInfo) {
-                                    friendInfo.insertAdjacentHTML('beforeend', `<p class="last-message">${lastMessageData.content}</p>`);
-                                }
-                            }
-                            
-                            // Eğer bu arkadaşla sohbet açık değilse, okunmamış mesaj sayısını güncelle
-                            if (friendId !== currentFriendId && !lastMessageData.read) {
-                                // Okunmamış mesaj sayısını hesapla
-                                firebase.database().ref('messages/' + [userId, friendId].sort().join('_'))
-                                    .orderByChild('senderId').equalTo(friendId).orderByChild('read').equalTo(false)
-                                    .once('value', (messagesSnapshot) => {
-                                        const unreadCount = messagesSnapshot.numChildren();
-                                        updateUnreadBadge(friendId, unreadCount);
-                                    });
-                            }
-                        }
-                    }
-                });
             }
             
             // Arkadaş arama işlevi
@@ -1161,6 +1464,14 @@
             
             // Çevrimiçi durumu güncelleme
             function updateOnlineStatus() {
+                // Kullanıcı oturum açmış mı kontrol et
+                if (!firebase.auth().currentUser) {
+                    console.log("Kullanıcı henüz oturum açmamış, çevrimiçi durumu güncellenemiyor");
+                    // Kullanıcı oturum açtığında tekrar dene
+                    setTimeout(updateOnlineStatus, 1000);
+                    return;
+                }
+                
                 const userId = firebase.auth().currentUser.uid;
                 const userStatusRef = firebase.database().ref('status/' + userId);
                 
@@ -1184,6 +1495,104 @@
             
             // Çevrimiçi durumu güncellemeyi başlat
             updateOnlineStatus();
+
+            // Okunmamış mesaj sayısını hesaplama ve güncelleme
+            function updateUnreadMessageCount(chatId, friendId, userId) {
+                firebase.database().ref('messages/' + chatId)
+                    .orderByChild('senderId')
+                    .equalTo(friendId)
+                    .once('value')
+                    .then((snapshot) => {
+                        if (snapshot.exists()) {
+                            let unreadCount = 0;
+                            
+                            // Okunmamış mesajları say
+                            snapshot.forEach((childSnapshot) => {
+                                const message = childSnapshot.val();
+                                if (!message.read) {
+                                    unreadCount++;
+                                }
+                            });
+                            
+                            // Okunmamış mesaj sayısını güncelle
+                            updateUnreadBadge(friendId, unreadCount);
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Okunmamış mesaj sayısı hesaplanırken hata:", error);
+                    });
+            }
+
+            // Her saniyede bir son mesajları güncelleme
+            function startLastMessageRefresher(userId) {
+                console.log("Son mesaj yenileyici başlatılıyor...");
+                
+                // Global zamanlayıcı değişkeni
+                window.lastMessageRefresher = setInterval(function() {
+                    console.log("Son mesajlar yenileniyor...");
+                    
+                    // Tüm arkadaşları al
+                    firebase.database().ref('users/' + userId + '/friends').once('value')
+                        .then((snapshot) => {
+                            const friends = snapshot.val();
+                            if (!friends) return;
+                            
+                            // Her bir arkadaş için son mesajı güncelle
+                            Object.keys(friends).forEach(friendId => {
+                                const chatId = [userId, friendId].sort().join('_');
+                                
+                                // Son mesajı bul
+                                firebase.database().ref('messages/' + chatId)
+                                    .orderByChild('timestamp')
+                                    .limitToLast(1)
+                                    .once('value')
+                                    .then((messageSnapshot) => {
+                                        if (messageSnapshot.exists()) {
+                                            let lastMessage = null;
+                                            
+                                            messageSnapshot.forEach((childSnapshot) => {
+                                                lastMessage = childSnapshot.val();
+                                            });
+                                            
+                                            if (lastMessage) {
+                                                // Mesajı deşifre et
+                                                let messageContent = lastMessage.content;
+                                                if (lastMessage.type === 'encrypted') {
+                                                    try {
+                                                        messageContent = atob(lastMessage.content); // Base64 decoding
+                                                    } catch (error) {
+                                                        console.error("Mesaj deşifre edilirken hata:", error);
+                                                        messageContent = "Mesaj okunamadı";
+                                                    }
+                                                }
+                                                
+                                                // Son mesajı arkadaş listesinde güncelle
+                                                updateLastMessageInFriendsList(friendId, messageContent);
+                                                
+                                                // Okunmamış mesaj sayısını güncelle
+                                                if (lastMessage.senderId === friendId && !lastMessage.read && friendId !== currentFriendId) {
+                                                    updateUnreadMessageCount(chatId, friendId, userId);
+                                                }
+                                            }
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error("Son mesaj bilgisi yüklenirken hata:", error);
+                                    });
+                            });
+                        })
+                        .catch(error => {
+                            console.error("Arkadaş listesi yüklenirken hata:", error);
+                        });
+                }, 1000); // Her 1 saniyede bir yenile
+                
+                // Sayfa kapatıldığında zamanlayıcıyı temizle
+                window.addEventListener('beforeunload', function() {
+                    if (window.lastMessageRefresher) {
+                        clearInterval(window.lastMessageRefresher);
+                    }
+                });
+            }
         });
 
         // Sınav türü metni alma fonksiyonu
@@ -1201,6 +1610,24 @@
         // Arkadaşlar sayfasından mesaj gönderme fonksiyonu
         function sendMessage(friendId) {
             window.location.href = `messages.html?friend=${friendId}`;
+        }
+
+        // Son mesajı arkadaş listesinde güncelleme
+        function updateLastMessageInFriendsList(friendId, messageContent) {
+            const friendItem = document.querySelector(`.friend-item[data-friend-id="${friendId}"]`);
+            if (friendItem) {
+                const friendInfo = friendItem.querySelector('.friend-info');
+                if (friendInfo) {
+                    const lastMessageElement = friendInfo.querySelector('.last-message');
+                    if (lastMessageElement) {
+                        // Son mesaj elementi varsa içeriğini güncelle
+                        lastMessageElement.textContent = messageContent;
+                    } else {
+                        // Son mesaj elementi yoksa yeni bir element ekle
+                        friendInfo.insertAdjacentHTML('beforeend', `<p class="last-message">${messageContent}</p>`);
+                    }
+                }
+            }
         }
     </script>
 </body>

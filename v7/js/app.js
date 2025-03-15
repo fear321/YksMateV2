@@ -1,6 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Sayfa yüklendi, uygulama başlatılıyor...");
     
+    // Service Worker'ı kaydet (PWA desteği için)
+    registerServiceWorker();
+    
     // Uygulama bileşenlerini başlat
     initializeApp();
     
@@ -16,6 +19,19 @@ document.addEventListener('DOMContentLoaded', () => {
         alert("Sistem yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.");
     }
 });
+
+// Service Worker'ı kaydet
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+                console.log('Service Worker başarıyla kaydedildi:', registration.scope);
+            })
+            .catch(error => {
+                console.error('Service Worker kaydı başarısız oldu:', error);
+            });
+    }
+}
 
 // NOT: Otomatik kaydetme işlevleri firebase-config.js dosyasına taşındı
 // Aşağıdaki işlevler kaldırıldı:
@@ -357,4 +373,482 @@ function getExamTypeText(examType) {
         case 'dil': return 'Dil';
         default: return 'TYT';
     }
-} 
+}
+
+// Okunmamış mesaj ve bildirim sistemi
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Okunmamış mesaj ve bildirim sistemi başlatılıyor...");
+    
+    // Firebase bağlantısını kontrol et
+    if (typeof firebase === 'undefined') {
+        console.error("Firebase tanımlı değil!");
+        return;
+    }
+    
+    // Kullanıcı oturum açmış mı kontrol et
+    firebase.auth().onAuthStateChanged(function(user) {
+        if (user) {
+            console.log("Kullanıcı oturum açmış, okunmamış mesaj sayısı takip ediliyor:", user.uid);
+            
+            // Okunmamış mesaj sayısını takip etmeye başla
+            startUnreadMessagesCounter(user.uid);
+            
+            // Bildirim sistemini başlat
+            startNotificationSystem(user.uid);
+        }
+    });
+    
+    // Okunmamış mesaj sayısını takip etme
+    function startUnreadMessagesCounter(userId) {
+        // Sidebar'daki mesajlar menü öğesini bul
+        const messagesMenuItem = document.querySelector('.sidebar-nav a[href="messages.html"] i');
+        if (!messagesMenuItem) {
+            console.warn("Mesajlar menü öğesi bulunamadı");
+            return;
+        }
+        
+        // Mesajlar menü öğesinin yanına rozet ekle (eğer yoksa)
+        let unreadBadge = messagesMenuItem.nextElementSibling;
+        if (!unreadBadge || !unreadBadge.classList.contains('unread-messages-badge')) {
+            unreadBadge = document.createElement('span');
+            unreadBadge.className = 'unread-messages-badge';
+            unreadBadge.style.backgroundColor = '#4a6cf7';
+            unreadBadge.style.color = 'white';
+            unreadBadge.style.borderRadius = '50%';
+            unreadBadge.style.width = '18px';
+            unreadBadge.style.height = '18px';
+            unreadBadge.style.display = 'inline-flex';
+            unreadBadge.style.alignItems = 'center';
+            unreadBadge.style.justifyContent = 'center';
+            unreadBadge.style.fontSize = '0.7rem';
+            unreadBadge.style.marginLeft = '5px';
+            unreadBadge.style.position = 'absolute';
+            unreadBadge.style.right = '10px';
+            unreadBadge.style.top = '50%';
+            unreadBadge.style.transform = 'translateY(-50%)';
+            unreadBadge.textContent = '0';
+            unreadBadge.style.display = 'none'; // Başlangıçta gizli
+            
+            // Mesajlar menü öğesinin parent elementine ekle
+            messagesMenuItem.parentElement.style.position = 'relative';
+            messagesMenuItem.parentElement.appendChild(unreadBadge);
+        }
+        
+        // Her saniyede bir okunmamış mesaj sayısını güncelle
+        window.unreadMessagesCounter = setInterval(function() {
+            updateUnreadMessagesCount(userId, unreadBadge);
+        }, 1000);
+        
+        // Sayfa kapatıldığında zamanlayıcıyı temizle
+        window.addEventListener('beforeunload', function() {
+            if (window.unreadMessagesCounter) {
+                clearInterval(window.unreadMessagesCounter);
+            }
+        });
+    }
+    
+    // Okunmamış mesaj sayısını güncelleme
+    function updateUnreadMessagesCount(userId, badgeElement) {
+        // Kullanıcının arkadaşlarını al
+        firebase.database().ref('users/' + userId + '/friends').once('value')
+            .then((snapshot) => {
+                const friends = snapshot.val();
+                if (!friends) return;
+                
+                let totalUnreadCount = 0;
+                let promises = [];
+                
+                // Her bir arkadaş için okunmamış mesaj sayısını hesapla
+                Object.keys(friends).forEach(friendId => {
+                    const chatId = [userId, friendId].sort().join('_');
+                    
+                    // Okunmamış mesajları say
+                    const promise = firebase.database().ref('messages/' + chatId)
+                        .orderByChild('senderId')
+                        .equalTo(friendId)
+                        .once('value')
+                        .then((messagesSnapshot) => {
+                            if (messagesSnapshot.exists()) {
+                                let unreadCount = 0;
+                                
+                                messagesSnapshot.forEach((childSnapshot) => {
+                                    const message = childSnapshot.val();
+                                    if (!message.read) {
+                                        unreadCount++;
+                                    }
+                                });
+                                
+                                totalUnreadCount += unreadCount;
+                            }
+                        });
+                    
+                    promises.push(promise);
+                });
+                
+                // Tüm sorguların tamamlanmasını bekle
+                Promise.all(promises).then(() => {
+                    // Rozeti güncelle
+                    if (totalUnreadCount > 0) {
+                        badgeElement.textContent = totalUnreadCount > 99 ? '99+' : totalUnreadCount;
+                        badgeElement.style.display = 'inline-flex';
+                    } else {
+                        badgeElement.style.display = 'none';
+                    }
+                    
+                    // Bildirim sayısını da güncelle
+                    updateNotificationBadge(totalUnreadCount);
+                });
+            })
+            .catch(error => {
+                console.error("Okunmamış mesaj sayısı hesaplanırken hata:", error);
+            });
+    }
+    
+    // Bildirim rozetini güncelleme
+    function updateNotificationBadge(unreadCount) {
+        const notificationBadge = document.querySelector('.notification-badge');
+        if (notificationBadge) {
+            if (unreadCount > 0) {
+                notificationBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                notificationBadge.style.display = 'inline-flex';
+            } else {
+                notificationBadge.style.display = 'none';
+            }
+        }
+    }
+    
+    // Bildirim sistemini başlatma
+    function startNotificationSystem(userId) {
+        // Bildirim butonunu bul
+        const notificationBtn = document.querySelector('.notification-btn');
+        if (!notificationBtn) {
+            console.warn("Bildirim butonu bulunamadı");
+            return;
+        }
+        
+        // Tarayıcı bildirimlerine izin iste
+        requestNotificationPermission();
+        
+        // Bildirim paneli oluştur (eğer yoksa)
+        let notificationPanel = document.querySelector('.notification-panel');
+        if (!notificationPanel) {
+            notificationPanel = document.createElement('div');
+            notificationPanel.className = 'notification-panel';
+            
+            // Bildirim panelini bildirim butonunun parent elementine ekle
+            notificationBtn.parentElement.style.position = 'relative';
+            notificationBtn.parentElement.appendChild(notificationPanel);
+            
+            // Bildirim butonuna tıklama olayı ekle
+            notificationBtn.addEventListener('click', function() {
+                if (notificationPanel.style.display === 'none' || !notificationPanel.style.display) {
+                    notificationPanel.style.display = 'block';
+                    // Bildirimleri yükle
+                    loadNotifications(userId, notificationPanel);
+                } else {
+                    notificationPanel.style.display = 'none';
+                }
+            });
+            
+            // Dışarı tıklandığında bildirim panelini kapat
+            document.addEventListener('click', function(event) {
+                if (!notificationBtn.contains(event.target) && !notificationPanel.contains(event.target)) {
+                    notificationPanel.style.display = 'none';
+                }
+            });
+        }
+        
+        // Her 5 saniyede bir bildirimleri güncelle
+        window.notificationUpdater = setInterval(function() {
+            if (notificationPanel.style.display === 'block') {
+                loadNotifications(userId, notificationPanel);
+            }
+            
+            // Yeni mesajları kontrol et ve bildirim gönder
+            checkForNewMessages(userId);
+        }, 5000);
+        
+        // Sayfa kapatıldığında zamanlayıcıyı temizle
+        window.addEventListener('beforeunload', function() {
+            if (window.notificationUpdater) {
+                clearInterval(window.notificationUpdater);
+            }
+        });
+        
+        // Son kontrol edilen mesaj zamanını sakla
+        window.lastCheckedTime = Date.now();
+    }
+    
+    // Tarayıcı bildirimlerine izin iste
+    function requestNotificationPermission() {
+        // Bildirim API'si var mı kontrol et
+        if (!("Notification" in window)) {
+            console.warn("Bu tarayıcı bildirim desteği sunmuyor");
+            return;
+        }
+        
+        // İzin durumunu kontrol et
+        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+            Notification.requestPermission().then(function (permission) {
+                if (permission === "granted") {
+                    console.log("Bildirim izni verildi");
+                }
+            });
+        }
+    }
+    
+    // Yeni mesajları kontrol et ve bildirim gönder
+    function checkForNewMessages(userId) {
+        // Son kontrol zamanı
+        const lastChecked = window.lastCheckedTime || Date.now();
+        
+        // Kullanıcının arkadaşlarını al
+        firebase.database().ref('users/' + userId + '/friends').once('value')
+            .then((snapshot) => {
+                const friends = snapshot.val();
+                if (!friends) return;
+                
+                let newMessages = {};
+                let promises = [];
+                
+                // Her bir arkadaş için yeni mesajları kontrol et
+                Object.keys(friends).forEach(friendId => {
+                    const chatId = [userId, friendId].sort().join('_');
+                    const friendData = friends[friendId];
+                    
+                    // Son kontrol zamanından sonra gelen mesajları al
+                    const promise = firebase.database().ref('messages/' + chatId)
+                        .orderByChild('timestamp')
+                        .startAt(lastChecked)
+                        .once('value')
+                        .then((messagesSnapshot) => {
+                            if (messagesSnapshot.exists()) {
+                                messagesSnapshot.forEach((childSnapshot) => {
+                                    const message = childSnapshot.val();
+                                    // Sadece arkadaştan gelen mesajları kontrol et
+                                    if (message.senderId === friendId) {
+                                        // Mesajı deşifre et
+                                        let messageContent = message.content;
+                                        if (message.type === 'encrypted') {
+                                            try {
+                                                messageContent = atob(message.content); // Base64 decoding
+                                            } catch (error) {
+                                                console.error("Mesaj deşifre edilirken hata:", error);
+                                                messageContent = "Mesaj okunamadı";
+                                            }
+                                        }
+                                        
+                                        // Arkadaş için mesaj listesi oluştur
+                                        if (!newMessages[friendId]) {
+                                            newMessages[friendId] = {
+                                                name: friendData.name || 'İsimsiz Kullanıcı',
+                                                messages: []
+                                            };
+                                        }
+                                        
+                                        // Mesajı listeye ekle
+                                        newMessages[friendId].messages.push({
+                                            content: messageContent,
+                                            timestamp: message.timestamp
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    
+                    promises.push(promise);
+                });
+                
+                // Tüm sorguların tamamlanmasını bekle
+                Promise.all(promises).then(() => {
+                    // Yeni mesaj varsa bildirim gönder
+                    Object.keys(newMessages).forEach(friendId => {
+                        const friend = newMessages[friendId];
+                        if (friend.messages.length > 0) {
+                            // Mesajları zamana göre sırala (en yeniler üstte)
+                            friend.messages.sort((a, b) => b.timestamp - a.timestamp);
+                            
+                            // Son 3 mesajı al
+                            const recentMessages = friend.messages.slice(0, 3);
+                            
+                            // Bildirim içeriğini oluştur
+                            let notificationContent = '';
+                            if (recentMessages.length === 1) {
+                                notificationContent = recentMessages[0].content;
+                            } else {
+                                notificationContent = `${recentMessages.length} yeni mesaj: "${recentMessages[0].content}" ve diğerleri`;
+                            }
+                            
+                            // Tarayıcı bildirimi gönder
+                            sendBrowserNotification(friend.name, notificationContent, friendId);
+                        }
+                    });
+                    
+                    // Son kontrol zamanını güncelle
+                    window.lastCheckedTime = Date.now();
+                });
+            })
+            .catch(error => {
+                console.error("Yeni mesajlar kontrol edilirken hata:", error);
+            });
+    }
+    
+    // Tarayıcı bildirimi gönder
+    function sendBrowserNotification(title, message, friendId) {
+        // Bildirim izni kontrol et
+        if (Notification.permission === "granted") {
+            // Bildirim oluştur
+            const notification = new Notification(title, {
+                body: message,
+                icon: '/img/logo.png' // Uygulamanızın logosu
+            });
+            
+            // Bildirime tıklandığında mesaj sayfasına yönlendir
+            notification.onclick = function() {
+                window.focus();
+                window.location.href = `messages.html?friend=${friendId}`;
+            };
+        }
+    }
+    
+    // Bildirimleri yükleme
+    function loadNotifications(userId, panelElement) {
+        // Kullanıcının arkadaşlarını al
+        firebase.database().ref('users/' + userId + '/friends').once('value')
+            .then((snapshot) => {
+                const friends = snapshot.val();
+                if (!friends) {
+                    panelElement.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Henüz bildirim bulunmuyor.</div>';
+                    return;
+                }
+                
+                let friendNotifications = {};
+                let promises = [];
+                
+                // Her bir arkadaş için okunmamış mesajları al
+                Object.keys(friends).forEach(friendId => {
+                    const chatId = [userId, friendId].sort().join('_');
+                    const friendData = friends[friendId];
+                    
+                    // Okunmamış mesajları al
+                    const promise = firebase.database().ref('messages/' + chatId)
+                        .orderByChild('senderId')
+                        .equalTo(friendId)
+                        .once('value')
+                        .then((messagesSnapshot) => {
+                            if (messagesSnapshot.exists()) {
+                                let unreadMessages = [];
+                                
+                                messagesSnapshot.forEach((childSnapshot) => {
+                                    const message = childSnapshot.val();
+                                    if (!message.read) {
+                                        // Mesajı deşifre et
+                                        let messageContent = message.content;
+                                        if (message.type === 'encrypted') {
+                                            try {
+                                                messageContent = atob(message.content); // Base64 decoding
+                                            } catch (error) {
+                                                console.error("Mesaj deşifre edilirken hata:", error);
+                                                messageContent = "Mesaj okunamadı";
+                                            }
+                                        }
+                                        
+                                        // Okunmamış mesajı listeye ekle
+                                        unreadMessages.push({
+                                            content: messageContent,
+                                            timestamp: message.timestamp
+                                        });
+                                    }
+                                });
+                                
+                                // Eğer okunmamış mesaj varsa, arkadaş için bildirim oluştur
+                                if (unreadMessages.length > 0) {
+                                    // Mesajları zamana göre sırala (en yeniler üstte)
+                                    unreadMessages.sort((a, b) => b.timestamp - a.timestamp);
+                                    
+                                    // Arkadaş için bildirim nesnesini oluştur
+                                    friendNotifications[friendId] = {
+                                        friendId: friendId,
+                                        friendName: friendData.name || 'İsimsiz Kullanıcı',
+                                        messages: unreadMessages,
+                                        latestTimestamp: unreadMessages[0].timestamp
+                                    };
+                                }
+                            }
+                        });
+                    
+                    promises.push(promise);
+                });
+                
+                // Tüm sorguların tamamlanmasını bekle
+                Promise.all(promises).then(() => {
+                    // Bildirimleri zamana göre sırala (en yeniler üstte)
+                    const sortedNotifications = Object.values(friendNotifications).sort((a, b) => b.latestTimestamp - a.latestTimestamp);
+                    
+                    // Bildirim panelini güncelle
+                    if (sortedNotifications.length === 0) {
+                        panelElement.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Henüz bildirim bulunmuyor.</div>';
+                    } else {
+                        let notificationHTML = '<div class="notification-panel-header"><h4>Bildirimler</h4></div>';
+                        
+                        sortedNotifications.forEach(notification => {
+                            // Son 3 mesajı al
+                            const recentMessages = notification.messages.slice(0, 3);
+                            
+                            // Mesaj içeriğini oluştur
+                            let messageContent = '';
+                            if (recentMessages.length === 1) {
+                                messageContent = recentMessages[0].content;
+                            } else {
+                                messageContent = `${recentMessages[0].content} <span class="notification-count">+${recentMessages.length - 1} mesaj daha</span>`;
+                            }
+                            
+                            notificationHTML += `
+                                <div class="notification-item" onclick="window.location.href='messages.html?friend=${notification.friendId}'">
+                                    <div class="notification-item-name">${notification.friendName}</div>
+                                    <div class="notification-item-message">${messageContent}</div>
+                                    <div class="notification-item-time">${formatTimestamp(notification.latestTimestamp)}</div>
+                                </div>
+                            `;
+                        });
+                        
+                        notificationHTML += `
+                            <div class="notification-panel-footer">
+                                <a href="messages.html">Tüm mesajları görüntüle</a>
+                            </div>
+                        `;
+                        
+                        panelElement.innerHTML = notificationHTML;
+                    }
+                });
+            })
+            .catch(error => {
+                console.error("Bildirimler yüklenirken hata:", error);
+                panelElement.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Bildirimler yüklenirken bir hata oluştu.</div>';
+            });
+    }
+    
+    // Zaman damgasını formatlama
+    function formatTimestamp(timestamp) {
+        const now = new Date();
+        const date = new Date(timestamp);
+        
+        const diffMs = now - date;
+        const diffSec = Math.floor(diffMs / 1000);
+        const diffMin = Math.floor(diffSec / 60);
+        const diffHour = Math.floor(diffMin / 60);
+        const diffDay = Math.floor(diffHour / 24);
+        
+        if (diffSec < 60) {
+            return 'Az önce';
+        } else if (diffMin < 60) {
+            return `${diffMin} dakika önce`;
+        } else if (diffHour < 24) {
+            return `${diffHour} saat önce`;
+        } else if (diffDay < 7) {
+            return `${diffDay} gün önce`;
+        } else {
+            return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+        }
+    }
+}); 
