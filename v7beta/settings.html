@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKSMate - Ayarlar</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/theme-styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo(192).png">
+    
+    <style>
+        /* Tema Önizleme Stilleri */
+        .light-theme-preview {
+            background-color: #f5f5f5;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
+        .dark-theme-preview {
+            background-color: #0a0a0a;
+            color: #f5f5f5;
+            border: 1px solid #333;
+        }
+        
+        /* Special Tema Stilleri */
+        .special-theme {
+            background: linear-gradient(135deg, #2c0a3d 0%, #3c1053 100%);
+            color: #f5f5f5;
+        }
+        
+        .special-theme .sidebar {
+            background: linear-gradient(180deg, #3c1053 0%, #2c0a3d 100%);
+            border-right: 1px solid #5e2a80;
+        }
+        
+        .special-theme .main-content {
+            background: linear-gradient(135deg, #2c0a3d 0%, #3c1053 100%);
+        }
+        
+        .special-theme .content-header {
+            background-color: rgba(44, 10, 61, 0.8);
+            border-bottom: 1px solid #5e2a80;
+        }
+        
+        .special-theme .card,
+        .special-theme .settings-content,
+        .special-theme .settings-tabs {
+            background-color: rgba(60, 16, 83, 0.7);
+            border: 1px solid #5e2a80;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .special-theme .btn-primary {
+            background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+            border: none;
+            color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .special-theme .btn-primary:hover {
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+        
+        .special-theme .btn-outline {
+            background: transparent;
+            border: 1px solid #9b59b6;
+            color: #f5f5f5;
+        }
+        
+        .special-theme .btn-outline:hover {
+            background: rgba(155, 89, 182, 0.2);
+            border: 1px solid #8e44ad;
+        }
+        
+        .special-theme input,
+        .special-theme select,
+        .special-theme textarea {
+            background-color: rgba(44, 10, 61, 0.8);
+            border: 1px solid #5e2a80;
+            color: #f5f5f5;
+        }
+        
+        .special-theme input:focus,
+        .special-theme select:focus,
+        .special-theme textarea:focus {
+            border-color: #9b59b6;
+            box-shadow: 0 0 0 2px rgba(155, 89, 182, 0.3);
+        }
+        
+        .special-theme .sidebar-nav a {
+            color: #f5f5f5;
+            border-left: 3px solid transparent;
+        }
+        
+        .special-theme .sidebar-nav a:hover,
+        .special-theme .sidebar-nav li.active a {
+            background-color: rgba(155, 89, 182, 0.2);
+            border-left: 3px solid #9b59b6;
+        }
+        
+        .special-theme .settings-tab {
+            background-color: rgba(44, 10, 61, 0.8);
+            border: 1px solid #5e2a80;
+            color: #f5f5f5;
+        }
+        
+        .special-theme .settings-tab.active,
+        .special-theme .settings-tab:hover {
+            background-color: rgba(155, 89, 182, 0.3);
+            border: 1px solid #9b59b6;
+        }
+        
+        .special-theme .page-title {
+            color: #f5f5f5;
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        
+        .special-theme .page-title:after {
+            content: "";
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: linear-gradient(90deg, #8e44ad, #9b59b6);
+            border-radius: 3px;
+        }
+        
+        .special-theme .search-bar {
+            background-color: rgba(44, 10, 61, 0.8);
+            border: 1px solid #5e2a80;
+        }
+        
+        .special-theme .search-bar input {
+            background-color: transparent;
+            color: #f5f5f5;
+        }
+        
+        .special-theme .notification-btn {
+            background-color: rgba(44, 10, 61, 0.8);
+            border: 1px solid #5e2a80;
+            color: #f5f5f5;
+        }
+        
+        .special-theme .notification-badge {
+            background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+            color: #fff;
+        }
+        
+        .special-theme .form-group label {
+            color: #f5f5f5;
+            font-weight: 500;
+        }
+        
+        .special-theme .checkbox-group {
+            background-color: rgba(44, 10, 61, 0.8);
+            border: 1px solid #5e2a80;
+        }
+        
+        .special-theme .checkbox-group input[type="checkbox"] {
+            border: 1px solid #5e2a80;
+            background-color: rgba(44, 10, 61, 0.8);
+        }
+        
+        .special-theme .checkbox-group label {
+            color: #f5f5f5;
+        }
+        
+        .special-theme .danger-zone {
+            background-color: rgba(44, 10, 61, 0.8);
+            border: 1px solid #e74c3c;
+        }
+        
+        .special-theme .btn-danger {
+            background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+            border: none;
+            color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .special-theme .btn-danger:hover {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+        
+        /* Tema Önizleme Stilleri */
+        .theme-options {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .theme-option {
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        /* Radio input'ları gizle */
+        .theme-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .theme-label {
+            display: block;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+        }
+        
+        .theme-label:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        input[type="radio"]:checked + .theme-label {
+            border-color: #8e44ad;
+            box-shadow: 0 0 15px rgba(142, 68, 173, 0.7);
+        }
+        
+        /* Özel Tema Kutucuğu Stilleri */
+        .custom-theme-preview {
+            background: linear-gradient(135deg, #740e1b 0%, #471b58 100%);
+            color: #f5f5f5;
+            position: relative;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .custom-theme-preview::before {
+            content: "";
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+        
+        .custom-theme-preview:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Form grupları için ek stiller */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        /* Ayarlar sayfası için ek stiller */
+        .settings-page {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        /* Ayarlar içeriği için animasyon */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .settings-content.active {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        /* Toast bildirimleri için stiller */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            z-index: 9999;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .toast-icon {
+            margin-right: 15px;
+            font-size: 20px;
+        }
+        
+        .success-toast .toast-icon {
+            color: #2ecc71;
+        }
+        
+        .toast-message {
+            font-weight: 500;
+        }
+
+        /* YksMate v1 Tema Önizleme Stili */
+        .yksmate-v1-preview {
+            background: linear-gradient(135deg, #740e1b 0%, #471b58 100%);
+            color: #f5f5f5;
+            border: 1px solid #471b58;
+        }
+    </style>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Ana JavaScript -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth-check.js"></script>
+    <script src="js/theme-utils.js"></script>
+    <script src="js/theme-manager.js"></script>
+    <script src="js/app.js"></script>
+
+</head>
+<body class="light-theme">
+    <div class="container">
+        <div class="dashboard-container" id="dashboardContainer" style="display: none;">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <a href="profile.html" style="text-decoration: none; color: inherit;">
+                            <h3 id="userName">Kullanıcı Adı</h3>
+                            <p id="userExamType">Bölüm: TYT</p>
+                        </a>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li>
+                            <a href="index.html"><i class="fas fa-home"></i> Ana Sayfa</a>
+                        </li>
+                        <li>
+                            <a href="exams.html"><i class="fas fa-file-alt"></i> Denemelerim</a>
+                        </li>
+                        <li>
+                            <a href="timer.html"><i class="fas fa-clock"></i> Zamanlayıcı</a>
+                        </li>
+                        <li>
+                            <a href="calendar.html"><i class="fas fa-calendar-alt"></i> Takvim</a>
+                        </li>
+                        <li>
+                            <a href="notes.html"><i class="fas fa-sticky-note"></i> Notlarım</a>
+                        </li>
+                        <li>
+                            <a href="community.html"><i class="fas fa-users"></i> Topluluk</a>
+                        </li>
+                        <li>
+                            <a href="friends.html"><i class="fas fa-user-friends"></i> Arkadaşlarım</a>
+                        </li>
+                        <li>
+                            <a href="messages.html"><i class="fas fa-comment"></i> Mesajlar</a>
+                        </li>
+                        <li>
+                            <a href="ai.html"><i class="fas fa-robot"></i> MateAI</a>
+                        </li>
+                        <li>
+                            <a href="profile.html"><i class="fas fa-user-circle"></i> Profil</a>
+                        </li>
+                        <li class="active">
+                            <a href="settings.html"><i class="fas fa-cog"></i> Ayarlar</a>
+                        </li>
+                    </ul>
+                </nav>
+
+            </div>
+
+            <!-- Sidebar Overlay -->
+            <div class="sidebar-overlay"></div>
+
+            <!-- Ana İçerik -->
+            <div class="main-content">
+                <header class="content-header">
+                    <button id="sidebarToggle" class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Ara...">
+                    </div>
+                    <div class="header-actions">
+                        <button class="theme-toggle" id="themeToggle">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <div class="notifications">
+                            <button class="notification-btn">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge">3</span>
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Ayarlar Sayfa İçeriği -->
+                <div class="page-content">
+                    <div class="settings-page">
+                        <h1 class="page-title">Ayarlar</h1>
+                        
+                        <!-- Ayarlar içeriği -->
+                        <div class="settings-container">
+                            <!-- Ayarlar Kategorileri -->
+
+                            
+                            <!-- Profil Ayarları -->
+                            <div class="settings-content active" id="profile-settings">
+                                <h2>Profil Ayarları</h2>
+                                <div class="settings-form">
+                                    <div class="form-group">
+                                        <label for="displayName">Ad Soyad</label>
+                                        <input type="text" id="displayName" placeholder="Ad Soyad" disabled>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="email">E-posta</label>
+                                        <input type="email" id="email" placeholder="E-posta" disabled>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="examType">Sınav Türü</label>
+                                        <select id="examType">
+                                            <option value="tyt">TYT</option>
+                                            <option value="sayisal">Sayısal</option>
+                                            <option value="sozel">Sözel</option>
+                                            <option value="esitagirlik">Eşit Ağırlık</option>
+                                            <option value="dil">Dil</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="targetUniversity">Hedef Üniversite</label>
+                                        <input type="text" id="targetUniversity" placeholder="Hedef Üniversite">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="targetDepartment">Hedef Bölüm</label>
+                                        <input type="text" id="targetDepartment" placeholder="Hedef Bölüm">
+                                    </div>
+                                    <button class="btn btn-primary" id="saveProfileBtn">
+                                        <i class="fas fa-save"></i> Kaydet
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Bildirim Ayarları -->
+                            <div class="settings-content" id="notifications-settings">
+                                <h2>Bildirim Ayarları</h2>
+                                <div class="settings-form">
+                                    <div class="form-group checkbox-group">
+                                        <input type="checkbox" id="emailNotifications" checked>
+                                        <label for="emailNotifications">E-posta Bildirimleri</label>
+                                    </div>
+                                    <div class="form-group checkbox-group">
+                                        <input type="checkbox" id="examReminders" checked>
+                                        <label for="examReminders">Deneme Sınavı Hatırlatıcıları</label>
+                                    </div>
+                                    <div class="form-group checkbox-group">
+                                        <input type="checkbox" id="studyReminders" checked>
+                                        <label for="studyReminders">Çalışma Programı Hatırlatıcıları</label>
+                                    </div>
+                                    <div class="form-group checkbox-group">
+                                        <input type="checkbox" id="newsUpdates">
+                                        <label for="newsUpdates">YKS Haberleri ve Güncellemeleri</label>
+                                    </div>
+                                    <div class="form-group checkbox-group">
+                                        <input type="checkbox" id="communityNotifications" checked>
+                                        <label for="communityNotifications">Topluluk Bildirimleri</label>
+                                    </div>
+                                    <button class="btn btn-primary" id="saveNotificationsBtn">
+                                        <i class="fas fa-save"></i> Kaydet
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Görünüm Ayarları -->
+                            <div class="settings-content" id="appearance-settings">
+                                <h2>Görünüm Ayarları</h2>
+                                <div class="settings-form">
+                                    <div class="form-group">
+                                        <label>Tema</label>
+                                        <div class="theme-options">
+                                            <div class="theme-option">
+                                                <input type="radio" name="theme" id="lightTheme" value="light">
+                                                <label for="lightTheme" class="theme-label light-theme-preview">
+                                                    <span>Açık Tema</span>
+                                                </label>
+                                            </div>
+                                            <div class="theme-option">
+                                                <input type="radio" name="theme" id="darkTheme" value="dark">
+                                                <label for="darkTheme" class="theme-label dark-theme-preview">
+                                                    <span>Koyu Tema</span>
+                                                </label>
+                                            </div>
+                                            <div class="theme-option">
+                                                <input type="radio" name="theme" id="YksMatev1Theme" value="YksMatev1Theme" onclick="window.location.href='yksmate-v1-theme.html'">
+                                                <label for="YksMatev1Theme" class="theme-label yksmate-v1-preview">
+                                                    <span>YksMatev1 Tema</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="fontSize">Yazı Boyutu</label>
+                                        <select id="fontSize">
+                                            <option value="small">Küçük</option>
+                                            <option value="medium" selected>Orta</option>
+                                            <option value="large">Büyük</option>
+                                        </select>
+                                    </div>
+                                    <button class="btn btn-primary" id="saveAppearanceBtn">
+                                        <i class="fas fa-save"></i> Kaydet
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Hesap Ayarları -->
+                            <div class="settings-content" id="account-settings">
+                                <h2>Hesap Ayarları</h2>
+                                <div class="settings-form">
+                                    <div class="form-group">
+                                        <label for="currentPassword">Mevcut Şifre</label>
+                                        <input type="password" id="currentPassword" placeholder="Mevcut Şifre">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="newPassword">Yeni Şifre</label>
+                                        <input type="password" id="newPassword" placeholder="Yeni Şifre">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="confirmPassword">Şifre Tekrar</label>
+                                        <input type="password" id="confirmPassword" placeholder="Şifre Tekrar">
+                                    </div>
+                                    <button class="btn btn-primary" id="changePasswordBtn">
+                                        <i class="fas fa-key"></i> Şifre Değiştir
+                                    </button>
+                                    
+                                    <div class="danger-zone">
+                                        <h3>Tehlikeli Bölge</h3>
+                                        <p>Bu işlemler geri alınamaz, dikkatli olun!</p>
+                                        <button class="btn btn-danger" id="deleteAccountBtn">
+                                            <i class="fas fa-trash-alt"></i> Hesabımı Sil
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Sayfa yüklendi, tema uygulanacak");
+            
+            // Tema bilgisini localStorage'dan al
+            const savedTheme = localStorage.getItem('theme');
+            const appearanceData = JSON.parse(localStorage.getItem('appearanceData')) || {};
+            const theme = appearanceData.theme || savedTheme || 'special';
+            
+            console.log("Yüklenen tema:", theme);
+            
+            // Temayı doğrudan uygula
+            if (theme === 'light') {
+                document.body.classList.remove('dark-theme');
+                document.body.classList.add('light-theme');
+                // Tema seçim butonunu güncelle
+                document.getElementById('lightTheme').checked = true;
+            } else if (theme === 'dark') {
+                document.body.classList.remove('light-theme');
+                document.body.classList.add('dark-theme');
+                // Tema seçim butonunu güncelle
+                document.getElementById('darkTheme').checked = true;
+            }
+            
+            // Üst menüdeki tema değiştirme butonu
+            document.getElementById('themeToggle').addEventListener('click', function() {
+                const currentTheme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
+                
+                // Temalar arasında geçiş yap
+                let newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                
+                console.log("Tema değiştiriliyor:", currentTheme, "->", newTheme);
+                
+                // Yeni temayı uygula - applyTheme içinde localStorage'a kaydedilecek
+                applyTheme(newTheme);
+                
+                // Tema değişikliği bildirimi göster
+                showToast(`${getThemeText(newTheme)} uygulandı`, 'theme');
+            });
+            
+            // Oturum kontrolü
+            try {
+                // Firebase oturumunu kontrol et
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        console.log("Kullanıcı oturum açmış:", user.uid);
+                        // Kullanıcı bilgilerini yükle
+                        loadUserData();
+                    } else {
+                        console.log("Kullanıcı oturum açmamış, localStorage'dan veri yüklenecek");
+                        // Kullanıcı bilgilerini yükle (localStorage'dan)
+                        loadUserData();
+                    }
+                    
+                    // Dashboard container'ı göster
+                    document.getElementById("dashboardContainer").style.display = "flex";
+                });
+            } catch (error) {
+                console.error("Oturum kontrolü hatası:", error);
+                // Hata durumunda da kullanıcı bilgilerini yükle
+                loadUserData();
+                // Dashboard container'ı göster
+                document.getElementById("dashboardContainer").style.display = "flex";
+            }
+
+            // Modal kapatma butonları için event listener
+            document.querySelectorAll('.close-modal').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.modal').forEach(modal => {
+                        modal.style.display = 'none';
+                    });
+                });
+            });
+
+            // Ayarlar sekmesi değiştirme
+            const settingsTabs = document.querySelectorAll('.settings-tab');
+            const settingsContents = document.querySelectorAll('.settings-content');
+            
+            settingsTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Aktif sekmeyi kaldır
+                    settingsTabs.forEach(t => t.classList.remove('active'));
+                    
+                    // Önce içerikleri gizle, sonra aktif olanı göster (animasyon için)
+                    settingsContents.forEach(c => {
+                        c.classList.remove('active');
+                        c.style.opacity = '0';
+                    });
+                    
+                    // Tıklanan sekmeyi aktif yap
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab');
+                    const activeContent = document.getElementById(`${tabId}-settings`);
+                    
+                    // Animasyonlu geçiş için timeout kullan
+                    setTimeout(() => {
+                        activeContent.classList.add('active');
+                        activeContent.style.opacity = '1';
+                    }, 50);
+                });
+            });
+
+            // Toast bildirimi gösterme fonksiyonu
+            function showToast(message, type = 'success') {
+                // Varsa önceki toast'ı kaldır
+                const existingToast = document.querySelector('.toast');
+                if (existingToast) {
+                    document.body.removeChild(existingToast);
+                }
+                
+                // Toast bildirimi oluştur
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}-toast`;
+                
+                let icon = 'check-circle';
+                if (type === 'error') icon = 'exclamation-circle';
+                
+                toast.innerHTML = `
+                    <div class="toast-icon"><i class="fas fa-${icon}"></i></div>
+                    <div class="toast-message">${message}</div>
+                `;
+                document.body.appendChild(toast);
+                
+                // Toast'ı göster
+                setTimeout(() => {
+                    toast.classList.add('show');
+                }, 100);
+                
+                // Toast'ı gizle
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => {
+                        document.body.removeChild(toast);
+                    }, 300);
+                }, 3000);
+            }
+
+            // Tema adını metin olarak döndüren yardımcı fonksiyon
+            function getThemeText(theme) {
+                switch(theme) {
+                    case 'light': return 'Açık Tema';
+                    case 'dark': return 'Koyu Tema';
+                    case 'special': return 'Special Tema';
+                    default: return 'Tema';
+                }
+            }
+
+            // Profil ayarlarını kaydet
+            document.getElementById('saveProfileBtn').addEventListener('click', async function() {
+                try {
+                    // Kaydetme animasyonu
+                    const button = this;
+                    const originalText = button.innerHTML;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...';
+                    button.disabled = true;
+                    
+                    const examType = document.getElementById('examType').value;
+                    const targetUniversity = document.getElementById('targetUniversity').value;
+                    const targetDepartment = document.getElementById('targetDepartment').value;
+                    
+                    // Profil verilerini hazırla
+                    const profileData = {
+                        examType: examType,
+                        targetUniversity: targetUniversity,
+                        targetDepartment: targetDepartment
+                    };
+                    
+                    // firebase-config.js'deki saveUserProfile fonksiyonunu kullan
+                    const success = await window.saveUserProfile(profileData);
+                    
+                    if (success) {
+                        // Başarılı olursa UI'ı manuel olarak da güncelle
+                        document.getElementById("userExamType").textContent = "Bölüm: " + getExamTypeText(examType);
+                        
+                        // Ayrıca examType select elementini de güncelle
+                        document.getElementById('examType').value = examType;
+                        
+                        // Verileri yeniden yükle - veritabanından en güncel verileri almak için
+                        setTimeout(() => {
+                            // Veritabanından verileri yeniden yükle
+                            firebase.database().ref('users/' + firebase.auth().currentUser.uid).once('value')
+                                .then((snapshot) => {
+                                    const rtdbData = snapshot.val();
+                                    if (rtdbData) {
+                                        console.log("Profil güncelleme sonrası veritabanından veriler yeniden yüklendi:", rtdbData);
+                                        
+                                        // Form alanlarını doldur
+                                        document.getElementById('displayName').value = rtdbData.name || '';
+                                        document.getElementById('examType').value = rtdbData.examType || 'tyt';
+                                        document.getElementById('targetUniversity').value = rtdbData.targetUniversity || '';
+                                        document.getElementById('targetDepartment').value = rtdbData.targetDepartment || '';
+                                        
+                                        // Kullanıcı adını güncelle
+                                        document.getElementById("userName").textContent = rtdbData.name || 'Kullanıcı';
+                                        document.getElementById("userExamType").textContent = "Bölüm: " + getExamTypeText(rtdbData.examType || 'tyt');
+                                    }
+                                });
+                        }, 500); // Veritabanının güncellenmesi için kısa bir süre bekle
+                        
+                        // Butonu normal haline getir
+                        setTimeout(() => {
+                            button.innerHTML = originalText;
+                            button.disabled = false;
+                            showToast('Profil bilgileri başarıyla güncellendi!');
+                        }, 1000);
+                    } else {
+                        // Butonu normal haline getir
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                        showToast('Profil bilgileri güncellenirken bir hata oluştu.', 'error');
+                    }
+                } catch (error) {
+                    console.error("Profil bilgileri kaydedilirken hata:", error);
+                    // Butonu normal haline getir
+                    this.innerHTML = '<i class="fas fa-save"></i> Kaydet';
+                    this.disabled = false;
+                    showToast('Profil bilgileri kaydedilirken bir hata oluştu: ' + error.message, 'error');
+                }
+            });
+            
+            // Bildirim ayarlarını kaydet
+            document.getElementById('saveNotificationsBtn').addEventListener('click', function() {
+                // Kaydetme animasyonu
+                const button = this;
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...';
+                button.disabled = true;
+                
+                const emailNotifications = document.getElementById('emailNotifications').checked;
+                const examReminders = document.getElementById('examReminders').checked;
+                const studyReminders = document.getElementById('studyReminders').checked;
+                const newsUpdates = document.getElementById('newsUpdates').checked;
+                const communityNotifications = document.getElementById('communityNotifications').checked;
+                
+                // LocalStorage'a kaydet
+                const notificationData = {
+                    email: emailNotifications,
+                    exams: examReminders,
+                    study: studyReminders,
+                    news: newsUpdates,
+                    community: communityNotifications
+                };
+                
+                localStorage.setItem('notificationData', JSON.stringify(notificationData));
+                
+                // Butonu normal haline getir
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    showToast('Bildirim ayarları güncellendi!');
+                }, 1000);
+            });
+            
+            // Tema uygulama fonksiyonu
+            function applyTheme(theme) {
+                console.log("Tema uygulanıyor:", theme);
+                
+                if (theme === 'light') {
+                    document.body.classList.remove('dark-theme');
+                    document.body.classList.add('light-theme');
+                } else if (theme === 'dark') {
+                    document.body.classList.remove('light-theme');
+                    document.body.classList.add('dark-theme');
+                }
+                
+                // Tema seçim butonunu güncelle
+                const themeRadio = document.querySelector(`input[name="theme"][value="${theme}"]`);
+                if (themeRadio) {
+                    themeRadio.checked = true;
+                }
+                
+                // Tema ikonunu güncelle
+                updateThemeIcon(theme);
+                
+                // Her tema değişikliğinde localStorage'a kaydet
+                localStorage.setItem('theme', theme);
+                
+                // appearanceData nesnesini de güncelle
+                const appearanceData = JSON.parse(localStorage.getItem('appearanceData')) || {};
+                appearanceData.theme = theme;
+                localStorage.setItem('appearanceData', JSON.stringify(appearanceData));
+            }
+
+            // Tema ikonu güncelleme fonksiyonu
+            function updateThemeIcon(theme) {
+                const themeIcon = document.querySelector('#themeToggle i');
+                if (theme === 'light') {
+                    themeIcon.className = 'fas fa-moon';
+                } else if (theme === 'dark') {
+                    themeIcon.className = 'fas fa-sun';
+                } 
+            }
+
+            // Görünüm ayarlarını kaydet
+            document.getElementById('saveAppearanceBtn').addEventListener('click', function() {
+                // Kaydetme animasyonu
+                const button = this;
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...';
+                button.disabled = true;
+                
+                const theme = document.querySelector('input[name="theme"]:checked').value;
+                const fontSize = document.getElementById('fontSize').value;
+                
+                console.log("Görünüm ayarları kaydediliyor. Tema:", theme, "Yazı boyutu:", fontSize);
+                
+                // Tema ve yazı boyutunu kaydet
+                // Temayı uygula
+                document.body.classList.remove('light-theme', 'dark-theme');
+                document.body.classList.add(`${theme}-theme`);
+                
+                // Tema ikonunu güncelle
+                const themeIcon = document.querySelector('#themeToggle i');
+                if (themeIcon) {
+                    if (theme === 'light') {
+                        themeIcon.className = 'fas fa-moon';
+                    } else if (theme === 'dark') {
+                        themeIcon.className = 'fas fa-sun';
+                    } 
+                }
+                
+                // Yazı boyutunu uygula
+                document.documentElement.setAttribute('data-font-size', fontSize);
+                
+                // localStorage'a kaydet
+                localStorage.setItem('theme', theme);
+                localStorage.setItem('fontSize', fontSize);
+                
+                // appearanceData nesnesini güncelle
+                const appearanceData = JSON.parse(localStorage.getItem('appearanceData')) || {};
+                appearanceData.fontSize = fontSize;
+                appearanceData.theme = theme;
+                localStorage.setItem('appearanceData', JSON.stringify(appearanceData));
+                
+                // Butonu normal haline getir
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    showToast('Görünüm ayarları güncellendi!');
+                }, 1000);
+            });
+            
+            // Şifre değiştir
+            document.getElementById('changePasswordBtn').addEventListener('click', function() {
+                // Kaydetme animasyonu
+                const button = this;
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> İşleniyor...';
+                button.disabled = true;
+                
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                
+                if (!currentPassword || !newPassword || !confirmPassword) {
+                    // Butonu normal haline getir
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                        showToast('Lütfen tüm alanları doldurun.', 'error');
+                    }, 500);
+                    return;
+                }
+                
+                if (newPassword !== confirmPassword) {
+                    // Butonu normal haline getir
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                        showToast('Yeni şifre ve şifre tekrarı eşleşmiyor.', 'error');
+                    }, 500);
+                    return;
+                }
+                
+                // LocalStorage'a şifreyi kaydet (gerçek uygulamada bu güvenli değildir, sadece demo amaçlıdır)
+                localStorage.setItem('userPassword', newPassword);
+                
+                // Butonu normal haline getir
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    showToast('Şifreniz başarıyla güncellendi!');
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                }, 1000);
+            });
+            
+            // Hesap silme
+            document.getElementById('deleteAccountBtn').addEventListener('click', function() {
+                const confirmDelete = confirm('Hesabınızı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!');
+                if (confirmDelete) {
+                    // Silme animasyonu
+                    const button = this;
+                    const originalText = button.innerHTML;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Hesap Siliniyor...';
+                    button.disabled = true;
+                    
+                    // LocalStorage'dan kullanıcı verilerini sil
+                    localStorage.removeItem('profileData');
+                    localStorage.removeItem('notificationData');
+                    localStorage.removeItem('appearanceData');
+                    localStorage.removeItem('userPassword');
+                    localStorage.removeItem('guestUser');
+                    
+                    // Silme işlemi tamamlandı, yönlendirme yapılıyor
+                    setTimeout(() => {
+                        showToast('Hesabınız başarıyla silindi. Yönlendiriliyorsunuz...');
+                        setTimeout(() => {
+                            window.location.href = 'login.html';
+                        }, 1500);
+                    }, 1000);
+                }
+            });
+            
+            // Çıkış yapma butonu
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                // Çıkış yapma animasyonu
+                const button = this;
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Çıkış Yapılıyor...</span>';
+                button.disabled = true;
+                
+                // LocalStorage'dan kullanıcı oturum bilgilerini temizle
+                localStorage.removeItem('profileData');
+                localStorage.removeItem('notificationData');
+                localStorage.removeItem('appearanceData');
+                localStorage.removeItem('userPassword');
+                localStorage.removeItem('guestUser');
+                
+                // Tema ve yazı boyutu ayarlarını koruyalım
+                // localStorage.removeItem('theme');
+                // localStorage.removeItem('fontSize');
+                
+                // Çıkış yapma işlemi tamamlandı, yönlendirme yapılıyor
+                setTimeout(() => {
+                    showToast('Çıkış yapıldı. Yönlendiriliyorsunuz...');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1500);
+                }, 1000);
+            });
+
+            // Tema seçimi değiştiğinde anında uygula
+            document.querySelectorAll('input[name="theme"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const selectedTheme = this.value;
+                    applyTheme(selectedTheme);
+                    showToast(`${getThemeText(selectedTheme)} seçildi`, 'theme');
+                });
+            });
+
+            // Varsayılan değerleri yükle
+            function loadDefaultValues() {
+                document.getElementById('displayName').value = '';
+                document.getElementById('examType').value = 'tyt';
+                document.getElementById('targetUniversity').value = '';
+                document.getElementById('targetDepartment').value = '';
+                
+                document.getElementById("userName").textContent = 'Kullanıcı';
+                document.getElementById("userExamType").textContent = "Bölüm: TYT";
+            }
+
+            // Kullanıcı bilgilerini form alanlarına doldur
+            function loadUserData() {
+                // Aktif kullanıcıyı kontrol et
+                const user = firebase.auth().currentUser;
+                
+                if (user) {
+                    // Kullanıcı giriş yapmışsa, Firebase'den verileri çek
+                    console.log("Giriş yapmış kullanıcı için verileri yüklüyorum:", user.uid);
+                    
+                    // E-posta alanını doldur
+                    document.getElementById('email').value = user.email || '';
+                    
+                    // Firebase'den kullanıcı verilerini al - önce Realtime Database'e bak
+                    firebase.database().ref('users/' + user.uid).once('value')
+                        .then((snapshot) => {
+                            const rtdbData = snapshot.val();
+                            if (rtdbData) {
+                                console.log("Realtime Database'den kullanıcı verileri alındı:", rtdbData);
+                                
+                                // Form alanlarını doldur
+                                document.getElementById('displayName').value = rtdbData.name || '';
+                                document.getElementById('examType').value = rtdbData.examType || 'tyt';
+                                document.getElementById('targetUniversity').value = rtdbData.targetUniversity || '';
+                                document.getElementById('targetDepartment').value = rtdbData.targetDepartment || '';
+                                
+                                // Kullanıcı adını güncelle
+                                document.getElementById("userName").textContent = rtdbData.name || 'Kullanıcı';
+                                document.getElementById("userExamType").textContent = "Bölüm: " + getExamTypeText(rtdbData.examType || 'tyt');
+                                
+                                // LocalStorage'a da kaydet (yedek olarak)
+                                const profileData = {
+                                    name: rtdbData.name,
+                                    email: user.email,
+                                    examType: rtdbData.examType,
+                                    targetUniversity: rtdbData.targetUniversity,
+                                    targetDepartment: rtdbData.targetDepartment
+                                };
+                                localStorage.setItem('profileData', JSON.stringify(profileData));
+                            } else {
+                                console.log("Realtime Database'de kullanıcı verisi bulunamadı, Firestore'a bakılıyor");
+                                
+                                // Firestore'dan verileri al
+                                firebase.firestore().collection('users').doc(user.uid).get()
+                                    .then((doc) => {
+                                        if (doc.exists) {
+                                            const firestoreData = doc.data();
+                                            console.log("Firestore'dan kullanıcı verileri alındı:", firestoreData);
+                                            
+                                            // Form alanlarını doldur
+                                            document.getElementById('displayName').value = firestoreData.name || '';
+                                            document.getElementById('examType').value = firestoreData.examType || 'tyt';
+                                            document.getElementById('targetUniversity').value = firestoreData.targetUniversity || '';
+                                            document.getElementById('targetDepartment').value = firestoreData.targetDepartment || '';
+                                            
+                                            // Kullanıcı adını güncelle
+                                            document.getElementById("userName").textContent = firestoreData.name || 'Kullanıcı';
+                                            document.getElementById("userExamType").textContent = "Bölüm: " + getExamTypeText(firestoreData.examType || 'tyt');
+                                            
+                                            // Firestore verilerini Realtime Database'e de kaydet (senkronizasyon için)
+                                            firebase.database().ref('users/' + user.uid).update({
+                                                name: firestoreData.name,
+                                                examType: firestoreData.examType,
+                                                targetUniversity: firestoreData.targetUniversity,
+                                                targetDepartment: firestoreData.targetDepartment
+                                            });
+                                            
+                                            // LocalStorage'a da kaydet (yedek olarak)
+                                            const profileData = {
+                                                name: firestoreData.name,
+                                                email: user.email,
+                                                examType: firestoreData.examType,
+                                                targetUniversity: firestoreData.targetUniversity,
+                                                targetDepartment: firestoreData.targetDepartment
+                                            };
+                                            localStorage.setItem('profileData', JSON.stringify(profileData));
+                                        } else {
+                                            console.log("Firestore'da da kullanıcı verisi bulunamadı");
+                                            // Varsayılan değerleri kullan
+                                            loadDefaultValues();
+                                        }
+                                    })
+                                    .catch((error) => {
+                                        console.error("Firestore'dan veri alınırken hata:", error);
+                                        // Varsayılan değerleri kullan
+                                        loadDefaultValues();
+                                    });
+                            }
+                        })
+                        .catch((error) => {
+                            console.error("Realtime Database'den veri alınırken hata:", error);
+                            // Varsayılan değerleri kullan
+                            loadDefaultValues();
+                        });
+                } else {
+                    // Kullanıcı giriş yapmamışsa, localStorage'dan verileri yükle
+                    console.log("Giriş yapmamış kullanıcı için localStorage'dan verileri yüklüyorum");
+                    
+                    // LocalStorage'dan profil bilgilerini yükle
+                    const profileData = JSON.parse(localStorage.getItem('profileData')) || {};
+                    
+                    // Form alanlarını doldur
+                    document.getElementById('email').value = profileData.email || 'misafir@example.com';
+                    document.getElementById('displayName').value = profileData.name || 'Misafir Kullanıcı';
+                    document.getElementById('examType').value = profileData.examType || 'tyt';
+                    document.getElementById('targetUniversity').value = profileData.targetUniversity || '';
+                    document.getElementById('targetDepartment').value = profileData.targetDepartment || '';
+                    
+                    // Kullanıcı adını güncelle
+                    document.getElementById("userName").textContent = profileData.name || 'Misafir Kullanıcı';
+                    document.getElementById("userExamType").textContent = "Bölüm: " + getExamTypeText(profileData.examType || 'tyt');
+                }
+                
+                // LocalStorage'dan bildirim ayarlarını yükle
+                const notificationData = JSON.parse(localStorage.getItem('notificationData')) || {};
+                document.getElementById('emailNotifications').checked = notificationData.email !== false;
+                document.getElementById('examReminders').checked = notificationData.exams !== false;
+                document.getElementById('studyReminders').checked = notificationData.study !== false;
+                document.getElementById('newsUpdates').checked = notificationData.news === true;
+                document.getElementById('communityNotifications').checked = notificationData.community !== false;
+                
+                // LocalStorage'dan görünüm ayarlarını yükle
+                const appearanceData = JSON.parse(localStorage.getItem('appearanceData')) || {};
+                const theme = appearanceData.theme || localStorage.getItem('theme') || 'special';
+                document.querySelector(`input[name="theme"][value="${theme}"]`).checked = true;
+                
+                const fontSize = appearanceData.fontSize || localStorage.getItem('fontSize') || 'medium';
+                document.getElementById('fontSize').value = fontSize;
+                
+                // Sayfa yükleme tamamlandı bildirimi
+                showToast('Ayarlar sayfası yüklendi');
+            }
+        });
+
+        // Sınav türü metni alma fonksiyonu
+        function getExamTypeText(examType) {
+            switch(examType) {
+                case 'tyt': return 'TYT';
+                case 'sayisal': return 'Sayısal';
+                case 'sozel': return 'Sözel';
+                case 'esitagirlik': return 'Eşit Ağırlık';
+                case 'dil': return 'Dil';
+                default: return 'TYT';
+            }
+        }
+    </script>
+</body>
+</html> 
