@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKSMate - Birlikte Çalış</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo(192).png">
+    
+    <style>
+        .work-together-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .work-cards {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .work-card {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            flex: 1;
+            min-width: 280px;
+        }
+        
+        .work-card h3 {
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .work-card h3 i {
+            color: #4a6cf7;
+            font-size: 1.2em;
+        }
+        
+        .friends-list {
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .friend-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: background-color 0.2s;
+        }
+        
+        .friend-item:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .friend-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #4a6cf7;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+        }
+        
+        .friend-info {
+            flex: 1;
+        }
+        
+        .friend-name {
+            font-weight: 500;
+            margin: 0;
+        }
+        
+        .friend-status {
+            font-size: 0.8em;
+            color: #666;
+        }
+        
+        .friend-status.online {
+            color: #28a745;
+        }
+        
+        .friend-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-invite {
+            background-color: #4a6cf7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-invite:hover {
+            background-color: #3a5ce5;
+        }
+        
+        .active-sessions {
+            margin-top: 15px;
+        }
+        
+        .session-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background-color: #f5f5f5;
+            border-left: 4px solid #4a6cf7;
+        }
+        
+        .session-info {
+            flex: 1;
+        }
+        
+        .session-title {
+            font-weight: 500;
+            margin: 0 0 5px 0;
+        }
+        
+        .session-details {
+            font-size: 0.85em;
+            color: #666;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .session-detail {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .session-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-join {
+            background-color: #4a6cf7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-join:hover {
+            background-color: #3a5ce5;
+        }
+        
+        /* Form stili */
+        .create-form {
+            margin-top: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 15px;
+        }
+        
+        /* Dark theme uyumluluğu */
+        .dark-theme .work-card {
+            background-color: #2a2a2a;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .dark-theme .friend-item:hover {
+            background-color: #333;
+        }
+        
+        .dark-theme .session-item {
+            background-color: #333;
+        }
+        
+        .dark-theme .form-control {
+            background-color: #333;
+            border-color: #444;
+            color: #eee;
+        }
+        
+        /* Çalışma oturumu modali */
+        .modal-content {
+            max-width: 500px;
+        }
+        
+        /* Bildirim kartı */
+        .notification-card {
+            background-color: #fff8e1;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .notification-card i {
+            color: #ffc107;
+            font-size: 1.5em;
+            margin-right: 15px;
+        }
+        
+        .notification-card p {
+            margin: 0;
+            flex: 1;
+        }
+        
+        .dark-theme .notification-card {
+            background-color: #3a3500;
+            border-left: 4px solid #ffc107;
+        }
+        
+        /* Çalışma Modu Seçimi Modalı için Stiller */
+        .study-modes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .study-mode-item {
+            flex: 1;
+            min-width: 200px;
+            display: flex;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .study-mode-item:hover {
+            border-color: #4a6cf7;
+            background-color: rgba(74, 108, 247, 0.05);
+        }
+        
+        .study-mode-item.selected {
+            border-color: #4a6cf7;
+            background-color: rgba(74, 108, 247, 0.1);
+            box-shadow: 0 0 0 2px rgba(74, 108, 247, 0.2);
+        }
+        
+        .mode-icon {
+            width: 48px;
+            height: 48px;
+            background-color: rgba(74, 108, 247, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+        
+        .mode-icon i {
+            font-size: 24px;
+            color: #4a6cf7;
+        }
+        
+        .mode-info h4 {
+            margin: 0 0 5px 0;
+        }
+        
+        .mode-info p {
+            margin: 0;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .selected-mode-details {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .mode-settings {
+            margin-top: 15px;
+        }
+        
+        /* Gelen İstekler Listesi için Stiller */
+        .requests-list {
+            margin-top: 15px;
+        }
+        
+        .request-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #4a6cf7;
+        }
+        
+        .request-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+        }
+        
+        .request-info h4 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+        }
+        
+        .request-info p {
+            margin: 0 0 5px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .request-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-accept {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-accept:hover {
+            background-color: #218838;
+        }
+        
+        .btn-decline {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-decline:hover {
+            background-color: #c82333;
+        }
+        
+        .btn-primary {
+            background-color: #4a6cf7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-primary:hover {
+            background-color: #3a5ce5;
+        }
+        
+        .btn-primary:disabled {
+            background-color: #a0a0a0;
+            cursor: not-allowed;
+        }
+        
+        /* Modal stilli */
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+        }
+        
+        .modal-body {
+            margin-bottom: 20px;
+        }
+        
+        /* Zamanlayıcı stilleri */
+        .timer-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .timer-option {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 3px solid #4a6cf7;
+        }
+        
+        .timer-option h4 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .timer-option p {
+            margin: 0 0 12px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .timer-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .timer-display {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+        }
+        
+        .timer-heading {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        
+        .timer-time {
+            font-size: 36px;
+            font-weight: 600;
+            margin: 15px 0;
+        }
+        
+        .timer-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .dark-theme .timer-option {
+            background-color: #333;
+        }
+        
+        .dark-theme .timer-display {
+            background-color: #333;
+        }
+    </style>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Ana JavaScript -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth-check.js"></script>
+    <script src="js/theme-manager.js"></script>
+    <script src="js/app.js"></script>
+
+</head>
+<body class="light-theme">
+    <div class="container">
+        <div class="dashboard-container" id="dashboardContainer" style="display: none;">
+            <!-- Sidebar -->
+            <div class="sidebar">
+
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <a href="profile.html" style="text-decoration: none; color: inherit;">
+                            <h3 id="userName">Kullanıcı Adı</h3>
+                            <p id="userExamType">Bölüm: TYT</p>
+                        </a>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li>
+                            <a href="index.html"><i class="fas fa-home"></i> Ana Sayfa</a>
+                        </li>
+                        <li>
+                            <a href="exams.html"><i class="fas fa-file-alt"></i> Denemelerim</a>
+                        </li>
+                        <li>
+                            <a href="timer.html"><i class="fas fa-clock"></i> Zamanlayıcı</a>
+                        </li>
+                        <li>
+                            <a href="calendar.html"><i class="fas fa-calendar-alt"></i> Takvim</a>
+                        </li>
+                        <li>
+                            <a href="notes.html"><i class="fas fa-sticky-note"></i> Notlarım</a>
+                        </li>
+                        <li>
+                            <a href="community.html"><i class="fas fa-users"></i> Topluluk</a>
+                        </li>
+                        <li>
+                            <a href="friends.html"><i class="fas fa-user-friends"></i> Arkadaşlarım</a>
+                        </li>
+                        <li>
+                            <a href="messages.html"><i class="fas fa-comment"></i> Mesajlar</a>
+                        </li>
+                        <li class="active">
+                            <a href="work-together.html"><i class="fas fa-users-cog"></i> Birlikte Çalış</a>
+                        </li>
+                        <li>
+                            <a href="profile.html"><i class="fas fa-user-circle"></i> Profil</a>
+                        </li>
+                        <li>
+                            <a href="settings.html"><i class="fas fa-cog"></i> Ayarlar</a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="token-info">
+                        <i class="fas fa-coins"></i>
+                        <span id="tokenCount">0 Jeton</span>
+                    </div>
+                    <button id="collapseToggle" class="collapse-toggle">
+                        <i class="fas fa-chevron-left"></i>
+                        <span>Menüyü Daralt</span>
+                    </button>
+                    <button id="logoutBtn" class="btn btn-outline">
+                        <i class="fas fa-sign-out-alt"></i> <span>Çıkış Yap</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sidebar Overlay -->
+            <div class="sidebar-overlay"></div>
+
+            <!-- Ana İçerik -->
+            <div class="main-content">
+                <header class="content-header">
+                    <button id="sidebarToggle" class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Ara...">
+                    </div>
+                    <div class="header-actions">
+                        <button class="theme-toggle" id="themeToggle">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <div class="notifications">
+                            <button class="notification-btn">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge">3</span>
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Sayfa İçeriği -->
+                <div class="page-content">
+                    <div class="work-together-page">
+                        <h1 class="page-title">Birlikte Çalış</h1>
+                        
+                        <!-- Bildirim Alanı -->
+                        <div class="notification-card">
+                            <i class="fas fa-info-circle"></i>
+                            <p>Birlikte çalışma özelliği ile arkadaşlarınızla aynı anda çalışabilir, birbirinize yardımcı olabilirsiniz.</p>
+                        </div>
+                        
+                        <!-- İçerik Alanı -->
+                        <div class="work-together-content">
+                            <!-- Kartlar -->
+                            <div class="work-cards">
+                                <!-- Arkadaşlarım -->
+                                <div class="work-card">
+                                    <h3><i class="fas fa-user-friends"></i> Arkadaşlarım</h3>
+                                    <p>Birlikte çalışmak için arkadaşlarınızı davet edin:</p>
+                                    
+                                    <div class="friends-list" id="friendsList">
+                                        <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Arkadaşlar yükleniyor...</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Oturum Oluştur -->
+                                <div class="work-card">
+                                    <h3><i class="fas fa-clock"></i> Zamanlayıcı</h3>
+                                    <p>Hızlı erişim için temel zamanlayıcı araçları:</p>
+                                    
+                                    <div class="timer-options">
+                                        <div class="timer-option">
+                                            <h4><i class="fas fa-clock"></i> Pomodoro</h4>
+                                            <p>25 dakika çalış, 5 dakika dinlen</p>
+                                            <button class="btn-invite" id="startPomodoroBtn">Başlat</button>
+                                        </div>
+                                        
+                                        <div class="timer-option">
+                                            <h4><i class="fas fa-stopwatch"></i> Geri Sayım</h4>
+                                            <div class="timer-input">
+                                                <input type="number" id="countdownMinutes" class="form-control" min="5" max="180" value="30" style="width: 70px;"> 
+                                                <span>dakika</span>
+                                            </div>
+                                            <button class="btn-invite" id="startCountdownBtn">Başlat</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="timer-display" style="display: none;">
+                                        <div class="timer-heading">
+                                            <span id="timerModeText">Pomodoro</span>
+                                            <span id="timerStatusText">(Çalışma)</span>
+                                        </div>
+                                        <div class="timer-time">
+                                            <span id="timerMinutes">25</span>:<span id="timerSeconds">00</span>
+                                        </div>
+                                        <div class="timer-actions">
+                                            <button id="pauseTimerBtn" class="btn-invite"><i class="fas fa-pause"></i> Duraklat</button>
+                                            <button id="stopTimerBtn" class="btn-invite"><i class="fas fa-stop"></i> Durdur</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-actions" style="margin-top: 20px;">
+                                        <a href="timer.html" class="btn-primary">Daha Fazla Zamanlayıcı Seçeneği</a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Gelen İstekler Bölümü (Alt kısım) -->
+                            <div class="work-card">
+                                <h3><i class="fas fa-envelope"></i> Gelen Çalışma İstekleri</h3>
+                                <p>Arkadaşlarınızdan gelen çalışma isteklerini buradan görebilirsiniz:</p>
+                                
+                                <div class="requests-list" id="requestsList">
+                                    <div class="request-item">
+                                        <div class="request-info">
+                                            <div class="friend-avatar">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                            <div>
+                                                <h4>Ayşe Yılmaz sizi çalışmaya davet etti</h4>
+                                                <p><i class="fas fa-book"></i> TYT Matematik - Fonksiyonlar</p>
+                                                <p><i class="fas fa-clock"></i> 15 dakika önce</p>
+                                            </div>
+                                        </div>
+                                        <div class="request-actions">
+                                            <button class="btn-accept">Kabul Et</button>
+                                            <button class="btn-decline">Reddet</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="request-item">
+                                        <div class="request-info">
+                                            <div class="friend-avatar">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                            <div>
+                                                <h4>Mehmet Demir sizi çalışmaya davet etti</h4>
+                                                <p><i class="fas fa-book"></i> AYT Fizik - Elektrik</p>
+                                                <p><i class="fas fa-clock"></i> 40 dakika önce</p>
+                                            </div>
+                                        </div>
+                                        <div class="request-actions">
+                                            <button class="btn-accept">Kabul Et</button>
+                                            <button class="btn-decline">Reddet</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Çalışma Oturumu Modalı -->
+    <div id="sessionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Çalışma Oturumu</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>Çalışma oturumu başlatılıyor...</p>
+                <div class="session-details">
+                    <div class="form-group">
+                        <label>Oturum Başlığı</label>
+                        <p id="modalSessionTitle">TYT Matematik Çalışması</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Katılımcılar</label>
+                        <div id="modalParticipants">
+                            <div class="friend-item">
+                                <div class="friend-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="friend-info">
+                                    <h4 class="friend-name">Siz (Ev Sahibi)</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button id="startSessionBtn" class="btn-join">Oturumu Başlat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Çalışma Modu Seçim Modalı -->
+    <div id="studyModeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Çalışma Modu Seçin</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>Arkadaşınızla nasıl çalışmak istediğinizi seçin:</p>
+                
+                <div class="study-modes">
+                    <div class="study-mode-item" data-mode="pomodoro">
+                        <div class="mode-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="mode-info">
+                            <h4>Pomodoro Oturumu</h4>
+                            <p>25dk çalışma + 5dk mola</p>
+                        </div>
+                    </div>
+                    
+                    <div class="study-mode-item" data-mode="freestyle">
+                        <div class="mode-icon">
+                            <i class="fas fa-stopwatch"></i>
+                        </div>
+                        <div class="mode-info">
+                            <h4>Serbest Çalışma</h4>
+                            <p>Zamanlayıcı ile serbest çalışma</p>
+                        </div>
+                    </div>
+                    
+                    <div class="study-mode-item" data-mode="exam">
+                        <div class="mode-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="mode-info">
+                            <h4>Deneme Modu</h4>
+                            <p>Sınav deneyimi</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="selectedModeDetails" class="selected-mode-details" style="display: none;">
+                    <h3 class="mode-title">Mod Başlığı</h3>
+                    <p class="mode-description">Mod açıklaması burada görünecek.</p>
+                    
+                    <div class="mode-settings">
+                        <!-- Bu bölüm JavaScript ile doldurulacak -->
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button id="selectModeBtn" class="btn-primary" disabled>Devam Et</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global değişkenler
+        let currentUser = null;
+        let selectedFriend = null;
+        let selectedStudyMode = null;
+        let userFriends = [];
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Sayfa yüklendi");
+            
+            // Oturum kontrolü
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        currentUser = user;
+                        // Kullanıcı bilgilerini güncelle
+                        firebase.database().ref('users/' + user.uid).once('value')
+                            .then((snapshot) => {
+                                const userData = snapshot.val();
+                                if (userData) {
+                                    document.getElementById("userName").textContent = userData.name || user.email.split('@')[0];
+                                    document.getElementById("userExamType").textContent = "Bölüm: " + getExamTypeText(userData.examType);
+                                    document.getElementById("tokenCount").textContent = `${userData.tokens || 0} Jeton`;
+                                }
+                                document.getElementById("dashboardContainer").style.display = "flex";
+                                
+                                // Arkadaşları ve istekleri yükle
+                                loadFriends(user.uid);
+                                loadStudyRequests(user.uid);
+                            });
+                    } else {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            const guestData = JSON.parse(guestUser);
+                            document.getElementById("userName").textContent = guestData.name;
+                            document.getElementById("userExamType").textContent = "Bölüm: " + getExamTypeText(guestData.examType);
+                            document.getElementById("tokenCount").textContent = `${guestData.tokens || 0} Jeton`;
+                            document.getElementById("dashboardContainer").style.display = "flex";
+                        } else {
+                            window.location.href = "login.html";
+                        }
+                    }
+                });
+            } else {
+                console.log("Firebase tanımlı değil, misafir modunda devam ediliyor");
+                document.getElementById("dashboardContainer").style.display = "flex";
+            }
+            
+            // Birlikte çalışma oturumu oluşturma
+            const createSessionBtn = document.getElementById('createSessionBtn');
+            const sessionModal = document.getElementById('sessionModal');
+            
+            if (createSessionBtn) {
+                createSessionBtn.addEventListener('click', function() {
+                    const sessionTitle = document.getElementById('sessionTitle').value;
+                    const sessionSubject = document.getElementById('sessionSubject').value;
+                    const sessionDuration = document.getElementById('sessionDuration').value;
+                    
+                    if (sessionTitle && sessionSubject && sessionDuration) {
+                        // Modal içeriğini güncelle
+                        document.getElementById('modalSessionTitle').textContent = sessionTitle;
+                        
+                        // Modalı göster
+                        sessionModal.style.display = 'block';
+                    } else {
+                        alert('Lütfen tüm alanları doldurun.');
+                    }
+                });
+            }
+            
+            // Oturumu başlatma
+            const startSessionBtn = document.getElementById('startSessionBtn');
+            if (startSessionBtn) {
+                startSessionBtn.addEventListener('click', function() {
+                    alert('Çalışma oturumu başlatıldı! Arkadaşlarınız katıldıkça burada görünecekler.');
+                    sessionModal.style.display = 'none';
+                });
+            }
+            
+            // Modal kapatma
+            const closeModalButtons = document.querySelectorAll('.close-modal');
+            closeModalButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const modals = document.querySelectorAll('.modal');
+                    modals.forEach(modal => {
+                        modal.style.display = 'none';
+                    });
+                    
+                    // Çalışma modu seçimi modalı kapatıldığında seçimleri sıfırla
+                    resetStudyModeSelection();
+                });
+            });
+            
+            // Modal dışına tıklayınca kapatma
+            window.addEventListener('click', function(event) {
+                const modals = document.querySelectorAll('.modal');
+                modals.forEach(modal => {
+                    if (event.target === modal) {
+                        modal.style.display = 'none';
+                        
+                        // Çalışma modu seçimi modalı kapatıldığında seçimleri sıfırla
+                        resetStudyModeSelection();
+                    }
+                });
+            });
+            
+            // Çalışma modu seçim dinleyicileri ekle
+            initStudyModeListeners();
+            
+            // Zamanlayıcı işlevlerini başlat
+            initTimerFunctions();
+        });
+        
+        // Sınav türü metni alma fonksiyonu
+        function getExamTypeText(examType) {
+            switch(examType) {
+                case 'tyt': return 'TYT';
+                case 'sayisal': return 'Sayısal';
+                case 'sozel': return 'Sözel';
+                case 'esitagirlik': return 'Eşit Ağırlık';
+                case 'dil': return 'Dil';
+                default: return 'TYT';
+            }
+        }
+        
+        // Arkadaşları Firebase'den yükle
+        function loadFriends(userId) {
+            const friendsList = document.getElementById('friendsList');
+            if (!friendsList) return;
+            
+            // Arkadaş listesini temizle
+            friendsList.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Arkadaşlar yükleniyor...</div>';
+            
+            console.log("Arkadaş listesi yükleniyor, kullanıcı ID:", userId);
+            
+            // Firebase'den kullanıcı bilgilerini ve arkadaş listesini çek
+            firebase.database().ref('users/' + userId).once('value')
+                .then((snapshot) => {
+                    const userData = snapshot.val();
+                    console.log("Kullanıcı verileri:", userData);
+                    
+                    if (!userData || !userData.friends || Object.keys(userData.friends).length === 0) {
+                        console.log("Arkadaş bulunamadı");
+                        friendsList.innerHTML = '<p class="no-friends">Henüz arkadaşınız bulunmuyor.</p>';
+                        return;
+                    }
+                    
+                    console.log("Arkadaş listesi:", userData.friends);
+                    friendsList.innerHTML = ''; // Listeyi temizle
+                    
+                    // Her bir arkadaş için bilgileri listele
+                    Object.keys(userData.friends).forEach(friendId => {
+                        const friendData = userData.friends[friendId];
+                        console.log("Arkadaş ID:", friendId, "Arkadaş verileri:", friendData);
+                        
+                        // Arkadaşın çevrimiçi durumunu kontrol et
+                        firebase.database().ref('status/' + friendId).once('value')
+                            .then((statusSnapshot) => {
+                                const statusData = statusSnapshot.val();
+                                const isOnline = statusData && statusData.state === 'online';
+                                const lastActivity = statusData ? statusData.lastActivity : null;
+                                
+                                // Arkadaş öğesini oluştur
+                                const friendItem = document.createElement('div');
+                                friendItem.className = 'friend-item';
+                                friendItem.setAttribute('data-friend-id', friendId);
+                                
+                                // Çevrimiçi durumu ve aktivite bilgisini hazırla
+                                let statusText = '';
+                                
+                                if (isOnline) {
+                                    statusText = 'Çevrimiçi';
+                                } else {
+                                    statusText = 'Çevrimdışı';
+                                    if (lastActivity) {
+                                        statusText = `Son görülme: ${formatLastSeen(lastActivity)}`;
+                                    }
+                                }
+                                
+                                // Arkadaş öğesi HTML'ini oluştur
+                                friendItem.innerHTML = `
+                                    <div class="friend-avatar">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div class="friend-info">
+                                        <h4 class="friend-name">${friendData.name || 'İsimsiz Kullanıcı'}</h4>
+                                        <p class="friend-status ${isOnline ? 'online' : ''}">${statusText}</p>
+                                    </div>
+                                    <div class="friend-actions">
+                                        <button class="btn-invite" data-friend-id="${friendId}" data-friend-name="${friendData.name || 'İsimsiz Kullanıcı'}">Davet Et</button>
+                                    </div>
+                                `;
+                                
+                                friendsList.appendChild(friendItem);
+                                
+                                // Tüm arkadaşlar eklendikten sonra butonlara tıklama olaylarını ekle
+                                if (friendsList.querySelectorAll('.friend-item').length === Object.keys(userData.friends).length) {
+                                    setupInviteButtons();
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Arkadaş durumu yüklenirken hata:", error);
+                            });
+                    });
+                })
+                .catch(error => {
+                    console.error("Arkadaş listesi yüklenirken hata:", error);
+                    friendsList.innerHTML = '<p class="error">Arkadaş listesi yüklenirken bir hata oluştu. <button onclick="location.reload()">Yenile</button></p>';
+                });
+        }
+        
+        // Davet butonlarına tıklama olayları
+        function setupInviteButtons() {
+            const inviteButtons = document.querySelectorAll('.btn-invite');
+            
+            inviteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const friendId = this.getAttribute('data-friend-id');
+                    const friendName = this.getAttribute('data-friend-name');
+                    if (!friendId) return;
+                    
+                    // Seçilen arkadaşı kaydet
+                    selectedFriend = {
+                        id: friendId,
+                        name: friendName
+                    };
+                    
+                    // Çalışma modu seçim modalını aç
+                    const studyModeModal = document.getElementById('studyModeModal');
+                    if (studyModeModal) {
+                        // Modal başlığını güncelle
+                        const modalTitle = studyModeModal.querySelector('.modal-header h2');
+                        if (modalTitle) {
+                            modalTitle.textContent = `${friendName} için Çalışma Modu Seçin`;
+                        }
+                        
+                        studyModeModal.style.display = 'block';
+                    }
+                });
+            });
+        }
+        
+        // Çalışma isteklerini yükle
+        function loadStudyRequests(userId) {
+            const requestsList = document.getElementById('requestsList');
+            if (!requestsList) return;
+            
+            // Yükleniyor mesajını göster
+            requestsList.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Çalışma istekleri yükleniyor...</div>';
+            
+            console.log("Çalışma istekleri yükleniyor, kullanıcı ID:", userId);
+            
+            // pendingRequests'ten istekleri çek
+            firebase.database().ref('pendingRequests')
+                .orderByChild('toUserId')
+                .equalTo(userId)
+                .once('value')
+                .then((snapshot) => {
+                    if (!snapshot.exists()) {
+                        console.log("Kullanıcıya ait çalışma isteği bulunamadı");
+                        requestsList.innerHTML = '<p>Henüz bir çalışma isteği almadınız.</p>';
+                        return;
+                    }
+                    
+                    const requests = snapshot.val();
+                    const pendingRequests = [];
+                    
+                    // Bekleyen istekleri filtrele
+                    Object.keys(requests).forEach(key => {
+                        const request = requests[key];
+                        if (request.status === 'pending') {
+                            pendingRequests.push({
+                                id: key,
+                                ...request
+                            });
+                        }
+                    });
+                    
+                    if (pendingRequests.length === 0) {
+                        console.log("Bekleyen çalışma isteği bulunamadı");
+                        requestsList.innerHTML = '<p>Henüz bir çalışma isteği almadınız.</p>';
+                        return;
+                    }
+                    
+                    // İstek listesini temizle
+                    requestsList.innerHTML = '';
+                    
+                    // İstekleri listele
+                    pendingRequests.forEach(request => {
+                        const requestTime = formatTimestamp(request.timestamp);
+                        
+                        const requestItem = document.createElement('div');
+                        requestItem.className = 'request-item';
+                        requestItem.setAttribute('data-request-id', request.id);
+                        
+                        requestItem.innerHTML = `
+                            <div class="request-info">
+                                <div class="friend-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div>
+                                    <h4>${request.senderName} sizi çalışmaya davet etti</h4>
+                                    <p><i class="fas fa-book"></i> ${request.subject}</p>
+                                    <p><i class="fas fa-clock"></i> ${requestTime}</p>
+                                </div>
+                            </div>
+                            <div class="request-actions">
+                                <button class="btn-accept" data-request-id="${request.id}">Kabul Et</button>
+                                <button class="btn-decline" data-request-id="${request.id}">Reddet</button>
+                            </div>
+                        `;
+                        
+                        requestsList.appendChild(requestItem);
+                    });
+                    
+                    // Butonlara tıklama olaylarını ekle
+                    setupRequestButtons();
+                })
+                .catch(error => {
+                    console.error("Çalışma istekleri yüklenirken hata oluştu:", error);
+                    requestsList.innerHTML = `
+                        <div class="error-message">
+                            <p><i class="fas fa-exclamation-circle"></i> Çalışma istekleri yüklenirken bir hata oluştu.</p>
+                            <button onclick="location.reload()">Yenile</button>
+                        </div>
+                    `;
+                });
+        }
+        
+        // İstek butonlarına tıklama olayları
+        function setupRequestButtons() {
+            // Kabul Et butonları
+            const acceptButtons = document.querySelectorAll('.btn-accept');
+            acceptButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const requestId = this.getAttribute('data-request-id');
+                    if (!requestId) return;
+                    
+                    const currentUser = firebase.auth().currentUser;
+                    if (!currentUser) {
+                        alert('İsteği kabul etmek için giriş yapmanız gerekiyor.');
+                        return;
+                    }
+                    
+                    // İsteği kabul et - pendingRequests üzerinden
+                    firebase.database().ref('pendingRequests/' + requestId).update({
+                        status: 'accepted',
+                        responseTimestamp: Date.now()
+                    })
+                    .then(() => {
+                        alert('Çalışma isteği kabul edildi! Oturuma yönlendiriliyorsunuz...');
+                        // İstek öğesini kaldır
+                        const requestItem = this.closest('.request-item');
+                        if (requestItem) requestItem.remove();
+                        
+                        // Kalan istek sayısını kontrol et
+                        checkRemainingRequests();
+                    })
+                    .catch((error) => {
+                        console.error("İstek kabul edilirken hata oluştu:", error);
+                        alert('İstek kabul edilirken bir hata oluştu: ' + error.message);
+                    });
+                });
+            });
+            
+            // Reddet butonları
+            const declineButtons = document.querySelectorAll('.btn-decline');
+            declineButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const requestId = this.getAttribute('data-request-id');
+                    if (!requestId) return;
+                    
+                    const currentUser = firebase.auth().currentUser;
+                    if (!currentUser) {
+                        alert('İsteği reddetmek için giriş yapmanız gerekiyor.');
+                        return;
+                    }
+                    
+                    // İsteği reddet - pendingRequests üzerinden
+                    firebase.database().ref('pendingRequests/' + requestId).update({
+                        status: 'declined',
+                        responseTimestamp: Date.now()
+                    })
+                    .then(() => {
+                        alert('Çalışma isteği reddedildi.');
+                        // İstek öğesini kaldır
+                        const requestItem = this.closest('.request-item');
+                        if (requestItem) requestItem.remove();
+                        
+                        // Kalan istek sayısını kontrol et
+                        checkRemainingRequests();
+                    })
+                    .catch((error) => {
+                        console.error("İstek reddedilirken hata oluştu:", error);
+                        alert('İstek reddedilirken bir hata oluştu: ' + error.message);
+                    });
+                });
+            });
+        }
+        
+        // Kalan istek sayısını kontrol et
+        function checkRemainingRequests() {
+            const requestsList = document.getElementById('requestsList');
+            if (!requestsList) return;
+            
+            if (requestsList.children.length === 0) {
+                requestsList.innerHTML = '<p>Henüz bir çalışma isteği almadınız.</p>';
+            }
+        }
+        
+        // Çalışma modu seçim dinleyicileri
+        function initStudyModeListeners() {
+            const studyModeItems = document.querySelectorAll('.study-mode-item');
+            const selectModeBtn = document.getElementById('selectModeBtn');
+            
+            // Mod seçim öğelerine tıklama olayları
+            studyModeItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // Önceki seçimleri kaldır
+                    studyModeItems.forEach(i => i.classList.remove('selected'));
+                    
+                    // Bu öğeyi seç
+                    this.classList.add('selected');
+                    
+                    // Seçilen modu kaydet
+                    selectedStudyMode = this.getAttribute('data-mode');
+                    
+                    // Mod detaylarını göster
+                    showModeDetails(selectedStudyMode);
+                    
+                    // Devam et butonunu etkinleştir
+                    if (selectModeBtn) {
+                        selectModeBtn.disabled = false;
+                    }
+                });
+            });
+            
+            // Devam et butonuna tıklama olayı
+            if (selectModeBtn) {
+                selectModeBtn.addEventListener('click', function() {
+                    if (!selectedStudyMode || !selectedFriend || !currentUser) {
+                        alert('Lütfen bir çalışma modu seçin.');
+                        return;
+                    }
+                    
+                    // Çalışma isteği gönder
+                    sendStudyRequest();
+                });
+            }
+        }
+        
+        // Seçilen çalışma modu detaylarını göster
+        function showModeDetails(mode) {
+            const modeDetails = document.getElementById('selectedModeDetails');
+            if (!modeDetails) return;
+            
+            const modeTitle = modeDetails.querySelector('.mode-title');
+            const modeDescription = modeDetails.querySelector('.mode-description');
+            const modeSettings = modeDetails.querySelector('.mode-settings');
+            
+            // Mod başlığı ve açıklamasını ayarla
+            switch(mode) {
+                case 'pomodoro':
+                    if (modeTitle) modeTitle.textContent = 'Pomodoro Oturumu';
+                    if (modeDescription) modeDescription.textContent = 'Odaklanmış çalışma periyotları ve kısa molalar ile verimli çalışma.';
+                    if (modeSettings) {
+                        modeSettings.innerHTML = `
+                            <div class="setting-group">
+                                <label>Pomodoro Sayısı: 4</label>
+                            </div>
+                            <div class="setting-group">
+                                <label>Çalışma Süresi: 25 dakika</label>
+                            </div>
+                            <div class="setting-group">
+                                <label>Mola Süresi: 5 dakika</label>
+                            </div>
+                        `;
+                    }
+                    break;
+                    
+                case 'freestyle':
+                    if (modeTitle) modeTitle.textContent = 'Serbest Çalışma';
+                    if (modeDescription) modeDescription.textContent = 'İstediğiniz kadar çalışabilirsiniz, zamanlayıcı size yardımcı olacak.';
+                    if (modeSettings) {
+                        modeSettings.innerHTML = `
+                            <div class="setting-group">
+                                <label>Hedef Süre: 2 saat</label>
+                            </div>
+                            <div class="setting-group">
+                                <label>Hatırlatıcılar: Her 30 dakikada bir</label>
+                            </div>
+                        `;
+                    }
+                    break;
+                    
+                case 'exam':
+                    if (modeTitle) modeTitle.textContent = 'Deneme Modu';
+                    if (modeDescription) modeDescription.textContent = 'Zamanlı deneme sınavı deneyimi için ideal.';
+                    if (modeSettings) {
+                        modeSettings.innerHTML = `
+                            <div class="setting-group">
+                                <label>Sınav Türü: TYT</label>
+                            </div>
+                            <div class="setting-group">
+                                <label>Süre: 135 dakika</label>
+                            </div>
+                        `;
+                    }
+                    break;
+            }
+            
+            // Detayları göster
+            modeDetails.style.display = 'block';
+        }
+        
+        // Seçimleri sıfırla
+        function resetStudyModeSelection() {
+            selectedFriend = null;
+            selectedStudyMode = null;
+            
+            // Mod seçimlerini temizle
+            const studyModeItems = document.querySelectorAll('.study-mode-item');
+            studyModeItems.forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // Detayları gizle
+            const modeDetails = document.getElementById('selectedModeDetails');
+            if (modeDetails) {
+                modeDetails.style.display = 'none';
+            }
+            
+            // Devam et butonunu devre dışı bırak
+            const selectModeBtn = document.getElementById('selectModeBtn');
+            if (selectModeBtn) {
+                selectModeBtn.disabled = true;
+            }
+        }
+        
+        // Timestamp'i formatla
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return 'Bilinmiyor';
+            
+            const now = Date.now();
+            const diff = now - timestamp;
+            
+            // 1 dakikadan az
+            if (diff < 60000) {
+                return 'Az önce';
+            }
+            
+            // 1 saatten az
+            if (diff < 3600000) {
+                const minutes = Math.floor(diff / 60000);
+                return `${minutes} dakika önce`;
+            }
+            
+            // 1 günden az
+            if (diff < 86400000) {
+                const hours = Math.floor(diff / 3600000);
+                return `${hours} saat önce`;
+            }
+            
+            // Tarih formatı
+            const date = new Date(timestamp);
+            return date.toLocaleDateString();
+        }
+        
+        // Son görülme zamanını formatla
+        function formatLastSeen(timestamp) {
+            return formatTimestamp(timestamp);
+        }
+        
+        // Çalışma isteği gönder
+        function sendStudyRequest() {
+            if (!currentUser || !selectedFriend || !selectedStudyMode) {
+                console.error("Eksik bilgi: kullanıcı, arkadaş veya çalışma modu.");
+                return;
+            }
+            
+            // Çalışma konusu
+            let subject = '';
+            switch(selectedStudyMode) {
+                case 'pomodoro':
+                    subject = 'Pomodoro Çalışma Oturumu';
+                    break;
+                case 'freestyle':
+                    subject = 'Serbest Çalışma Oturumu';
+                    break;
+                case 'exam':
+                    subject = 'Deneme Sınavı';
+                    break;
+                default:
+                    subject = 'Çalışma Oturumu';
+            }
+            
+            // İstek verisini oluştur
+            const request = {
+                senderId: currentUser.uid,
+                senderName: document.getElementById('userName').textContent,
+                receiverId: selectedFriend.id,
+                subject: subject,
+                mode: selectedStudyMode,
+                status: 'pending',
+                timestamp: Date.now()
+            };
+            
+            // Demo mod yerine doğrudan Firebase'e kaydedelim
+            // Firebase kurallarına uygun olarak pendingRequests bölümüne kaydedelim
+            firebase.database().ref('pendingRequests').push({
+                fromUserId: currentUser.uid,
+                toUserId: selectedFriend.id,
+                senderName: document.getElementById('userName').textContent,
+                receiverName: selectedFriend.name,
+                subject: subject,
+                mode: selectedStudyMode,
+                status: 'pending',
+                timestamp: Date.now()
+            })
+            .then(() => {
+                console.log("Çalışma isteği başarıyla gönderildi");
+                
+                // Kullanıcıya bildirim göster
+                const notification = document.createElement('div');
+                notification.className = 'notification-card';
+                notification.style.backgroundColor = '#e8f5e9';
+                notification.style.borderLeftColor = '#4caf50';
+                notification.innerHTML = `
+                    <i class="fas fa-check-circle" style="color: #4caf50;"></i>
+                    <p>${selectedFriend.name} adlı arkadaşınıza çalışma isteği gönderildi.</p>
+                `;
+                
+                // Bildirim kartını sayfanın üst kısmına ekle
+                const workTogetherContent = document.querySelector('.work-together-content');
+                if (workTogetherContent) {
+                    workTogetherContent.insertBefore(notification, workTogetherContent.firstChild);
+                    
+                    // 5 saniye sonra bildirimi kaldır
+                    setTimeout(() => {
+                        notification.style.opacity = '0';
+                        notification.style.transition = 'opacity 0.5s';
+                        setTimeout(() => notification.remove(), 500);
+                    }, 5000);
+                }
+                
+                // Davet butonunu güncelle
+                const inviteButton = document.querySelector(`.btn-invite[data-friend-id="${selectedFriend.id}"]`);
+                if (inviteButton) {
+                    inviteButton.textContent = 'Davet Edildi';
+                    inviteButton.disabled = true;
+                    inviteButton.style.backgroundColor = '#6c757d';
+                }
+                
+                // Modalı kapat
+                const studyModeModal = document.getElementById('studyModeModal');
+                if (studyModeModal) {
+                    studyModeModal.style.display = 'none';
+                }
+                
+                // Seçimleri sıfırla
+                resetStudyModeSelection();
+            })
+            .catch((error) => {
+                console.error("Çalışma isteği gönderilirken hata oluştu:", error);
+                alert('Çalışma isteği gönderilirken bir hata oluştu: ' + error.message);
+            });
+        }
+        
+        // Zamanlayıcı fonksiyonları
+        function initTimerFunctions() {
+            // Zamanlayıcı değişkenleri
+            let timerInterval = null;
+            let timerMinutes = 25;
+            let timerSeconds = 0;
+            let timerMode = 'pomodoro';
+            let timerStatus = 'work'; // work, break
+            let timerRunning = false;
+            
+            // Zamanlayıcı elementleri
+            const timerDisplay = document.querySelector('.timer-display');
+            const timerModeText = document.getElementById('timerModeText');
+            const timerStatusText = document.getElementById('timerStatusText');
+            const timerMinutesEl = document.getElementById('timerMinutes');
+            const timerSecondsEl = document.getElementById('timerSeconds');
+            
+            // Zamanlayıcı butonları
+            const startPomodoroBtn = document.getElementById('startPomodoroBtn');
+            const startCountdownBtn = document.getElementById('startCountdownBtn');
+            const pauseTimerBtn = document.getElementById('pauseTimerBtn');
+            const stopTimerBtn = document.getElementById('stopTimerBtn');
+            const countdownMinutesInput = document.getElementById('countdownMinutes');
+            
+            // Pomodoro başlat
+            if (startPomodoroBtn) {
+                startPomodoroBtn.addEventListener('click', function() {
+                    timerMode = 'pomodoro';
+                    timerStatus = 'work';
+                    timerMinutes = 25;
+                    timerSeconds = 0;
+                    startTimer();
+                });
+            }
+            
+            // Geri sayım başlat
+            if (startCountdownBtn) {
+                startCountdownBtn.addEventListener('click', function() {
+                    const minutes = parseInt(countdownMinutesInput.value) || 30;
+                    timerMode = 'countdown';
+                    timerStatus = 'work';
+                    timerMinutes = minutes;
+                    timerSeconds = 0;
+                    startTimer();
+                });
+            }
+            
+            // Zamanlayıcıyı duraklat veya devam ettir
+            if (pauseTimerBtn) {
+                pauseTimerBtn.addEventListener('click', function() {
+                    if (timerRunning) {
+                        clearInterval(timerInterval);
+                        timerRunning = false;
+                        this.innerHTML = '<i class="fas fa-play"></i> Devam Et';
+                    } else {
+                        startTimerInterval();
+                        timerRunning = true;
+                        this.innerHTML = '<i class="fas fa-pause"></i> Duraklat';
+                    }
+                });
+            }
+            
+            // Zamanlayıcıyı durdur
+            if (stopTimerBtn) {
+                stopTimerBtn.addEventListener('click', function() {
+                    stopTimer();
+                });
+            }
+            
+            // Zamanlayıcıyı başlat
+            function startTimer() {
+                // Görünüm ayarlamaları
+                timerDisplay.style.display = 'block';
+                document.querySelector('.timer-options').style.display = 'none';
+                
+                // Zamanlayıcı metinlerini güncelle
+                updateTimerTexts();
+                
+                // Zamanlayıcıyı güncelle
+                updateTimerDisplay();
+                
+                // Interval başlat
+                startTimerInterval();
+                timerRunning = true;
+            }
+            
+            // Zamanlayıcı interval'ını başlat
+            function startTimerInterval() {
+                timerInterval = setInterval(function() {
+                    // Her saniye azalt
+                    if (timerSeconds === 0) {
+                        if (timerMinutes === 0) {
+                            // Süre doldu
+                            clearInterval(timerInterval);
+                            
+                            // Pomodoro ise, mola / çalışma arası geçiş yap
+                            if (timerMode === 'pomodoro') {
+                                if (timerStatus === 'work') {
+                                    // Molaya geç
+                                    timerStatus = 'break';
+                                    timerMinutes = 5;
+                                    timerSeconds = 0;
+                                    updateTimerTexts();
+                                    startTimerInterval();
+                                    
+                                    // Bildirim göster
+                                    showNotification('Pomodoro tamamlandı!', 'Şimdi 5 dakika mola zamanı.');
+                                } else {
+                                    // Çalışmaya geç
+                                    timerStatus = 'work';
+                                    timerMinutes = 25;
+                                    timerSeconds = 0;
+                                    updateTimerTexts();
+                                    startTimerInterval();
+                                    
+                                    // Bildirim göster
+                                    showNotification('Mola süresi doldu!', 'Şimdi tekrar çalışma zamanı.');
+                                }
+                            } else {
+                                // Geri sayım tamamlandı
+                                stopTimer();
+                                showNotification('Zamanlayıcı tamamlandı!', 'Çalışma süreniz doldu.');
+                            }
+                            return;
+                        }
+                        timerMinutes--;
+                        timerSeconds = 59;
+                    } else {
+                        timerSeconds--;
+                    }
+                    
+                    // Zamanlayıcıyı güncelle
+                    updateTimerDisplay();
+                }, 1000);
+            }
+            
+            // Zamanlayıcıyı durdur
+            function stopTimer() {
+                clearInterval(timerInterval);
+                timerRunning = false;
+                timerDisplay.style.display = 'none';
+                document.querySelector('.timer-options').style.display = 'flex';
+                if (pauseTimerBtn) {
+                    pauseTimerBtn.innerHTML = '<i class="fas fa-pause"></i> Duraklat';
+                }
+            }
+            
+            // Zamanlayıcı ekranını güncelle
+            function updateTimerDisplay() {
+                if (timerMinutesEl) {
+                    timerMinutesEl.textContent = timerMinutes < 10 ? '0' + timerMinutes : timerMinutes;
+                }
+                if (timerSecondsEl) {
+                    timerSecondsEl.textContent = timerSeconds < 10 ? '0' + timerSeconds : timerSeconds;
+                }
+            }
+            
+            // Zamanlayıcı metinlerini güncelle
+            function updateTimerTexts() {
+                if (timerModeText) {
+                    timerModeText.textContent = timerMode === 'pomodoro' ? 'Pomodoro' : 'Geri Sayım';
+                }
+                if (timerStatusText) {
+                    timerStatusText.textContent = timerStatus === 'work' ? '(Çalışma)' : '(Mola)';
+                }
+            }
+            
+            // Bildirim göster
+            function showNotification(title, message) {
+                // Ses çal
+                const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
+                audio.play();
+                
+                // Bildirim göster
+                if ('Notification' in window) {
+                    if (Notification.permission === 'granted') {
+                        new Notification(title, { body: message });
+                    } else if (Notification.permission !== 'denied') {
+                        Notification.requestPermission().then(permission => {
+                            if (permission === 'granted') {
+                                new Notification(title, { body: message });
+                            }
+                        });
+                    }
+                }
+                
+                // Ekranda alert göster
+                alert(title + ' - ' + message);
+            }
+        }
+    </script>
+</body>
+</html> 
