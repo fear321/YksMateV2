@@ -21,6 +21,7 @@
     <script src="js/auth-check.js"></script>
     <script src="js/theme-manager.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/user-token-display.js"></script>
     <script src="js/notes.js"></script>
     
     <style>
@@ -366,10 +367,9 @@
             </nav>
             
             <div class="sidebar-footer">
-                <div class="token-info">
-                    <i class="fas fa-coins"></i>
-                    <span>Token: <strong id="userTokens">0</strong></span>
-                </div>
+                <button id="logoutBtn" class="btn btn-outline">
+                    <i class="fas fa-sign-out-alt"></i> Çıkış Yap
+                </button>
             </div>
         </div>
         

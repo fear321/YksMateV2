@@ -21,6 +21,8 @@
     <script src="js/auth-check.js"></script>
     <script src="js/theme-manager.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/user-token-display.js"></script>
+    <script src="js/user-name-sync.js"></script>
     
     <!-- Oturum Kontrolü -->
     <script>
@@ -28,131 +30,37 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Firebase yüklendiyse
             if (typeof firebase !== 'undefined' && firebase.app) {
-                // Kullanıcı oturumunu kontrol et
-                firebase.auth().onAuthStateChanged(function(user) {
-                    if (user) {
-                        // Kullanıcı giriş yapmış
-                        console.log("Kullanıcı giriş yapmış:", user.uid);
-                        
-                        // Kullanıcı bilgilerini getir
-                        firebase.database().ref('users/' + user.uid).once('value')
-                            .then((snapshot) => {
-                                const userData = snapshot.val();
-                                if (userData) {
-                                    // Kullanıcı verileri varsa
-                                    
-                                    // Kullanıcı adını güncelle
-                                    document.getElementById("userName").textContent = userData.name || user.email.split('@')[0];
-                                    document.getElementById("profileUserName").textContent = userData.name || user.email.split('@')[0];
-                                    
-                                    // Sınav türünü güncelle
-                                    document.getElementById("userExamType").textContent = "" + getExamTypeText(userData.examType);
-                                    document.getElementById("profileExamType").textContent = getExamTypeText(userData.examType);
-                                    
-                                    // E-posta adresini güncelle
-                                    document.getElementById("profileEmail").textContent = userData.email || user.email;
-                                    
-                                    // Kayıt tarihini güncelle
-                                    if (userData.registrationDate) {
-                                        const regDate = new Date(userData.registrationDate);
-                                        document.getElementById("profileRegDate").textContent = regDate.toLocaleDateString('tr-TR');
-                                    }
-                                    
-                                    // Jeton sayısını güncelle
-                                    document.getElementById("tokenCount").textContent = userData.tokens + " Jeton";
-                                    document.getElementById("profileTokens").textContent = userData.tokens;
-                                    
-                                    // Hedef üniversite ve bölüm bilgilerini güncelle
-                                    document.getElementById("profileTargetUniversity").textContent = userData.targetUniversity || "Belirtilmemiş";
-                                    document.getElementById("profileTargetDepartment").textContent = userData.targetDepartment || "Belirtilmemiş";
-                                    
-                                    // Premium durumunu güncelle
-                                    document.getElementById("profilePremium").textContent = userData.isPremium ? "Premium Üye" : "Standart Üye";
-                                    
-                                    // İstatistikleri güncelle
-                                    document.getElementById("profileTotalExams").textContent = userData.totalExams || 0;
-                                    document.getElementById("profileStudyTime").textContent = formatStudyTime(userData.totalStudyTime || 0);
-                                    document.getElementById("profileCompletedTasks").textContent = (userData.completedTasks || 0) + "/" + (userData.totalTasks || 0);
-                                    document.getElementById("profileAvgScore").textContent = (userData.averageScore || 0).toFixed(1);
-                                    
-                                    // Dashboard'u göster
-                                    document.getElementById("dashboardContainer").style.display = "flex";
-                                } else {
-                                    // Kullanıcı verileri yoksa e-postadan isim oluştur
-                                    const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
-                                    
-                                    // Kullanıcı adını güncelle
-                                    document.getElementById("userName").textContent = name;
-                                    document.getElementById("profileUserName").textContent = name;
-                                    
-                                    // E-posta adresini güncelle
-                                    document.getElementById("profileEmail").textContent = user.email;
-                                    
-                                    // Dashboard'u göster
-                                    document.getElementById("dashboardContainer").style.display = "flex";
-                                }
-                            })
-                            .catch((error) => {
-                                console.error("Kullanıcı verileri alınırken hata:", error);
-                                
-                                // E-postadan isim oluştur
-                                const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
-                                
-                                // Kullanıcı adını güncelle
-                                document.getElementById("userName").textContent = name;
-                                document.getElementById("profileUserName").textContent = name;
-                                
-                                // E-posta adresini güncelle
-                                document.getElementById("profileEmail").textContent = user.email;
-                                
-                                // Dashboard'u göster
-                                document.getElementById("dashboardContainer").style.display = "flex";
-                            });
-                    } else {
-                        // Misafir kullanıcı kontrolü
-                        const guestUser = localStorage.getItem('guestUser');
-                        if (guestUser) {
-                            // Misafir kullanıcı varsa
-                            const guestData = JSON.parse(guestUser);
-                            
-                            // Kullanıcı adını güncelle
-                            document.getElementById("userName").textContent = guestData.name;
-                            document.getElementById("profileUserName").textContent = guestData.name;
-                            
-                            // Sınav türünü güncelle
-                            document.getElementById("userExamType").textContent = "Sınav Türü: " + getExamTypeText(guestData.examType);
-                            document.getElementById("profileExamType").textContent = getExamTypeText(guestData.examType);
-                            
-                            // Misafir bilgilerini güncelle
-                            document.getElementById("profileEmail").textContent = "Misafir Kullanıcı";
-                            document.getElementById("profileRegDate").textContent = "Geçici Oturum";
-                            document.getElementById("profilePremium").textContent = "Misafir";
-                            
-                            // Jeton sayısını güncelle
-                            document.getElementById("tokenCount").textContent = guestData.tokens + " Jeton";
-                            document.getElementById("profileTokens").textContent = guestData.tokens;
-                            
-                            // Hedef üniversite ve bölüm bilgilerini güncelle
-                            document.getElementById("profileTargetUniversity").textContent = guestData.targetUniversity || "Belirtilmemiş";
-                            document.getElementById("profileTargetDepartment").textContent = guestData.targetDepartment || "Belirtilmemiş";
-                            
-                            // İstatistikleri güncelle
-                            document.getElementById("profileTotalExams").textContent = guestData.totalExams || 0;
-                            document.getElementById("profileStudyTime").textContent = formatStudyTime(guestData.totalStudyTime || 0);
-                            document.getElementById("profileCompletedTasks").textContent = (guestData.completedTasks || 0) + "/" + (guestData.totalTasks || 0);
-                            document.getElementById("profileAvgScore").textContent = (guestData.averageScore || 0).toFixed(1);
-                            
-                            // Dashboard'u göster
-                            document.getElementById("dashboardContainer").style.display = "flex";
-                        } else {
-                            // Giriş sayfasına yönlendir
-                            console.log("Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...");
-                            window.location.href = "login.html";
-                        }
+                console.log("profile.html: Firebase yüklendi, oturum kontrolü çalışıyor");
+                
+                // Dashboard container'ı görünür yap
+                setTimeout(() => {
+                    const dashboardContainer = document.getElementById("dashboardContainer");
+                    if (dashboardContainer && dashboardContainer.style.display === "none") {
+                        console.log("profile.html: Dashboard container'ı 1 saniye sonra görünür hale getiriliyor");
+                        dashboardContainer.style.display = "flex";
                     }
-                });
+                }, 1000); // 1 saniye sonra görünür yap
+                
+                // Oturum kontrolü ve veri yüklemesi alt script tarafından yapılacak
+                
+                // Dashboard container'ı başlangıçta gizli
+                const dashboardContainer = document.getElementById("dashboardContainer");
+                if (dashboardContainer && dashboardContainer.style.display === "none") {
+                    // Firebase oturum kontrolünü bekle
+                    firebase.auth().onAuthStateChanged(function(user) {
+                        if (!user) {
+                            // Misafir kullanıcı kontrolü
+                            const guestUser = localStorage.getItem('guestUser');
+                            if (!guestUser) {
+                                // Giriş sayfasına yönlendir
+                                console.log("profile.html: Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...");
+                                window.location.href = "login.html";
+                            }
+                        }
+                    });
+                }
             } else {
-                console.error("Firebase yüklenemedi!");
+                console.error("profile.html: Firebase yüklenemedi!");
                 alert("Sistem yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.");
             }
         });
@@ -175,7 +83,11 @@
                 return `${minutes} dakika`;
             } else {
                 const hours = Math.floor(minutes / 60);
-                return `${hours} saat`;
+                const remainingMinutes = minutes % 60;
+                if (remainingMinutes === 0) {
+                    return `${hours} saat`;
+                }
+                return `${hours} saat ${remainingMinutes} dakika`;
             }
         }
     </script>
@@ -234,10 +146,6 @@
                     </ul>
                 </nav>
                 <div class="sidebar-footer">
-                    <div class="token-info">
-                        <i class="fas fa-coins"></i>
-                        <span id="tokenCount">0 Jeton</span>
-                    </div>
                     <button id="logoutBtn" class="btn btn-outline">
                         <i class="fas fa-sign-out-alt"></i> Çıkış Yap
                     </button>
@@ -427,24 +335,44 @@
         document.addEventListener('DOMContentLoaded', function() {
             let currentUser;
             let userRef;
+            let profileUserId;
+
+            // URL'den kullanıcı ID'sini al
+            const urlParams = new URLSearchParams(window.location.search);
+            const userIdParam = urlParams.get('user');
 
             // Kullanıcı oturumunu kontrol et
             firebase.auth().onAuthStateChanged(function(user) {
                 if (user) {
                     currentUser = user;
-                    userRef = firebase.database().ref('users/' + user.uid);
+                    
+                    // URL'de user parametresi varsa o kullanıcının profilini, yoksa kendi profilini göster
+                    profileUserId = userIdParam || user.uid;
+                    
+                    userRef = firebase.database().ref('users/' + profileUserId);
                     loadUserProfile();
+                    
+                    // Kendi profilin değilse düzenleme butonunu gizle
+                    if (profileUserId !== user.uid) {
+                        const editButtons = document.querySelectorAll('.edit-btn');
+                        editButtons.forEach(btn => {
+                            btn.style.display = 'none';
+                        });
+                    }
                 }
             });
 
             // Kullanıcı profilini yükle
             function loadUserProfile() {
-                userRef.once('value').then(snapshot => {
+                // Realtime veri güncellemelerini al
+                userRef.on('value', snapshot => {
                     const userData = snapshot.val();
                     if (userData) {
+                        console.log("profile.html loadUserProfile: Veritabanından realtime veri alındı:", userData);
+                        
                         // Profil bilgilerini güncelle
-                        document.getElementById('profileUserName').textContent = userData.name || currentUser.email.split('@')[0];
-                        document.getElementById('profileEmail').textContent = currentUser.email;
+                        document.getElementById('profileUserName').textContent = userData.name || (profileUserId === currentUser.uid ? currentUser.email.split('@')[0] : 'İsimsiz Kullanıcı');
+                        document.getElementById('profileEmail').textContent = profileUserId === currentUser.uid ? currentUser.email : (userData.email || 'Gizli');
                         document.getElementById('profileExamType').textContent = getExamTypeText(userData.examType);
                         document.getElementById('profilePremium').textContent = userData.isPremium ? 'Premium Üye' : 'Standart Üye';
                         document.getElementById('profileTokens').textContent = userData.tokens || 0;
@@ -463,14 +391,32 @@
                         // Hedef üniversite ve bölüm bilgilerini güncelle
                         document.getElementById('profileTargetUniversity').textContent = userData.targetUniversity || 'Belirtilmemiş';
                         document.getElementById('profileTargetDepartment').textContent = userData.targetDepartment || 'Belirtilmemiş';
+                        
+                        // Profil başlığını değiştir
+                        if (profileUserId !== currentUser.uid) {
+                            document.title = `YKSMate - ${userData.name || 'Kullanıcı'} Profili`;
+                            const pageTitle = document.querySelector('.page-title');
+                            if (pageTitle) {
+                                pageTitle.textContent = `${userData.name || 'Kullanıcı'} Profili`;
+                            }
+                        }
+                        
+                        // Dashboard container'ı görünür hale getir
+                        const dashboardContainer = document.getElementById('dashboardContainer');
+                        if (dashboardContainer && dashboardContainer.style.display === 'none') {
+                            console.log("profile.html: Dashboard container görünür hale getiriliyor");
+                            dashboardContainer.style.display = 'flex';
+                        }
                     }
-                }).catch(error => {
+                }, error => {
                     console.error('Profil bilgileri yüklenirken hata:', error);
                     alert('Profil bilgileri yüklenirken bir hata oluştu.');
                 });
 
-                // Aktivite geçmişini yükle
-                loadActivityHistory();
+                // Aktivite geçmişini yükle - sadece kendi profilinde göster
+                if (profileUserId === currentUser.uid) {
+                    loadActivityHistory();
+                }
             }
 
             // Aktivite geçmişini yükle
@@ -547,20 +493,6 @@
                 } else {
                     const days = Math.floor(diff / day);
                     return `${days} gün önce`;
-                }
-            }
-
-            // Çalışma süresini formatla
-            function formatStudyTime(minutes) {
-                if (minutes < 60) {
-                    return `${minutes} dakika`;
-                } else {
-                    const hours = Math.floor(minutes / 60);
-                    const remainingMinutes = minutes % 60;
-                    if (remainingMinutes === 0) {
-                        return `${hours} saat`;
-                    }
-                    return `${hours} saat ${remainingMinutes} dakika`;
                 }
             }
 

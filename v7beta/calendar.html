@@ -21,6 +21,7 @@
     <script src="js/auth-check.js"></script>
     <script src="js/theme-manager.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/user-token-display.js"></script>
     
     <style>
         /* Takvim Stilleri */
@@ -161,18 +162,38 @@
             bottom: -10px;
             left: 50%;
             transform: translateX(-50%);
+            z-index: 2;
         }
         
         .task-dot.high {
             background-color: #ff4c4c;
+            box-shadow: 0 0 3px rgba(255, 76, 76, 0.8);
         }
         
         .task-dot.medium {
             background-color: #2196f3;
+            box-shadow: 0 0 3px rgba(33, 150, 243, 0.8);
         }
         
         .task-dot.low {
             background-color: #4caf50;
+            box-shadow: 0 0 3px rgba(76, 175, 80, 0.8);
+        }
+        
+        /* Koyu tema için görev noktaları */
+        .dark-theme .task-dot.high {
+            background-color: #ff6b6b;
+            box-shadow: 0 0 4px rgba(255, 107, 107, 0.9);
+        }
+        
+        .dark-theme .task-dot.medium {
+            background-color: #4dabf7;
+            box-shadow: 0 0 4px rgba(77, 171, 247, 0.9);
+        }
+        
+        .dark-theme .task-dot.low {
+            background-color: #69db7c;
+            box-shadow: 0 0 4px rgba(105, 219, 124, 0.9);
         }
         
         /* Görev Noktaları Konteyneri */
@@ -183,6 +204,16 @@
             transform: translateX(-50%);
             display: flex;
             gap: 4px;
+            z-index: 2;
+        }
+        
+        /* Seçili gün stilini ekle */
+        .days li.selected-day::before {
+            background-color: rgba(74, 108, 247, 0.2);
+        }
+        
+        .dark-theme .days li.selected-day::before {
+            background-color: rgba(74, 108, 247, 0.3);
         }
         
         /* Etkinlik Kartları */
@@ -559,10 +590,6 @@
                     </ul>
                 </nav>
                 <div class="sidebar-footer">
-                    <div class="token-info">
-                        <i class="fas fa-coins"></i>
-                        <span id="tokenCount">0 Jeton</span>
-                    </div>
                     <button id="logoutBtn" class="btn btn-outline">
                         <i class="fas fa-sign-out-alt"></i> Çıkış Yap
                     </button>

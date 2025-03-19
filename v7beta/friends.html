@@ -20,6 +20,171 @@
             margin-bottom: 20px;
         }
         
+        /* Kullanıcı adı kaydırma stilleri */
+        .user-details {
+            max-width: 160px;
+            overflow: hidden;
+        }
+        
+        .user-details h3 {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: relative;
+            transition: transform 0.5s;
+            padding: 0 2px;
+        }
+        
+        .user-details h3.scrolling {
+            animation: scrollText 12s infinite linear;
+        }
+        
+        @keyframes scrollText {
+            0% { transform: translateX(0); }
+            15% { transform: translateX(0); }
+            70% { transform: translateX(calc(-100% + 160px)); }
+            85% { transform: translateX(calc(-100% + 160px)); }
+            100% { transform: translateX(0); }
+        }
+        
+        .friend-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s ease;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .friend-item:hover {
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+        
+        .dark-theme .friend-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .friend-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #e1e1e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+        
+        .friend-avatar i {
+            font-size: 24px;
+            color: #888;
+        }
+        
+        .friend-info {
+            flex: 1;
+            cursor: pointer;
+        }
+        
+        .friend-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 5px 0;
+        }
+        
+        .friend-status {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+        }
+        
+        .friend-status i {
+            font-size: 10px;
+            margin-right: 5px;
+        }
+        
+        .friend-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            margin-left: 10px;
+        }
+        
+        .friend-action-btn {
+            background: none;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #777;
+            transition: background-color 0.2s, color 0.2s;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .friend-action-btn:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+            color: #000;
+        }
+        
+        .dark-theme .friend-action-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        
+        .friend-action-btn i {
+            font-size: 14px;
+        }
+        
+        /* Spesifik buton stilleri */
+        .friend-action-btn[title="Mesaj Gönder"]:hover {
+            background-color: #4a6cf7;
+            color: white;
+        }
+        
+        .friend-action-btn[title="Birlikte Çalış"]:hover {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .friend-action-btn[title="Profil"]:hover {
+            background-color: #17a2b8;
+            color: white;
+        }
+        
+        .friend-action-btn[title="Arkadaşlıktan Çıkar"]:hover {
+            background-color: #ffc107;
+            color: white;
+        }
+        
+        .friend-action-btn[title="Engelle"]:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        /* Mobil uyumluluk için butonları küçültme */
+        @media (max-width: 576px) {
+            .friend-action-btn {
+                width: 28px;
+                height: 28px;
+            }
+            
+            .friend-action-btn i {
+                font-size: 12px;
+            }
+            
+            .friend-actions {
+                gap: 2px;
+            }
+        }
+        
         .friends-header {
             display: flex;
             justify-content: space-between;
@@ -42,65 +207,6 @@
             padding: 15px;
             scroll-behavior: smooth;
             width: 100%;
-        }
-        
-        .friend-item {
-            display: flex;
-            align-items: center;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            transition: background-color 0.3s;
-            cursor: pointer;
-        }
-        
-        .friend-item:hover {
-            background-color: #f5f5f5;
-        }
-        
-        .friend-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background-color: #4a6cf7;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            font-size: 1.2rem;
-        }
-        
-        .friend-info {
-            flex: 1;
-        }
-        
-        .friend-name {
-            font-weight: 600;
-            margin: 0 0 5px 0;
-        }
-        
-        .friend-status {
-            font-size: 0.85rem;
-            color: #666;
-        }
-        
-        .friend-actions {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .friend-action-btn {
-            background: none;
-            border: none;
-            font-size: 1.1rem;
-            color: #666;
-            cursor: pointer;
-            transition: color 0.3s;
-        }
-        
-        .friend-action-btn:hover {
-            color: #4a6cf7;
         }
         
         .add-friend-form {
@@ -300,10 +406,6 @@
             color: #eee;
         }
         
-        .dark-theme .friend-item:hover {
-            background-color: #3a3a3a;
-        }
-        
         .dark-theme .friend-status {
             color: #aaa;
         }
@@ -474,17 +576,20 @@
                                         <p class="friend-status"><i class="fas fa-circle" style="color: #28a745;"></i> Çevrimiçi - Matematik çalışıyor</p>
                                 </div>
                                     <div class="friend-actions">
-                                        <button class="friend-action-btn" title="Mesaj Gönder">
+                                        <button class="friend-action-btn" title="Mesaj Gönder" onclick="sendMessage('${friendId}')">
                                             <i class="fas fa-comment"></i>
                                         </button>
-                                        <button class="friend-action-btn" title="Birlikte Çalış">
+                                        <button class="friend-action-btn" title="Birlikte Çalış" onclick="studyTogether('${friendId}')">
                                             <i class="fas fa-users"></i>
                                         </button>
-                                        <button class="friend-action-btn" title="Daha Fazla">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                </button>
-                            </div>
-                        </div>
+                                        <button class="friend-action-btn" title="Arkadaşlıktan Çıkar" onclick="removeFriend('${friendId}')">
+                                            <i class="fas fa-user-minus"></i>
+                                        </button>
+                                        <button class="friend-action-btn" title="Engelle" onclick="blockUser('${friendId}')">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                    </div>
+                                </div>
 
                                 <div class="friend-item">
                                     <div class="friend-avatar">
@@ -495,14 +600,17 @@
                                         <p class="friend-status"><i class="fas fa-circle" style="color: #28a745;"></i> Çevrimiçi - Fizik çalışıyor</p>
                                 </div>
                                     <div class="friend-actions">
-                                        <button class="friend-action-btn" title="Mesaj Gönder">
+                                        <button class="friend-action-btn" title="Mesaj Gönder" onclick="sendMessage('${friendId}')">
                                             <i class="fas fa-comment"></i>
                                         </button>
-                                        <button class="friend-action-btn" title="Birlikte Çalış">
+                                        <button class="friend-action-btn" title="Birlikte Çalış" onclick="studyTogether('${friendId}')">
                                             <i class="fas fa-users"></i>
                                         </button>
-                                        <button class="friend-action-btn" title="Daha Fazla">
-                                            <i class="fas fa-ellipsis-v"></i>
+                                        <button class="friend-action-btn" title="Arkadaşlıktan Çıkar" onclick="removeFriend('${friendId}')">
+                                            <i class="fas fa-user-minus"></i>
+                                        </button>
+                                        <button class="friend-action-btn" title="Engelle" onclick="blockUser('${friendId}')">
+                                            <i class="fas fa-ban"></i>
                                         </button>
                                 </div>
                                 </div>
@@ -516,14 +624,17 @@
                                         <p class="friend-status"><i class="fas fa-circle" style="color: #6c757d;"></i> Çevrimdışı - 3 saat önce</p>
                         </div>
                                     <div class="friend-actions">
-                                        <button class="friend-action-btn" title="Mesaj Gönder">
+                                        <button class="friend-action-btn" title="Mesaj Gönder" onclick="sendMessage('${friendId}')">
                                             <i class="fas fa-comment"></i>
                                         </button>
-                                        <button class="friend-action-btn" title="Birlikte Çalış">
+                                        <button class="friend-action-btn" title="Birlikte Çalış" onclick="studyTogether('${friendId}')">
                                             <i class="fas fa-users"></i>
                                         </button>
-                                        <button class="friend-action-btn" title="Daha Fazla">
-                                            <i class="fas fa-ellipsis-v"></i>
+                                        <button class="friend-action-btn" title="Arkadaşlıktan Çıkar" onclick="removeFriend('${friendId}')">
+                                            <i class="fas fa-user-minus"></i>
+                                        </button>
+                                        <button class="friend-action-btn" title="Engelle" onclick="blockUser('${friendId}')">
+                                            <i class="fas fa-ban"></i>
                                         </button>
                     </div>
                 </div>
@@ -776,10 +887,10 @@
                                 
                                 // Arkadaş öğesi HTML'ini oluştur
                                 friendItem.innerHTML = `
-                                    <div class="friend-avatar">
+                                    <div class="friend-avatar" onclick="window.location.href='profile.html?user=${friendId}'">
                                         <i class="fas fa-user"></i>
                                     </div>
-                                    <div class="friend-info">
+                                    <div class="friend-info" onclick="window.location.href='profile.html?user=${friendId}'">
                                         <h4 class="friend-name">${friendData.name || 'İsimsiz Kullanıcı'}</h4>
                                         <p class="friend-status"><i class="fas fa-circle" style="color: ${statusColor};"></i> ${statusText}</p>
                                     </div>
@@ -790,11 +901,23 @@
                                         <button class="friend-action-btn" title="Birlikte Çalış" onclick="studyTogether('${friendId}')">
                                             <i class="fas fa-users"></i>
                                         </button>
-                                        <button class="friend-action-btn" title="Daha Fazla" onclick="showFriendOptions('${friendId}')">
-                                            <i class="fas fa-ellipsis-v"></i>
+                                        <button class="friend-action-btn" title="Arkadaşlıktan Çıkar" onclick="removeFriend('${friendId}')">
+                                            <i class="fas fa-user-minus"></i>
+                                        </button>
+                                        <button class="friend-action-btn" title="Engelle" onclick="blockUser('${friendId}')">
+                                            <i class="fas fa-ban"></i>
                                         </button>
                                     </div>
                                 `;
+                                
+                                // Arkadaş öğesine tıklandığında profil sayfasına git
+                                friendItem.style.cursor = 'pointer';
+                                friendItem.addEventListener('click', function(e) {
+                                    // Butonlara tıklanmadıysa profile git
+                                    if (!e.target.closest('.friend-actions')) {
+                                        window.location.href = `profile.html?user=${friendId}`;
+                                    }
+                                });
                                 
                                 friendsList.appendChild(friendItem);
                             })

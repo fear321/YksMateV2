@@ -561,14 +561,6 @@
                     </ul>
                 </nav>
                 <div class="sidebar-footer">
-                    <div class="token-info">
-                        <i class="fas fa-coins"></i>
-                        <span id="tokenCount">0 Jeton</span>
-                    </div>
-                    <button id="collapseToggle" class="collapse-toggle">
-                        <i class="fas fa-chevron-left"></i>
-                        <span>Menüyü Daralt</span>
-                    </button>
                     <button id="logoutBtn" class="btn btn-outline">
                         <i class="fas fa-sign-out-alt"></i> <span>Çıkış Yap</span>
                     </button>
@@ -610,7 +602,7 @@
                         <div class="notification-card">
                             <i class="fas fa-info-circle"></i>
                             <p>Birlikte çalışma özelliği ile arkadaşlarınızla aynı anda çalışabilir, birbirinize yardımcı olabilirsiniz.</p>
-                        </div>
+                            </div>
                         
                         <!-- İçerik Alanı -->
                         <div class="work-together-content">
@@ -624,7 +616,7 @@
                                     <div class="friends-list" id="friendsList">
                                         <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Arkadaşlar yükleniyor...</div>
                                     </div>
-                                </div>
+                                    </div>
                                 
                                 <!-- Oturum Oluştur -->
                                 <div class="work-card">
@@ -645,9 +637,9 @@
                                                 <span>dakika</span>
                                             </div>
                                             <button class="btn-invite" id="startCountdownBtn">Başlat</button>
-                                        </div>
-                                    </div>
-                                    
+                                </div>
+                            </div>
+                            
                                     <div class="timer-display" style="display: none;">
                                         <div class="timer-heading">
                                             <span id="timerModeText">Pomodoro</span>
@@ -659,14 +651,14 @@
                                         <div class="timer-actions">
                                             <button id="pauseTimerBtn" class="btn-invite"><i class="fas fa-pause"></i> Duraklat</button>
                                             <button id="stopTimerBtn" class="btn-invite"><i class="fas fa-stop"></i> Durdur</button>
-                                        </div>
-                                    </div>
-                                    
+                            </div>
+                        </div>
+
                                     <div class="form-actions" style="margin-top: 20px;">
                                         <a href="timer.html" class="btn-primary">Daha Fazla Zamanlayıcı Seçeneği</a>
-                                    </div>
                                 </div>
-                            </div>
+                                </div>
+                                </div>
                             
                             <!-- Gelen İstekler Bölümü (Alt kısım) -->
                             <div class="work-card">
@@ -678,18 +670,18 @@
                                         <div class="request-info">
                                             <div class="friend-avatar">
                                                 <i class="fas fa-user"></i>
-                                            </div>
+                                </div>
                                             <div>
                                                 <h4>Ayşe Yılmaz sizi çalışmaya davet etti</h4>
                                                 <p><i class="fas fa-book"></i> TYT Matematik - Fonksiyonlar</p>
                                                 <p><i class="fas fa-clock"></i> 15 dakika önce</p>
-                                            </div>
-                                        </div>
+                            </div>
+                        </div>
                                         <div class="request-actions">
                                             <button class="btn-accept">Kabul Et</button>
                                             <button class="btn-decline">Reddet</button>
-                                        </div>
-                                    </div>
+                    </div>
+                </div>
                                     
                                     <div class="request-item">
                                         <div class="request-info">
@@ -736,11 +728,11 @@
                             <div class="friend-item">
                                 <div class="friend-avatar">
                                     <i class="fas fa-user"></i>
-                                </div>
+                    </div>
                                 <div class="friend-info">
                                     <h4 class="friend-name">Siz (Ev Sahibi)</h4>
-                                </div>
-                            </div>
+                    </div>
+                </div>
                         </div>
                     </div>
                 </div>
@@ -993,11 +985,11 @@
                                 friendItem.innerHTML = `
                                     <div class="friend-avatar">
                                         <i class="fas fa-user"></i>
-                                    </div>
+                                        </div>
                                     <div class="friend-info">
                                         <h4 class="friend-name">${friendData.name || 'İsimsiz Kullanıcı'}</h4>
                                         <p class="friend-status ${isOnline ? 'online' : ''}">${statusText}</p>
-                                    </div>
+                                        </div>
                                     <div class="friend-actions">
                                         <button class="btn-invite" data-friend-id="${friendId}" data-friend-name="${friendData.name || 'İsimsiz Kullanıcı'}">Davet Et</button>
                                     </div>
@@ -1048,10 +1040,10 @@
                         
                         studyModeModal.style.display = 'block';
                     }
+                    });
                 });
-            });
-        }
-        
+            }
+            
         // Çalışma isteklerini yükle
         function loadStudyRequests(userId) {
             const requestsList = document.getElementById('requestsList');
@@ -1174,7 +1166,7 @@
                     });
                 });
             });
-            
+
             // Reddet butonları
             const declineButtons = document.querySelectorAll('.btn-decline');
             declineButtons.forEach(button => {
@@ -1205,8 +1197,8 @@
                     .catch((error) => {
                         console.error("İstek reddedilirken hata oluştu:", error);
                         alert('İstek reddedilirken bir hata oluştu: ' + error.message);
-                    });
                 });
+            });
             });
         }
         
@@ -1285,8 +1277,8 @@
                             </div>
                             <div class="setting-group">
                                 <label>Mola Süresi: 5 dakika</label>
-                            </div>
-                        `;
+                        </div>
+                    `;
                     }
                     break;
                     
@@ -1532,7 +1524,7 @@
                         clearInterval(timerInterval);
                         timerRunning = false;
                         this.innerHTML = '<i class="fas fa-play"></i> Devam Et';
-                    } else {
+                } else {
                         startTimerInterval();
                         timerRunning = true;
                         this.innerHTML = '<i class="fas fa-pause"></i> Duraklat';

@@ -323,6 +323,57 @@
             color: #f5f5f5;
             border: 1px solid #471b58;
         }
+
+        /* Veri Yönetimi Stilleri */
+        .data-delete-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .data-delete-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: rgba(255, 0, 0, 0.05);
+            border: 1px solid rgba(255, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        
+        .dark-theme .data-delete-item {
+            background-color: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.2);
+        }
+        
+        .data-delete-info {
+            flex: 1;
+        }
+        
+        .data-delete-info h4 {
+            margin: 0 0 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .data-delete-info p {
+            margin: 0;
+            color: #777;
+            font-size: 14px;
+        }
+        
+        .dark-theme .data-delete-info p {
+            color: #aaa;
+        }
+        
+        @media (max-width: 768px) {
+            .data-delete-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+        }
     </style>
     
     <!-- Firebase -->
@@ -338,6 +389,8 @@
     <script src="js/theme-utils.js"></script>
     <script src="js/theme-manager.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/user-token-display.js"></script>
+    <script src="js/user-name-sync.js"></script>
 
 </head>
 <body class="light-theme">
@@ -393,7 +446,11 @@
                         </li>
                     </ul>
                 </nav>
-
+                <div class="sidebar-footer">
+                    <button id="logoutBtn" class="btn btn-outline">
+                        <i class="fas fa-sign-out-alt"></i> <span>Çıkış Yap</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Sidebar Overlay -->
@@ -431,14 +488,14 @@
                         <div class="settings-container">
                             <!-- Ayarlar Kategorileri -->
 
-                            
+
                             <!-- Profil Ayarları -->
                             <div class="settings-content active" id="profile-settings">
                                 <h2>Profil Ayarları</h2>
                                 <div class="settings-form">
                                     <div class="form-group">
                                         <label for="displayName">Ad Soyad</label>
-                                        <input type="text" id="displayName" placeholder="Ad Soyad" disabled>
+                                        <input type="text" id="displayName" placeholder="Ad Soyad">
                                     </div>
                                     <div class="form-group">
                                         <label for="email">E-posta</label>
@@ -540,31 +597,46 @@
                             </div>
                             
                             <!-- Hesap Ayarları -->
-                            <div class="settings-content" id="account-settings">
-                                <h2>Hesap Ayarları</h2>
+                           
+                            <!-- Veri Yönetimi Ayarları -->
+                            <div class="settings-content" id="data-settings">
+                                <h2>Veri Yönetimi</h2>
                                 <div class="settings-form">
-                                    <div class="form-group">
-                                        <label for="currentPassword">Mevcut Şifre</label>
-                                        <input type="password" id="currentPassword" placeholder="Mevcut Şifre">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="newPassword">Yeni Şifre</label>
-                                        <input type="password" id="newPassword" placeholder="Yeni Şifre">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="confirmPassword">Şifre Tekrar</label>
-                                        <input type="password" id="confirmPassword" placeholder="Şifre Tekrar">
-                                    </div>
-                                    <button class="btn btn-primary" id="changePasswordBtn">
-                                        <i class="fas fa-key"></i> Şifre Değiştir
-                                    </button>
-                                    
                                     <div class="danger-zone">
-                                        <h3>Tehlikeli Bölge</h3>
-                                        <p>Bu işlemler geri alınamaz, dikkatli olun!</p>
-                                        <button class="btn btn-danger" id="deleteAccountBtn">
-                                            <i class="fas fa-trash-alt"></i> Hesabımı Sil
-                                        </button>
+                                        <h3>Veri Silme İşlemleri</h3>
+                                        <p>Bu işlemler geri alınamaz, dikkatli olun! Silinen veriler kurtarılamaz.</p>
+                                        
+                                        <div class="data-delete-section">
+                                            <div class="data-delete-item">
+                                                <div class="data-delete-info">
+                                                    <h4><i class="fas fa-tasks"></i> Tüm Görevleri Sil</h4>
+                                                    <p>Takviminizdeki tüm görevleri ve etkinlikleri kalıcı olarak siler.</p>
+                                                </div>
+                                                <button class="btn btn-danger" id="deleteAllTasksBtn">
+                                                    <i class="fas fa-trash-alt"></i> Tüm Görevleri Sil
+                                                </button>
+                                            </div>
+                                            
+                                            <div class="data-delete-item">
+                                                <div class="data-delete-info">
+                                                    <h4><i class="fas fa-file-alt"></i> Tüm Denemeleri Sil</h4>
+                                                    <p>Tüm deneme sınavı kayıtlarınızı ve sonuçlarınızı kalıcı olarak siler.</p>
+                                                </div>
+                                                <button class="btn btn-danger" id="deleteAllExamsBtn">
+                                                    <i class="fas fa-trash-alt"></i> Tüm Denemeleri Sil
+                                                </button>
+                                            </div>
+                                            
+                                            <div class="data-delete-item">
+                                                <div class="data-delete-info">
+                                                    <h4><i class="fas fa-sticky-note"></i> Tüm Notları Sil</h4>
+                                                    <p>Tüm not kayıtlarınızı kalıcı olarak siler.</p>
+                                                </div>
+                                                <button class="btn btn-danger" id="deleteAllNotesBtn">
+                                                    <i class="fas fa-trash-alt"></i> Tüm Notları Sil
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -731,12 +803,14 @@
                     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...';
                     button.disabled = true;
                     
+                    const displayName = document.getElementById('displayName').value;
                     const examType = document.getElementById('examType').value;
                     const targetUniversity = document.getElementById('targetUniversity').value;
                     const targetDepartment = document.getElementById('targetDepartment').value;
                     
                     // Profil verilerini hazırla
                     const profileData = {
+                        name: displayName,
                         examType: examType,
                         targetUniversity: targetUniversity,
                         targetDepartment: targetDepartment
@@ -747,6 +821,7 @@
                     
                     if (success) {
                         // Başarılı olursa UI'ı manuel olarak da güncelle
+                        document.getElementById("userName").textContent = displayName;
                         document.getElementById("userExamType").textContent = "Bölüm: " + getExamTypeText(examType);
                         
                         // Ayrıca examType select elementini de güncelle
@@ -898,6 +973,10 @@
                 
                 // Yazı boyutunu uygula
                 document.documentElement.setAttribute('data-font-size', fontSize);
+                
+                // Yazı boyutunu uygula
+                document.documentElement.setAttribute('data-font-size', fontSize);
+                console.log("Yazı boyutu uygulandı:", fontSize);
                 
                 // localStorage'a kaydet
                 localStorage.setItem('theme', theme);
@@ -1166,6 +1245,10 @@
                 const fontSize = appearanceData.fontSize || localStorage.getItem('fontSize') || 'medium';
                 document.getElementById('fontSize').value = fontSize;
                 
+                // Yazı boyutunu uygula
+                document.documentElement.setAttribute('data-font-size', fontSize);
+                console.log("Yazı boyutu uygulandı:", fontSize);
+                
                 // Sayfa yükleme tamamlandı bildirimi
                 showToast('Ayarlar sayfası yüklendi');
             }
@@ -1182,6 +1265,149 @@
                 default: return 'TYT';
             }
         }
+
+        // Veri silme işlemleri için JavaScript kodları
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tüm görevleri silme
+            const deleteAllTasksBtn = document.getElementById('deleteAllTasksBtn');
+            if (deleteAllTasksBtn) {
+                deleteAllTasksBtn.addEventListener('click', async function() {
+                    // Onay kutusu göster
+                    const confirmation = confirm("Tüm görevlerinizi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!");
+                    if (!confirmation) return;
+                    
+                    try {
+                        // Butonu devre dışı bırak
+                        this.disabled = true;
+                        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Siliniyor...';
+                        
+                        // Kullanıcı oturumunu kontrol et
+                        const user = firebase.auth().currentUser;
+                        
+                        if (user) {
+                            // Firebase Realtime Database'den görevleri sil
+                            await firebase.database().ref('users/' + user.uid + '/tasks').remove();
+                            
+                            // Kullanıcıya bildirim göster
+                            showToast('Tüm görevleriniz başarıyla silindi!');
+                        } else {
+                            // Misafir kullanıcı ise yerel depolamadan görevleri sil
+                            const guestUser = JSON.parse(localStorage.getItem('guestUser') || '{}');
+                            if (guestUser) {
+                                guestUser.tasks = [];
+                                localStorage.setItem('guestUser', JSON.stringify(guestUser));
+                                
+                                // Kullanıcıya bildirim göster
+                                showToast('Tüm görevleriniz başarıyla silindi!');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Görevler silinirken hata oluştu:', error);
+                        showToast('Görevler silinirken bir hata oluştu: ' + error.message, 'error');
+                    } finally {
+                        // Butonu normal haline getir
+                        this.disabled = false;
+                        this.innerHTML = '<i class="fas fa-trash-alt"></i> Tüm Görevleri Sil';
+                    }
+                });
+            }
+            
+            // Tüm denemeleri silme
+            const deleteAllExamsBtn = document.getElementById('deleteAllExamsBtn');
+            if (deleteAllExamsBtn) {
+                deleteAllExamsBtn.addEventListener('click', async function() {
+                    // Onay kutusu göster
+                    const confirmation = confirm("Tüm deneme sınavlarınızı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!");
+                    if (!confirmation) return;
+                    
+                    try {
+                        // Butonu devre dışı bırak
+                        this.disabled = true;
+                        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Siliniyor...';
+                        
+                        // Kullanıcı oturumunu kontrol et
+                        const user = firebase.auth().currentUser;
+                        
+                        if (user) {
+                            // Firebase Realtime Database'den denemeleri sil
+                            await firebase.database().ref('users/' + user.uid + '/exams').remove();
+                            
+                            // Toplam sınav sayısını sıfırla
+                            await firebase.database().ref('users/' + user.uid + '/totalExams').set(0);
+                            
+                            // Ortalama puanı sıfırla
+                            await firebase.database().ref('users/' + user.uid + '/averageScore').set(0);
+                            
+                            // Kullanıcıya bildirim göster
+                            showToast('Tüm deneme sınavlarınız başarıyla silindi!');
+                        } else {
+                            // Misafir kullanıcı ise yerel depolamadan denemeleri sil
+                            const guestUser = JSON.parse(localStorage.getItem('guestUser') || '{}');
+                            if (guestUser) {
+                                guestUser.exams = [];
+                                guestUser.totalExams = 0;
+                                guestUser.averageScore = 0;
+                                localStorage.setItem('guestUser', JSON.stringify(guestUser));
+                                
+                                // Kullanıcıya bildirim göster
+                                showToast('Tüm deneme sınavlarınız başarıyla silindi!');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Denemeler silinirken hata oluştu:', error);
+                        showToast('Denemeler silinirken bir hata oluştu: ' + error.message, 'error');
+                    } finally {
+                        // Butonu normal haline getir
+                        this.disabled = false;
+                        this.innerHTML = '<i class="fas fa-trash-alt"></i> Tüm Denemeleri Sil';
+                    }
+                });
+            }
+            
+            // Tüm notları silme
+            const deleteAllNotesBtn = document.getElementById('deleteAllNotesBtn');
+            if (deleteAllNotesBtn) {
+                deleteAllNotesBtn.addEventListener('click', async function() {
+                    // Onay kutusu göster
+                    const confirmation = confirm("Tüm notlarınızı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!");
+                    if (!confirmation) return;
+                    
+                    try {
+                        // Butonu devre dışı bırak
+                        this.disabled = true;
+                        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Siliniyor...';
+                        
+                        // Kullanıcı oturumunu kontrol et
+                        const user = firebase.auth().currentUser;
+                        
+                        if (user) {
+                            // Firebase Realtime Database'den notları sil
+                            await firebase.database().ref('users/' + user.uid + '/notes').remove();
+                            
+                            // Kullanıcıya bildirim göster
+                            showToast('Tüm notlarınız başarıyla silindi!');
+                        } else {
+                            // Misafir kullanıcı ise yerel depolamadan notları sil
+                            const guestUser = JSON.parse(localStorage.getItem('guestUser') || '{}');
+                            if (guestUser) {
+                                guestUser.notes = [];
+                                localStorage.setItem('guestUser', JSON.stringify(guestUser));
+                                
+                                // Kullanıcıya bildirim göster
+                                showToast('Tüm notlarınız başarıyla silindi!');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Notlar silinirken hata oluştu:', error);
+                        showToast('Notlar silinirken bir hata oluştu: ' + error.message, 'error');
+                    } finally {
+                        // Butonu normal haline getir
+                        this.disabled = false;
+                        this.innerHTML = '<i class="fas fa-trash-alt"></i> Tüm Notları Sil';
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html> 
