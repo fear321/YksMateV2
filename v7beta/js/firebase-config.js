@@ -294,11 +294,13 @@ function updateUIWithUserData(userData) {
     document.getElementById("welcomeUserName").textContent = userData.name || "Kullanıcı";
     
     // Sınav türünü güncelle
-    document.getElementById("userExamType").textContent = "Sınav Türü: " + getExamTypeText(userData.examType);
+    document.getElementById("userExamType").textContent = "Bölüm: " + getExamTypeText(userData.examType);
     
     // Jeton sayısını güncelle
-    if (userData.tokens !== undefined) {
-      document.getElementById("tokenCount").textContent = userData.tokens + " Jeton";
+    const userTokensElement = document.getElementById("userTokens");
+    const tokenValueElement = document.getElementById("tokenValue");
+    if (tokenValueElement && userData.tokens !== undefined) {
+        tokenValueElement.textContent = userData.tokens;
     }
     
     // İstatistikleri güncelle

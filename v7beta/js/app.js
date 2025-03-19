@@ -98,6 +98,9 @@ function urlBase64ToUint8Array(base64String) {
 // - collectUserData()
 
 function initializeApp() {
+    // Yazı boyutunu ayarla
+    initializeFontSize();
+    
     initializeTheme();
     initializeSidebar();
     initializeNotifications();
@@ -108,6 +111,16 @@ function initializeApp() {
     
     // Sayfa içi linkleri düzenle
     initializeInPageLinks();
+}
+
+// Yazı boyutu ayarlarını uygula
+function initializeFontSize() {
+    const appearanceData = JSON.parse(localStorage.getItem('appearanceData')) || {};
+    const fontSize = appearanceData.fontSize || localStorage.getItem('fontSize') || 'medium';
+    
+    // HTML element'ine yazı boyutu özelliğini ekle
+    document.documentElement.setAttribute('data-font-size', fontSize);
+    console.log("Yazı boyutu uygulandı:", fontSize);
 }
 
 // Tema yönetimi
@@ -182,8 +195,8 @@ function initializeSidebar() {
     // Sabit menü genişliği için ana içeriği ayarla
     const mainContent = document.querySelector('.main-content');
     if (mainContent && window.innerWidth > 992) {
-        mainContent.style.marginLeft = '200px';
-        mainContent.style.width = 'calc(100% - 200px)';
+        mainContent.style.marginLeft = '230px';
+        mainContent.style.width = 'calc(100% - 230px)';
         mainContent.classList.add('content-pushed');
     }
     
@@ -219,7 +232,7 @@ function initializeSidebar() {
         if (isMobile) {
             // Mobil görünüm
             sidebar.classList.remove('sidebar-open');
-            sidebar.style.left = '-250px';
+            sidebar.style.left = '-230px';
             if (sidebarOverlay) sidebarOverlay.classList.remove('active');
             if (mainContent) {
                 mainContent.style.marginLeft = '0';
@@ -232,8 +245,8 @@ function initializeSidebar() {
             sidebar.style.left = '0';
             if (sidebarOverlay) sidebarOverlay.classList.remove('active');
             if (mainContent) {
-                mainContent.style.marginLeft = '250px';
-                mainContent.style.width = 'calc(100% - 250px)';
+                mainContent.style.marginLeft = '230px';
+                mainContent.style.width = 'calc(100% - 230px)';
                 mainContent.classList.add('content-pushed');
             }
         }
@@ -406,7 +419,6 @@ document.addEventListener('DOMContentLoaded', () => {
         addExamBtn.addEventListener('click', () => {
             // Deneme ekleme modalını göster
             // TODO: Deneme ekleme modalı oluştur
-            alert('Deneme ekleme özelliği yakında eklenecek!');
         });
     }
     
@@ -416,7 +428,6 @@ document.addEventListener('DOMContentLoaded', () => {
         addTaskBtn.addEventListener('click', () => {
             // Görev ekleme modalını göster
             // TODO: Görev ekleme modalı oluştur
-            alert('Görev ekleme özelliği yakında eklenecek!');
         });
     }
 });

@@ -36,6 +36,13 @@ function updateRotatingUserInfo(userData) {
     
     // Kullanıcı verilerini işle ve bilgileri göster
     function processUserData() {
+        // Jeton bilgisini ekle
+        if (userData.tokens !== undefined) {
+            userInfoItems.push({
+                text: `Mevcut Jetonun: ${userData.tokens}`
+            });
+        }
+        
         // Ortalama Net ve başarı durumuna göre kişiselleştirilmiş öneri
         if (userData.exams && userData.exams.length > 0) {
             // Sınav tipine göre maksimum soru sayıları
