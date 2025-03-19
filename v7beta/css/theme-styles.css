@@ -124,13 +124,13 @@ body.dark-theme {
 
 /* Sidebar Stilleri */
 .sidebar {
-    width: 250px;
-    min-width: 250px;
+    width: 230px;
+    min-width: 230px;
     height: 100vh;
     background: var(--sidebar-bg);
     border-right: 1px solid var(--sidebar-border);
     position: fixed;
-    left: -250px;
+    left: -230px;
     top: 0;
     z-index: 9999;
     overflow-y: auto;
@@ -148,7 +148,7 @@ body.dark-theme {
 }
 
 .content-pushed {
-    margin-left: 250px;
+    margin-left: 230px;
 }
 
 .sidebar-toggle {

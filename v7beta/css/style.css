@@ -1,4 +1,17 @@
 /* ===== GENEL STILLER ===== */
+/* Yazı Boyutu Ayarları */
+html[data-font-size="small"] {
+    font-size: 14px;
+}
+
+html[data-font-size="medium"] {
+    font-size: 16px;
+}
+
+html[data-font-size="large"] {
+    font-size: 18px;
+}
+
 :root {
     /* Ana Renkler */
     --primary-color: #4B2138;
@@ -141,29 +154,56 @@ body.has-background::before {
 /* Sidebar açık durumu */
 .sidebar.sidebar-open, .sidebar.active {
     left: 0 !important;
+    background: var(--light-card-bg);
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
 }
 
+.dark-theme .sidebar.sidebar-open, 
+.dark-theme .sidebar.active {
+    background: var(--dark-card-bg);
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.purple-theme .sidebar.sidebar-open, 
+.purple-theme .sidebar.active {
+    background: var(--purple-card-bg);
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.blue-theme .sidebar.sidebar-open, 
+.blue-theme .sidebar.active {
+    background: var(--blue-card-bg);
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.green-theme .sidebar.sidebar-open, 
+.green-theme .sidebar.active {
+    background: var(--green-card-bg);
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
 
 /* Bulanıklık efekti için destek */
 @supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
     body.has-background .sidebar {
-        background-color: rgba(var(--bg-primary-rgb, 255, 255, 255), 0.7);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
     }
     
     body.has-background.dark-theme .sidebar {
-        background-color: rgba(30, 30, 46, 0.7);
+        background: rgba(30, 30, 30, 0.95);
     }
     
     body.has-background.purple-theme .sidebar {
-        background-color: rgba(245, 240, 245, 0.7);
+        background: rgba(255, 255, 255, 0.95);
     }
     
     body.has-background.blue-theme .sidebar {
-        background-color: rgba(240, 245, 249, 0.7);
+        background: rgba(255, 255, 255, 0.95);
     }
     
     body.has-background.green-theme .sidebar {
-        background-color: rgba(240, 249, 245, 0.7);
+        background: rgba(255, 255, 255, 0.95);
     }
 }
 
@@ -309,13 +349,12 @@ body.green-theme {
     align-items: center;
     min-height: 100vh;
     padding: 20px;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
 }
 
 .auth-box {
     width: 100%;
     max-width: 450px;
-    background-color: white;
+    background-color: rgba(255, 255, 255, 0.055);
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     overflow: hidden;
@@ -688,8 +727,11 @@ body.green-theme {
 }
 
 .content-header {
-    width: calc(100% - -20px);
-    margin-left: -20px;
+    width: calc(100% - 5px);
+    top: -5px;
+    height: 70px;
+    margin-left: 0px;
+    margin-top: -10px;
     display: flex;
     align-items: center;
     padding: 10px;
@@ -772,8 +814,7 @@ body.green-theme {
     }
 }
 
-.action-separator {
-    color: var(--primary-color);
+.action-separator {    color: var(--primary-color);
     font-size: 14px;
 }
 
@@ -1066,9 +1107,10 @@ body.green-theme {
 }
 
 .stats-container .stat-card:last-child .stat-info p {
-    font-size: 18px;
+    font-size: 1.1rem;
     font-weight: 600;
     color: var(--primary-color);
+    margin: 0;
 }
 
 .dark-theme .stats-container .stat-card:last-child .stat-info p {
@@ -1133,9 +1175,10 @@ body.green-theme {
 }
 
 .stat-info p {
-    font-size: 24px;
+    font-size: 1.1rem;
     font-weight: 600;
-    color: var(--light-text);
+    color: var(--primary-color);
+    margin: 0;
 }
 
 .dark-theme .stat-info p {
@@ -6473,6 +6516,7 @@ body.green-theme {
     .section {
         width: 100%;
     }
+
 
 
 
