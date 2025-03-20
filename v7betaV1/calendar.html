@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKSMate - Takvim</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo(192).png">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Ana JavaScript -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth-check.js"></script>
+    <script src="js/theme-manager.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/user-token-display.js"></script>
+    
+    <style>
+        /* Takvim Stilleri */
+        .wrapper {
+            background: var(--light-card-bg);
+            border-radius: 10px;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            margin: 0 auto;
+        }
+        
+        .dark-theme .wrapper {
+            background: var(--dark-card-bg);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .wrapper header {
+            display: flex;
+            align-items: center;
+            padding: 25px 30px 10px;
+            justify-content: space-between;
+        }
+        
+        header .current-date {
+            font-size: 1.45rem;
+            font-weight: 500;
+            color: var(--light-text);
+        }
+        
+        .dark-theme header .current-date {
+            color: var(--dark-text);
+        }
+        
+        header .icons span {
+            height: 38px;
+            width: 38px;
+            margin: 0 1px;
+            cursor: pointer;
+            text-align: center;
+            line-height: 38px;
+            border-radius: 50%;
+            background: var(--light-hover);
+            color: var(--light-text);
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .dark-theme header .icons span {
+            background: var(--dark-hover);
+            color: var(--dark-text);
+        }
+        
+        header .icons span:hover {
+            background: var(--primary-color);
+            color: #fff;
+        }
+        
+        .calendar {
+            padding: 20px;
+        }
+        
+        .calendar ul {
+            display: flex;
+            list-style: none;
+            flex-wrap: wrap;
+            text-align: center;
+        }
+        
+        .calendar .weeks li {
+            font-weight: 500;
+            color: var(--light-text);
+        }
+        
+        .dark-theme .calendar .weeks li {
+            color: var(--dark-text);
+        }
+        
+        .calendar .days {
+            margin-bottom: 20px;
+        }
+        
+        .calendar ul li {
+            position: relative;
+            width: calc(100% / 7);
+            margin-top: 30px;
+        }
+        
+        .calendar .days li {
+            z-index: 1;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--light-text);
+        }
+        
+        .dark-theme .calendar .days li {
+            color: var(--dark-text);
+        }
+        
+        .calendar .days li.inactive {
+            color: #aaa;
+        }
+        
+        .calendar .days li.active {
+            color: #fff;
+        }
+        
+        .calendar .days li::before {
+            position: absolute;
+            content: "";
+            height: 40px;
+            width: 40px;
+            top: 50%;
+            left: 50%;
+            z-index: -1;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .calendar .days li:hover::before {
+            background: var(--light-hover);
+        }
+        
+        .dark-theme .calendar .days li:hover::before {
+            background: var(--dark-hover);
+        }
+        
+        .calendar .days li.active::before {
+            background: var(--primary-color);
+        }
+        
+        /* Görev Noktaları */
+        .task-dot {
+            position: absolute;
+            height: 6px;
+            width: 6px;
+            border-radius: 50%;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+        }
+        
+        .task-dot.high {
+            background-color: #ff4c4c;
+            box-shadow: 0 0 3px rgba(255, 76, 76, 0.8);
+        }
+        
+        .task-dot.medium {
+            background-color: #2196f3;
+            box-shadow: 0 0 3px rgba(33, 150, 243, 0.8);
+        }
+        
+        .task-dot.low {
+            background-color: #4caf50;
+            box-shadow: 0 0 3px rgba(76, 175, 80, 0.8);
+        }
+        
+        /* Koyu tema için görev noktaları */
+        .dark-theme .task-dot.high {
+            background-color: #ff6b6b;
+            box-shadow: 0 0 4px rgba(255, 107, 107, 0.9);
+        }
+        
+        .dark-theme .task-dot.medium {
+            background-color: #4dabf7;
+            box-shadow: 0 0 4px rgba(77, 171, 247, 0.9);
+        }
+        
+        .dark-theme .task-dot.low {
+            background-color: #69db7c;
+            box-shadow: 0 0 4px rgba(105, 219, 124, 0.9);
+        }
+        
+        /* Görev Noktaları Konteyneri */
+        .task-dots {
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 4px;
+            z-index: 2;
+        }
+        
+        /* Seçili gün stilini ekle */
+        .days li.selected-day::before {
+            background-color: rgba(74, 108, 247, 0.2);
+        }
+        
+        .dark-theme .days li.selected-day::before {
+            background-color: rgba(74, 108, 247, 0.3);
+        }
+        
+        /* Etkinlik Kartları */
+        .event-card {
+            background-color: var(--light-card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.5s ease forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .dark-theme .event-card {
+            background-color: var(--dark-card-bg);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .event-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark-theme .event-card:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            color: white;
+        }
+        
+        .event-header.priority-high {
+            background-color: #ff4c4c;
+        }
+        
+        .event-header.priority-medium {
+            background-color: #2196f3;
+        }
+        
+        .event-header.priority-low {
+            background-color: #4caf50;
+        }
+        
+        .event-header h4 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .event-time {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .event-body {
+            padding: 15px;
+        }
+        
+        .event-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        
+        .event-status.status-completed {
+            background-color: rgba(76, 175, 80, 0.15);
+            color: #4caf50;
+        }
+        
+        .event-status.status-in-progress {
+            background-color: rgba(33, 150, 243, 0.15);
+            color: #2196f3;
+        }
+        
+        .event-status.status-not-started {
+            background-color: rgba(158, 158, 158, 0.15);
+            color: #9e9e9e;
+        }
+        
+        .event-notes {
+            font-size: 14px;
+            color: var(--light-text);
+            margin: 0;
+        }
+        
+        .dark-theme .event-notes {
+            color: var(--dark-text);
+        }
+        
+        /* Animasyonlar */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .event-card:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+        
+        .event-card:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+        
+        .event-card:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+        
+        .event-card:nth-child(5) {
+            animation-delay: 0.4s;
+        }
+
+        .event-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .delete-event-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .delete-event-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        #eventPriority {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--light-card-bg);
+            color: var(--light-text);
+        }
+
+        .dark-theme #eventPriority {
+            background: var(--dark-card-bg);
+            color: var(--dark-text);
+            border-color: var(--dark-border-color);
+        }
+
+        .event-card {
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .selected-day::before {
+            background: var(--primary-color);
+            opacity: 0.5;
+        }
+        
+        .section-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-secondary {
+            background-color: var(--light-hover);
+            color: var(--light-text);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background-color: var(--border-color);
+        }
+        
+        .dark-theme .btn-secondary {
+            background-color: var(--dark-hover);
+            color: var(--dark-text);
+        }
+        
+        .dark-theme .btn-secondary:hover {
+            background-color: var(--dark-border-color);
+        }
+        
+        /* Etkinlik Sayacı */
+        .event-count {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 20px;
+            padding: 3px 8px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+    </style>
+    
+    <!-- Oturum Kontrolü -->
+    <script>
+        // Sayfa yüklendiğinde çalışacak
+        document.addEventListener('DOMContentLoaded', function() {
+            // Firebase yüklendiyse
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                // Kullanıcı oturumunu kontrol et
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        // Kullanıcı giriş yapmış
+                        console.log("Kullanıcı giriş yapmış:", user.uid);
+                        
+                        // Kullanıcı bilgilerini getir
+                        firebase.database().ref('users/' + user.uid).once('value')
+                            .then((snapshot) => {
+                                const userData = snapshot.val();
+                                if (userData) {
+                                    // Kullanıcı verileri varsa
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = userData.name || user.email.split('@')[0];
+                                    
+                                    // Sınav türünü güncelle
+                                    document.getElementById("userExamType").textContent = "" + getExamTypeText(userData.examType);
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                } else {
+                                    // Kullanıcı verileri yoksa e-postadan isim oluştur
+                                    const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = name;
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Kullanıcı verileri alınırken hata:", error);
+                                
+                                // E-postadan isim oluştur
+                                const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                
+                                // Kullanıcı adını güncelle
+                                document.getElementById("userName").textContent = name;
+                                
+                                // Dashboard'u göster
+                                document.getElementById("dashboardContainer").style.display = "flex";
+                            });
+                    } else {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            // Misafir kullanıcı varsa
+                            const guestData = JSON.parse(guestUser);
+                            
+                            // Kullanıcı adını güncelle
+                            document.getElementById("userName").textContent = guestData.name;
+                            document.getElementById("userExamType").textContent = "Sınav Türü: " + getExamTypeText(guestData.examType);
+                            
+                            // Dashboard'u göster
+                            document.getElementById("dashboardContainer").style.display = "flex";
+                        } else {
+                            // Giriş sayfasına yönlendir
+                            console.log("Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...");
+                            window.location.href = "login.html";
+                        }
+                    }
+                });
+            } else {
+                console.error("Firebase yüklenemedi!");
+                alert("Sistem yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.");
+            }
+        });
+        
+        // Sınav türü metni alma fonksiyonu
+        function getExamTypeText(examType) {
+            switch(examType) {
+                case 'tyt': return 'TYT';
+                case 'sayisal': return 'Sayısal';
+                case 'sozel': return 'Sözel';
+                case 'esitagirlik': return 'Eşit Ağırlık';
+                case 'dil': return 'Dil';
+                default: return 'TYT';
+            }
+        }
+    </script>
+</head>
+<body class="light-theme">
+    <div class="container">
+        <!-- Ana Dashboard -->
+        <div class="dashboard-container" id="dashboardContainer" style="display: none;">
+            <!-- Sidebar -->
+            <div class="sidebar">
+
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <a href="profile.html" style="text-decoration: none; color: inherit;">
+                            <h3 id="userName">Kullanıcı Adı</h3>
+                            <p id="userExamType">Sınav Türü: TYT</p>
+                        </a>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li>
+                            <a href="index.html"><i class="fas fa-home"></i> Ana Sayfa</a>
+                        </li>
+                        <li>
+                            <a href="exams.html"><i class="fas fa-file-alt"></i> Denemelerim</a>
+                        </li>
+                        <li>
+                            <a href="timer.html"><i class="fas fa-clock"></i> Zamanlayıcı</a>
+                        </li>
+                        <li class="active">
+                            <a href="calendar.html"><i class="fas fa-calendar-alt"></i> Takvim</a>
+                        </li>
+                        <li>
+                            <a href="notes.html"><i class="fas fa-sticky-note"></i> Notlarım</a>
+                        </li>
+                        <li>
+                            <a href="community.html"><i class="fas fa-users"></i> Topluluk</a>
+                        </li>
+                        <li>
+                            <a href="friends.html"><i class="fas fa-user-friends"></i> Arkadaşlarım</a>
+                        </li>
+                        <li>
+                            <a href="messages.html"><i class="fas fa-comment"></i> Mesajlar</a>
+                        </li>
+                        <li>
+                            <a href="ai.html"><i class="fas fa-robot"></i> MateAI</a>
+                        </li>
+                        <li>
+                            <a href="profile.html"><i class="fas fa-user-circle"></i> Profil</a>
+                        </li>
+                        <li>
+                            <a href="settings.html"><i class="fas fa-cog"></i> Ayarlar</a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="sidebar-footer">
+                    <button id="logoutBtn" class="btn btn-outline">
+                        <i class="fas fa-sign-out-alt"></i> Çıkış Yap
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ana İçerik -->
+            <div class="main-content">
+                <header class="content-header">
+                    <button id="sidebarToggle" class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Ara...">
+                    </div>
+                    <div class="header-actions">
+                        <button class="theme-toggle" id="themeToggle">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <div class="notifications">
+                            <button class="notification-btn">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge">3</span>
+                            </button>
+                            <div class="notification-dropdown">
+                                <div class="notification-header">
+                                    <h3>Bildirimler</h3>
+                                    <button class="mark-all-read">Tümünü Okundu İşaretle</button>
+                                </div>
+                                <div class="notification-list">
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-file-alt"></i></div>
+                                        <div class="notification-content">
+                                            <p>Yarın TYT Denemesi var!</p>
+                                            <span class="notification-time">2 saat önce</span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-tasks"></i></div>
+                                        <div class="notification-content">
+                                            <p>Matematik ödeviniz için son gün!</p>
+                                            <span class="notification-time">5 saat önce</span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-trophy"></i></div>
+                                        <div class="notification-content">
+                                            <p>Haftalık hedefinize ulaştınız!</p>
+                                            <span class="notification-time">1 gün önce</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="notification-footer">
+                                    <a href="#">Tüm Bildirimleri Gör</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Sayfa İçeriği -->
+                <div class="page-content">
+                    <h1 class="page-title">Takvim</h1>
+                    
+                    <div class="section">
+                        <div class="section-header">
+
+                        </div>
+                        
+                        <div class="calendar-container">
+                            <!-- Yeni Takvim Bileşeni -->
+                            <div class="wrapper">
+                                <header>
+                                    <p class="current-date" id="currentMonthYear"></p>      
+                                    <div class="icons">
+                                        <span id="prevIcon" class="leftIcon"><i class="fas fa-chevron-left"></i></span>
+                                        <span id="nextIcon" class="rightIcon"><i class="fas fa-chevron-right"></i></span>
+                                    </div>
+                                </header>
+                                <div class="calendar">
+                                    <ul class="weeks">
+                                        <li>Pzt</li>
+                                        <li>Sal</li>
+                                        <li>Çar</li>
+                                        <li>Per</li>
+                                        <li>Cum</li>
+                                        <li>Cmt</li>
+                                        <li>Paz</li>
+                                    </ul>
+                                    <ul class="days" id="calendarDays">
+                                        <!-- Günler JavaScript ile doldurulacak -->
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Yaklaşan Etkinlikler</h2>
+                            <div class="section-actions">
+                                <button class="btn btn-secondary" id="showAllEventsBtn">
+                                    <i class="fas fa-calendar-week"></i> Tüm Etkinlikler
+                                </button>
+                                <button class="btn btn-primary" id="addEventBtn">
+                                    <i class="fas fa-plus"></i> Etkinlik Ekle
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="events-list" id="eventsList">
+                            <div class="empty-state">
+                                <i class="fas fa-calendar-alt"></i>
+                                <p>Henüz etkinlik eklenmemiş</p>
+                                <p class="small-text">Etkinlik eklemek için "Etkinlik Ekle" butonuna tıklayın</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Etkinlik Ekleme Modalı -->
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Etkinlik Ekle</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <i class="fas fa-heading"></i>
+                    <input type="text" id="eventTitle" placeholder="Etkinlik Başlığı">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-calendar-day"></i>
+                    <input type="date" id="eventDate">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-clock"></i>
+                    <input type="time" id="eventTime">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-tag"></i>
+                    <select id="eventType">
+                        <option value="exam">Deneme Sınavı</option>
+                        <option value="study">Çalışma Planı</option>
+                        <option value="deadline">Son Teslim Tarihi</option>
+                        <option value="other">Diğer</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <select id="eventPriority">
+                        <option value="high">Yüksek Öncelik</option>
+                        <option value="medium">Orta Öncelik</option>
+                        <option value="low">Düşük Öncelik</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-align-left"></i>
+                    <textarea id="eventDescription" placeholder="Açıklama (İsteğe bağlı)"></textarea>
+                </div>
+                <button class="btn btn-primary" id="saveEventBtn">
+                    <i class="fas fa-save"></i> Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Çıkış İşlemi İçin JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function() {
+                    try {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            if (confirm('Çıkış yapmak istediğinize emin misiniz? Misafir verileriniz silinecektir.')) {
+                                localStorage.removeItem('guestUser');
+                                window.location.href = "login.html";
+                            }
+                        } else {
+                            if (typeof firebase !== 'undefined' && firebase.auth) {
+                                await firebase.auth().signOut();
+                                window.location.href = "login.html";
+                            } else {
+                                throw new Error("Firebase yüklenemedi!");
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Çıkış hatası:', error);
+                        alert('Çıkış yaparken bir hata oluştu: ' + error.message);
+                    }
+                });
+            }
+            
+            // Modal işlemleri
+            const addEventBtn = document.getElementById('addEventBtn');
+            const eventModal = document.getElementById('eventModal');
+            const closeModal = document.querySelector('.close-modal');
+            
+            if (addEventBtn && eventModal && closeModal) {
+                addEventBtn.addEventListener('click', function() {
+                    eventModal.style.display = 'flex';
+                });
+                
+                closeModal.addEventListener('click', function() {
+                    eventModal.style.display = 'none';
+                });
+                
+                window.addEventListener('click', function(event) {
+                    if (event.target === eventModal) {
+                        eventModal.style.display = 'none';
+                    }
+                });
+            }
+        });
+    </script>
+    
+    <!-- Takvim JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Takvim Elementleri
+            const currentDateTitle = document.querySelector(".current-date");
+            const daysTag = document.querySelector(".days");
+            const prevNextIcons = document.querySelectorAll(".icons span");
+            
+            // Tarih Değişkenleri
+            let date = new Date();
+            let currentYear = date.getFullYear();
+            let currentMonth = date.getMonth();
+            let selectedDate = new Date().toISOString().split('T')[0]; // Bugünün tarihi varsayılan olarak
+            
+            // Ay İsimleri
+            const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+            
+            // Görevleri Depolama
+            let allTasks = [];
+            
+            // Firebase Auth State Change Listener
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    // Realtime veritabanı dinleyicisi ekle
+                    const tasksRef = firebase.database().ref('users/' + user.uid + '/tasks');
+                    tasksRef.on('value', (snapshot) => {
+                        const tasksData = snapshot.val();
+                        processTasks(tasksData);
+                    });
+                } else {
+                    // Misafir kullanıcı için localStorage dinleyicisi
+                    window.addEventListener('storage', function(e) {
+                        if (e.key === 'guestUser') {
+                            const guestData = JSON.parse(e.newValue);
+                            if (guestData && guestData.tasks) {
+                                processTasks(guestData.tasks);
+                            }
+                        }
+                    });
+
+                    // İlk yükleme için misafir verilerini kontrol et
+                    const guestUser = localStorage.getItem('guestUser');
+                    if (guestUser) {
+                        const guestData = JSON.parse(guestUser);
+                        if (guestData && guestData.tasks) {
+                            processTasks(guestData.tasks);
+                        }
+                    }
+                }
+            });
+            
+            // Takvimi Oluştur
+            const renderCalendar = () => {
+                // Ayın ilk gününün haftanın hangi günü olduğunu bul (0: Pazar, 1: Pazartesi, ...)
+                let firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+                // Pazartesi başlangıçlı takvim için düzeltme (0: Pazartesi, 6: Pazar)
+                firstDayOfMonth = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+                
+                // Ayın son gününü bul
+                let lastDateOfMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                
+                // Ayın son gününün haftanın hangi günü olduğunu bul
+                let lastDayOfMonth = new Date(currentYear, currentMonth, lastDateOfMonth).getDay();
+                // Pazartesi başlangıçlı takvim için düzeltme
+                lastDayOfMonth = lastDayOfMonth === 0 ? 6 : lastDayOfMonth - 1;
+                
+                // Önceki ayın son gününü bul
+                let lastDateOfLastMonth = new Date(currentYear, currentMonth, 0).getDate();
+                
+                let liDayTag = "";
+                
+                // Önceki ayın son günlerini ekle
+                for (let i = firstDayOfMonth; i > 0; i--) {
+                    liDayTag += `<li class="inactive">${lastDateOfLastMonth - i + 1}</li>`;
+                }
+                
+                // Mevcut ayın günlerini ekle
+                for (let i = 1; i <= lastDateOfMonth; i++) {
+                    // Bugünün günü mü kontrol et
+                    let isToday = i === date.getDate() && currentMonth === new Date().getMonth() && currentYear === new Date().getFullYear() ? 'active' : '';
+                    
+                    // Günün tarihini oluştur (YYYY-MM-DD formatında)
+                    const dayDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                    
+                    // Bu güne ait görevleri bul
+                    const dayTasks = allTasks.filter(task => task.date === dayDate);
+                    
+                    // Görev noktaları HTML'i
+                    let taskDotsHTML = '';
+                    
+                    if (dayTasks.length > 0) {
+                        // Öncelik sayılarını hesapla
+                        const highPriority = dayTasks.filter(task => task.priority === 'high').length;
+                        const mediumPriority = dayTasks.filter(task => task.priority === 'medium').length;
+                        const lowPriority = dayTasks.filter(task => task.priority === 'low').length;
+                        
+                        // Görev noktaları HTML'i oluştur
+                        taskDotsHTML = '<div class="task-dots">';
+                        
+                        if (highPriority > 0) {
+                            taskDotsHTML += '<div class="task-dot high"></div>';
+                        }
+                        
+                        if (mediumPriority > 0) {
+                            taskDotsHTML += '<div class="task-dot medium"></div>';
+                        }
+                        
+                        if (lowPriority > 0) {
+                            taskDotsHTML += '<div class="task-dot low"></div>';
+                        }
+                        
+                        taskDotsHTML += '</div>';
+                    }
+                    
+                    // Gün HTML'i
+                    liDayTag += `<li class="${isToday}" data-date="${dayDate}">${i}${taskDotsHTML}</li>`;
+                }
+                
+                // Sonraki ayın ilk günlerini ekle
+                for (let i = lastDayOfMonth; i < 6; i++) {
+                    liDayTag += `<li class="inactive">${i - lastDayOfMonth + 1}</li>`;
+                }
+                
+                // Takvim başlığını güncelle
+                currentDateTitle.innerText = `${months[currentMonth]} ${currentYear}`;
+                
+                // Günleri takvime ekle
+                daysTag.innerHTML = liDayTag;
+                
+                // Gün tıklama olaylarını ekle
+                addDayClickEvents();
+            };
+            
+            // Gün tıklama olaylarını ekle
+            const addDayClickEvents = () => {
+                const dayElements = document.querySelectorAll('.days li:not(.inactive)');
+                
+                dayElements.forEach(day => {
+                    day.addEventListener('click', () => {
+                        const dateStr = day.getAttribute('data-date');
+                        if (dateStr) {
+                            // Seçilen tarihi global değişkene kaydet
+                            selectedDate = dateStr;
+                            
+                            // Seçilen tarihe ait görevleri göster
+                            showTasksForDate(dateStr);
+                            
+                            // Tüm günlerin aktif sınıfını kaldır
+                            dayElements.forEach(d => d.classList.remove('selected-day'));
+                            
+                            // Seçilen güne aktif sınıf ekle
+                            day.classList.add('selected-day');
+                        }
+                    });
+                });
+            };
+            
+            // Belirli bir tarihe ait görevleri göster
+            const showTasksForDate = (dateStr) => {
+                // Tarihe ait görevleri filtrele
+                const tasksForDate = allTasks.filter(task => task.date === dateStr);
+                
+                // Etkinlikler listesini güncelle
+                const eventsList = document.getElementById('eventsList');
+                
+                if (eventsList) {
+                    if (tasksForDate.length > 0) {
+                        // Görevleri göster
+                        eventsList.innerHTML = '';
+                        
+                        // Tarih başlığı
+                        const dateObj = new Date(dateStr);
+                        const formattedDate = `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+                        
+                        const dateHeader = document.createElement('div');
+                        dateHeader.className = 'date-header';
+                        dateHeader.innerHTML = `<h3>${formattedDate} Görevleri</h3>`;
+                        eventsList.appendChild(dateHeader);
+                        
+                        // Görevleri önceliğe göre sırala
+                        tasksForDate.sort((a, b) => {
+                            const priorityOrder = { 'high': 0, 'medium': 1, 'low': 2 };
+                            return priorityOrder[a.priority] - priorityOrder[b.priority];
+                        });
+                        
+                        // Her görev için kart oluştur
+                        tasksForDate.forEach(task => {
+                            const taskCard = document.createElement('div');
+                            taskCard.className = 'event-card';
+                            
+                            // Öncelik sınıfı
+                            let priorityClass = '';
+                            switch(task.priority) {
+                                case 'high': priorityClass = 'priority-high'; break;
+                                case 'medium': priorityClass = 'priority-medium'; break;
+                                case 'low': priorityClass = 'priority-low'; break;
+                                default: priorityClass = 'priority-medium';
+                            }
+                            
+                            // Durum sınıfı
+                            let statusClass = '';
+                            let statusText = '';
+                            switch(task.status) {
+                                case 'completed': 
+                                    statusClass = 'status-completed'; 
+                                    statusText = 'Tamamlandı';
+                                    break;
+                                case 'in-progress': 
+                                    statusClass = 'status-in-progress'; 
+                                    statusText = 'Devam Ediyor';
+                                    break;
+                                case 'not-started': 
+                                    statusClass = 'status-not-started'; 
+                                    statusText = 'Başlanmadı';
+                                    break;
+                                default: 
+                                    statusClass = 'status-not-started';
+                                    statusText = 'Başlanmadı';
+                            }
+                            
+                            // Kart içeriği
+                            taskCard.innerHTML = `
+                                <div class="event-header ${priorityClass}">
+                                    <h4>${task.title}</h4>
+                                    <div class="event-header-actions">
+                                        <span class="event-time">${formattedDate} ${task.time || ''}</span>
+                                        <button class="delete-event-btn" data-task-id="${task.id}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="event-body">
+                                    <div class="event-status ${statusClass}">${statusText}</div>
+                                    <p class="event-notes">${task.notes || 'Not yok'}</p>
+                                </div>
+                            `;
+                            
+                            eventsList.appendChild(taskCard);
+                        });
+                    } else {
+                        // Görev yoksa boş durumu göster
+                        showEmptyState();
+                    }
+                }
+            };
+            
+            // Görevleri yükle
+            const loadTasks = () => {
+                const user = firebase.auth().currentUser;
+                
+                if (user) {
+                    // Firebase dinleyicisi zaten aktif, tekrar yüklemeye gerek yok
+                    return;
+                } else {
+                    const guestUser = localStorage.getItem('guestUser');
+                    if (guestUser) {
+                        const guestData = JSON.parse(guestUser);
+                        processTasks(guestData.tasks);
+                    }
+                }
+            };
+            
+            // Görevleri işle
+            const processTasks = (tasks) => {
+                allTasks = [];
+                
+                if (!tasks) {
+                    renderCalendar();
+                    showEmptyState();
+                    return;
+                }
+                
+                if (typeof tasks === 'object' && !Array.isArray(tasks) && tasks !== null) {
+                    Object.keys(tasks).forEach(key => {
+                        allTasks.push({
+                            id: key,
+                            ...tasks[key]
+                        });
+                    });
+                } else if (Array.isArray(tasks)) {
+                    allTasks = tasks;
+                }
+                
+                renderCalendar();
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const dateParam = urlParams.get('date');
+                
+                if (dateParam) {
+                    showTasksForDate(dateParam);
+                } else {
+                    const today = new Date().toISOString().split('T')[0];
+                    showTasksForDate(today);
+                }
+            };
+            
+            // Boş durum gösterme fonksiyonu ekle
+            const showEmptyState = () => {
+                const eventsList = document.getElementById('eventsList');
+                if (eventsList) {
+                    eventsList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-alt"></i>
+                            <p>Henüz etkinlik eklenmemiş</p>
+                            <p class="small-text">Etkinlik eklemek için "Etkinlik Ekle" butonuna tıklayın</p>
+                        </div>
+                    `;
+                }
+            };
+            
+            // İlk yükleme
+            renderCalendar();
+            loadTasks();
+            
+            // Sayfa ilk yüklendiğinde tüm etkinlikleri göster
+            setTimeout(() => {
+                showAllEvents();
+            }, 500);
+            
+            // Önceki/Sonraki ay butonları
+            prevNextIcons.forEach(icon => {
+                icon.addEventListener("click", () => {
+                    // Ay değiştir
+                    currentMonth = icon.id === "prevIcon" ? currentMonth - 1 : currentMonth + 1;
+                    
+                    // Yıl değiştir
+                    if (currentMonth < 0 || currentMonth > 11) {
+                        date = new Date(currentYear, currentMonth);
+                        currentYear = date.getFullYear();
+                        currentMonth = date.getMonth();
+                    } else {
+                        date = new Date();
+                    }
+                    
+                    // Takvimi yeniden oluştur
+                    renderCalendar();
+                });
+            });
+            
+            // Etkinlik kaydetme
+            const saveEventBtn = document.getElementById('saveEventBtn');
+            if (saveEventBtn) {
+                saveEventBtn.addEventListener('click', async function() {
+                    try {
+                        // Form verilerini al
+                        const title = document.getElementById('eventTitle').value;
+                        const date = document.getElementById('eventDate').value;
+                        const time = document.getElementById('eventTime').value || '';
+                        const type = document.getElementById('eventType').value;
+                        const description = document.getElementById('eventDescription').value || '';
+                        
+                        // Zorunlu alanları kontrol et
+                        if (!title || !date) {
+                            alert('Lütfen başlık ve tarih alanlarını doldurun.');
+                            return;
+                        }
+                        
+                        // Görev verisi oluştur
+                        const taskData = {
+                            title: title,
+                            date: date,
+                            time: time,
+                            priority: document.getElementById('eventPriority').value,
+                            notes: description,
+                            status: 'not-started',
+                            createdAt: new Date().toISOString()
+                        };
+                        
+                        // Kullanıcı oturumunu kontrol et
+                        const user = firebase.auth().currentUser;
+                        
+                        if (user) {
+                            // Kullanıcı giriş yapmış, Firebase'e kaydet
+                            const taskRef = firebase.database().ref('users/' + user.uid + '/tasks').push();
+                            await taskRef.set(taskData);
+                            
+                            console.log("Görev kaydedildi:", taskData);
+                            alert("Görev başarıyla kaydedildi!");
+                            
+                            // Modalı kapat
+                            document.getElementById('eventModal').style.display = 'none';
+                            
+                            // Görevleri yeniden yükle
+                            loadTasks();
+                        } else {
+                            // Misafir kullanıcı kontrolü
+                            const guestUser = localStorage.getItem('guestUser');
+                            
+                            if (guestUser) {
+                                // Misafir kullanıcı için localStorage'a kaydet
+                                const guestData = JSON.parse(guestUser);
+                                
+                                // Görevler dizisi yoksa oluştur
+                                if (!guestData.tasks) {
+                                    guestData.tasks = [];
+                                }
+                                
+                                // Görev ID'si oluştur
+                                const taskId = 'task_' + Date.now();
+                                taskData.id = taskId;
+                                
+                                // Görevi ekle
+                                guestData.tasks.push(taskData);
+                                
+                                // LocalStorage'a kaydet
+                                localStorage.setItem('guestUser', JSON.stringify(guestData));
+                                
+                                console.log("Misafir kullanıcı için görev kaydedildi:", taskData);
+                                alert("Görev başarıyla kaydedildi!");
+                                
+                                // Modalı kapat
+                                document.getElementById('eventModal').style.display = 'none';
+                                
+                                // Görevleri yeniden yükle
+                                loadTasks();
+                            } else {
+                                alert("Görev eklemek için giriş yapmalısınız!");
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Görev kaydedilirken hata:", error);
+                        alert("Görev kaydedilirken bir hata oluştu: " + error.message);
+                    }
+                });
+            }
+            
+            // Tüm etkinlikleri göster
+            const showAllEvents = () => {
+                const eventsList = document.getElementById('eventsList');
+                if (!eventsList) return;
+
+                if (allTasks.length === 0) {
+                    showEmptyState();
+                    return;
+                }
+
+                // Etkinlikleri tarihe göre sırala (en yeni üstte)
+                const sortedTasks = [...allTasks].sort((a, b) => {
+                    const dateA = new Date(a.date + (a.time ? 'T' + a.time : ''));
+                    const dateB = new Date(b.date + (b.time ? 'T' + b.time : ''));
+                    return dateB - dateA;
+                });
+
+                eventsList.innerHTML = '<h3>Tüm Etkinlikler</h3>';
+
+                sortedTasks.forEach(task => {
+                    const taskCard = document.createElement('div');
+                    taskCard.className = 'event-card';
+
+                    let priorityClass = '';
+                    switch(task.priority) {
+                        case 'high': priorityClass = 'priority-high'; break;
+                        case 'medium': priorityClass = 'priority-medium'; break;
+                        case 'low': priorityClass = 'priority-low'; break;
+                        default: priorityClass = 'priority-medium';
+                    }
+
+                    const dateObj = new Date(task.date);
+                    const formattedDate = `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+
+                    taskCard.innerHTML = `
+                        <div class="event-header ${priorityClass}">
+                            <h4>${task.title}</h4>
+                            <div class="event-header-actions">
+                                <span class="event-time">${formattedDate} ${task.time || ''}</span>
+                                <button class="delete-event-btn" data-task-id="${task.id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="event-body">
+                            <div class="event-status ${task.status === 'completed' ? 'status-completed' : 
+                                                     task.status === 'in-progress' ? 'status-in-progress' : 
+                                                     'status-not-started'}">
+                                ${task.status === 'completed' ? 'Tamamlandı' : 
+                                  task.status === 'in-progress' ? 'Devam Ediyor' : 
+                                  'Başlanmadı'}
+                            </div>
+                            <p class="event-notes">${task.notes || 'Not yok'}</p>
+                        </div>
+                    `;
+
+                    eventsList.appendChild(taskCard);
+                });
+
+                // Silme butonlarına tıklama olayı ekle
+                addDeleteEventListeners();
+            };
+            
+            // Etkinlik ekle butonu ve tüm etkinlikleri göster butonu
+            const showAllEventsBtn = document.getElementById('showAllEventsBtn');
+            const eventModal = document.getElementById('eventModal');
+            const closeModal = document.querySelector('.close-modal');
+            
+            if (showAllEventsBtn) {
+                showAllEventsBtn.addEventListener('click', function() {
+                    showAllEvents();
+                    
+                    // Takvimde seçili gün varsa seçimini kaldır
+                    const selectedDays = document.querySelectorAll('.days li.selected-day');
+                    selectedDays.forEach(day => {
+                        day.classList.remove('selected-day');
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

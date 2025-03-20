@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKSMate - Profil</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo(192).png">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Ana JavaScript -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth-check.js"></script>
+    <script src="js/theme-manager.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/user-token-display.js"></script>
+    <script src="js/user-name-sync.js"></script>
+    
+    <!-- Oturum Kontrolü -->
+    <script>
+        // Sayfa yüklendiğinde çalışacak
+        document.addEventListener('DOMContentLoaded', function() {
+            // Firebase yüklendiyse
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                console.log("profile.html: Firebase yüklendi, oturum kontrolü çalışıyor");
+                
+                // Dashboard container'ı görünür yap
+                setTimeout(() => {
+                    const dashboardContainer = document.getElementById("dashboardContainer");
+                    if (dashboardContainer && dashboardContainer.style.display === "none") {
+                        console.log("profile.html: Dashboard container'ı 1 saniye sonra görünür hale getiriliyor");
+                        dashboardContainer.style.display = "flex";
+                    }
+                }, 1000); // 1 saniye sonra görünür yap
+                
+                // Oturum kontrolü ve veri yüklemesi alt script tarafından yapılacak
+                
+                // Dashboard container'ı başlangıçta gizli
+                const dashboardContainer = document.getElementById("dashboardContainer");
+                if (dashboardContainer && dashboardContainer.style.display === "none") {
+                    // Firebase oturum kontrolünü bekle
+                    firebase.auth().onAuthStateChanged(function(user) {
+                        if (!user) {
+                            // Misafir kullanıcı kontrolü
+                            const guestUser = localStorage.getItem('guestUser');
+                            if (!guestUser) {
+                                // Giriş sayfasına yönlendir
+                                console.log("profile.html: Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...");
+                                window.location.href = "login.html";
+                            }
+                        }
+                    });
+                }
+            } else {
+                console.error("profile.html: Firebase yüklenemedi!");
+                alert("Sistem yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.");
+            }
+        });
+        
+        // Sınav türü metni alma fonksiyonu
+        function getExamTypeText(examType) {
+            switch(examType) {
+                case 'tyt': return 'TYT';
+                case 'sayisal': return 'Sayısal';
+                case 'sozel': return 'Sözel';
+                case 'esitagirlik': return 'Eşit Ağırlık';
+                case 'dil': return 'Dil';
+                default: return 'TYT';
+            }
+        }
+        
+        // Çalışma süresini formatla
+        function formatStudyTime(minutes) {
+            if (minutes < 60) {
+                return `${minutes} dakika`;
+            } else {
+                const hours = Math.floor(minutes / 60);
+                const remainingMinutes = minutes % 60;
+                if (remainingMinutes === 0) {
+                    return `${hours} saat`;
+                }
+                return `${hours} saat ${remainingMinutes} dakika`;
+            }
+        }
+    </script>
+</head>
+<body class="light-theme">
+    <div class="container">
+        <!-- Ana Dashboard -->
+        <div class="dashboard-container" id="dashboardContainer" style="display: none;">
+            <!-- Sidebar -->
+            <div class="sidebar">
+
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <h3 id="userName">Kullanıcı Adı</h3>
+                        <p id="userExamType">Sınav Türü: TYT</p>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li>
+                            <a href="index.html"><i class="fas fa-home"></i> Ana Sayfa</a>
+                        </li>
+                        <li>
+                            <a href="exams.html"><i class="fas fa-file-alt"></i> Denemelerim</a>
+                        </li>
+                        <li>
+                            <a href="timer.html"><i class="fas fa-clock"></i> Zamanlayıcı</a>
+                        </li>
+                        <li>
+                            <a href="calendar.html"><i class="fas fa-calendar-alt"></i> Takvim</a>
+                        </li>
+                        <li>
+                            <a href="notes.html"><i class="fas fa-sticky-note"></i> Notlarım</a>
+                        </li>
+                        <li>
+                            <a href="community.html"><i class="fas fa-users"></i> Topluluk</a>
+                        </li>
+                        <li>
+                            <a href="friends.html"><i class="fas fa-user-friends"></i> Arkadaşlarım</a>
+                        </li>
+                        <li>
+                            <a href="messages.html"><i class="fas fa-comment"></i> Mesajlar</a>
+                        </li>
+                        <li>
+                            <a href="ai.html"><i class="fas fa-robot"></i> MateAI</a>
+                        </li>
+                        <li class="active">
+                            <a href="profile.html"><i class="fas fa-user-circle"></i> Profil</a>
+                        </li>
+                        <li>
+                            <a href="settings.html"><i class="fas fa-cog"></i> Ayarlar</a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="sidebar-footer">
+                    <button id="logoutBtn" class="btn btn-outline">
+                        <i class="fas fa-sign-out-alt"></i> Çıkış Yap
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ana İçerik -->
+            <div class="main-content">
+                <header class="content-header">
+                    <button id="sidebarToggle" class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Ara...">
+                    </div>
+                    <div class="header-actions">
+                        <button class="theme-toggle" id="themeToggle">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <div class="notifications">
+                            <button class="notification-btn">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge">3</span>
+                            </button>
+                            <div class="notification-dropdown">
+                                <div class="notification-header">
+                                    <h3>Bildirimler</h3>
+                                    <button class="mark-all-read">Tümünü Okundu İşaretle</button>
+                                </div>
+                                <div class="notification-list">
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-file-alt"></i></div>
+                                        <div class="notification-content">
+                                            <p>Yarın TYT Denemesi var!</p>
+                                            <span class="notification-time">2 saat önce</span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-tasks"></i></div>
+                                        <div class="notification-content">
+                                            <p>Matematik ödeviniz için son gün!</p>
+                                            <span class="notification-time">5 saat önce</span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-trophy"></i></div>
+                                        <div class="notification-content">
+                                            <p>Haftalık hedefinize ulaştınız!</p>
+                                            <span class="notification-time">1 gün önce</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="notification-footer">
+                                    <a href="#">Tüm Bildirimleri Gör</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Sayfa İçeriği -->
+                <div class="page-content">
+                    <h1 class="page-title">Profil</h1>
+                    
+                    <div class="section">
+                        <div class="profile-header">
+                            <div class="profile-avatar">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <div class="profile-info">
+                                <h2 id="profileUserName">Kullanıcı Adı</h2>
+                                <p id="profileExamType">TYT</p>
+                                <div class="profile-badges">
+                                    <span class="badge" id="profilePremium">Standart Üye</span>
+                                </div>
+                            </div>
+                            <div class="profile-actions">
+                                <a href="settings.html" class="btn btn-primary">
+                                    <i class="fas fa-edit"></i> Profili Düzenle
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Hesap Bilgileri</h2>
+                        </div>
+                        
+                        <div class="profile-details">
+                            <div class="profile-detail-item">
+                                <div class="detail-label">
+                                    <i class="fas fa-envelope"></i>
+                                    <span>E-posta</span>
+                                </div>
+                                <div class="detail-value" id="profileEmail">
+                                    kullanici@example.com
+                                </div>
+                            </div>
+                            
+                            <div class="profile-detail-item">
+                                <div class="detail-label">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span>Kayıt Tarihi</span>
+                                </div>
+                                <div class="detail-value" id="profileRegDate">
+                                    01.01.2023
+                                </div>
+                            </div>
+                            
+                            <div class="profile-detail-item">
+                                <div class="detail-label">
+                                    <i class="fas fa-coins"></i>
+                                    <span>Jeton</span>
+                                </div>
+                                <div class="detail-value" id="profileTokens">
+                                    0
+                                </div>
+                            </div>
+                            
+                            <div class="profile-detail-item">
+                                <div class="detail-label">
+                                    <i class="fas fa-university"></i>
+                                    <span>Hedef Üniversite</span>
+                                </div>
+                                <div class="detail-value" id="profileTargetUniversity">
+                                    Belirtilmemiş
+                                </div>
+                            </div>
+                            
+                            <div class="profile-detail-item">
+                                <div class="detail-label">
+                                    <i class="fas fa-graduation-cap"></i>
+                                    <span>Hedef Bölüm</span>
+                                </div>
+                                <div class="detail-value" id="profileTargetDepartment">
+                                    Belirtilmemiş
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>İstatistikler</h2>
+                        </div>
+                        
+                        <div class="stats-container">
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
+                                <div class="stat-info">
+                                    <h3>Toplam Deneme</h3>
+                                    <p id="profileTotalExams">0</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                                <div class="stat-info">
+                                    <h3>Çalışma Süresi</h3>
+                                    <p id="profileStudyTime">0 saat</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-tasks"></i></div>
+                                <div class="stat-info">
+                                    <h3>Tamamlanan Görevler</h3>
+                                    <p id="profileCompletedTasks">0/0</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                                <div class="stat-info">
+                                    <h3>Ortalama Net</h3>
+                                    <p id="profileAvgScore">0.0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Çıkış İşlemi İçin JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentUser;
+            let userRef;
+            let profileUserId;
+
+            // URL'den kullanıcı ID'sini al
+            const urlParams = new URLSearchParams(window.location.search);
+            const userIdParam = urlParams.get('user');
+
+            // Kullanıcı oturumunu kontrol et
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    currentUser = user;
+                    
+                    // URL'de user parametresi varsa o kullanıcının profilini, yoksa kendi profilini göster
+                    profileUserId = userIdParam || user.uid;
+                    
+                    userRef = firebase.database().ref('users/' + profileUserId);
+                    loadUserProfile();
+                    
+                    // Kendi profilin değilse düzenleme butonunu gizle
+                    if (profileUserId !== user.uid) {
+                        const editButtons = document.querySelectorAll('.edit-btn');
+                        editButtons.forEach(btn => {
+                            btn.style.display = 'none';
+                        });
+                    }
+                }
+            });
+
+            // Kullanıcı profilini yükle
+            function loadUserProfile() {
+                // Realtime veri güncellemelerini al
+                userRef.on('value', snapshot => {
+                    const userData = snapshot.val();
+                    if (userData) {
+                        console.log("profile.html loadUserProfile: Veritabanından realtime veri alındı:", userData);
+                        
+                        // Profil bilgilerini güncelle
+                        document.getElementById('profileUserName').textContent = userData.name || (profileUserId === currentUser.uid ? currentUser.email.split('@')[0] : 'İsimsiz Kullanıcı');
+                        document.getElementById('profileEmail').textContent = profileUserId === currentUser.uid ? currentUser.email : (userData.email || 'Gizli');
+                        document.getElementById('profileExamType').textContent = getExamTypeText(userData.examType);
+                        document.getElementById('profilePremium').textContent = userData.isPremium ? 'Premium Üye' : 'Standart Üye';
+                        document.getElementById('profileTokens').textContent = userData.tokens || 0;
+                        
+                        // İstatistikleri güncelle
+                        document.getElementById('profileTotalExams').textContent = userData.totalExams || 0;
+                        document.getElementById('profileStudyTime').textContent = formatStudyTime(userData.totalStudyTime || 0);
+                        document.getElementById('profileCompletedTasks').textContent = `${userData.completedTasks || 0}/${userData.totalTasks || 0}`;
+                        document.getElementById('profileAvgScore').textContent = (userData.averageScore || 0).toFixed(1);
+                        
+                        // Kayıt tarihini güncelle
+                        if (userData.registrationDate) {
+                            document.getElementById('profileRegDate').textContent = new Date(userData.registrationDate).toLocaleDateString('tr-TR');
+                        }
+
+                        // Hedef üniversite ve bölüm bilgilerini güncelle
+                        document.getElementById('profileTargetUniversity').textContent = userData.targetUniversity || 'Belirtilmemiş';
+                        document.getElementById('profileTargetDepartment').textContent = userData.targetDepartment || 'Belirtilmemiş';
+                        
+                        // Profil başlığını değiştir
+                        if (profileUserId !== currentUser.uid) {
+                            document.title = `YKSMate - ${userData.name || 'Kullanıcı'} Profili`;
+                            const pageTitle = document.querySelector('.page-title');
+                            if (pageTitle) {
+                                pageTitle.textContent = `${userData.name || 'Kullanıcı'} Profili`;
+                            }
+                        }
+                        
+                        // Dashboard container'ı görünür hale getir
+                        const dashboardContainer = document.getElementById('dashboardContainer');
+                        if (dashboardContainer && dashboardContainer.style.display === 'none') {
+                            console.log("profile.html: Dashboard container görünür hale getiriliyor");
+                            dashboardContainer.style.display = 'flex';
+                        }
+                    }
+                }, error => {
+                    console.error('Profil bilgileri yüklenirken hata:', error);
+                    alert('Profil bilgileri yüklenirken bir hata oluştu.');
+                });
+
+                // Aktivite geçmişini yükle - sadece kendi profilinde göster
+                if (profileUserId === currentUser.uid) {
+                    loadActivityHistory();
+                }
+            }
+
+            // Aktivite geçmişini yükle
+            function loadActivityHistory() {
+                const activitiesRef = firebase.database().ref('users/' + currentUser.uid + '/activities');
+                activitiesRef.orderByChild('timestamp').limitToLast(10).once('value').then(snapshot => {
+                    const activities = [];
+                    snapshot.forEach(childSnapshot => {
+                        activities.unshift(childSnapshot.val());
+                    });
+                    
+                    // Aktiviteleri görüntüle
+                    const activityList = document.createElement('div');
+                    activityList.className = 'activity-list';
+                    
+                    activities.forEach(activity => {
+                        const activityItem = document.createElement('div');
+                        activityItem.className = 'activity-item';
+                        activityItem.innerHTML = `
+                            <div class="activity-icon">
+                                <i class="${getActivityIcon(activity.type)}"></i>
+                            </div>
+                            <div class="activity-content">
+                                <p>${activity.description}</p>
+                                <span class="activity-time">${formatTimestamp(activity.timestamp)}</span>
+                            </div>
+                        `;
+                        activityList.appendChild(activityItem);
+                    });
+                    
+                    // Aktivite bölümünü ekle
+                    const section = document.createElement('div');
+                    section.className = 'section';
+                    section.innerHTML = `
+                        <div class="section-header">
+                            <h2>Son Aktiviteler</h2>
+                        </div>
+                    `;
+                    section.appendChild(activityList);
+                    
+                    // Sayfaya ekle
+                    document.querySelector('.page-content').appendChild(section);
+                });
+            }
+
+            // Aktivite ikonu seç
+            function getActivityIcon(type) {
+                switch(type) {
+                    case 'exam': return 'fas fa-file-alt';
+                    case 'study': return 'fas fa-clock';
+                    case 'task': return 'fas fa-tasks';
+                    case 'achievement': return 'fas fa-trophy';
+                    default: return 'fas fa-circle';
+                }
+            }
+
+            // Zaman damgasını formatla
+            function formatTimestamp(timestamp) {
+                const now = Date.now();
+                const diff = now - timestamp;
+                
+                const minute = 60 * 1000;
+                const hour = minute * 60;
+                const day = hour * 24;
+                
+                if (diff < minute) {
+                    return 'Az önce';
+                } else if (diff < hour) {
+                    const minutes = Math.floor(diff / minute);
+                    return `${minutes} dakika önce`;
+                } else if (diff < day) {
+                    const hours = Math.floor(diff / hour);
+                    return `${hours} saat önce`;
+                } else {
+                    const days = Math.floor(diff / day);
+                    return `${days} gün önce`;
+                }
+            }
+
+            // Çıkış İşlemi İçin JavaScript
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function() {
+                    try {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            if (confirm('Çıkış yapmak istediğinize emin misiniz? Misafir verileriniz silinecektir.')) {
+                                localStorage.removeItem('guestUser');
+                                window.location.href = "login.html";
+                            }
+                        } else {
+                            if (typeof firebase !== 'undefined' && firebase.auth) {
+                                await firebase.auth().signOut();
+                                window.location.href = "login.html";
+                            } else {
+                                throw new Error("Firebase yüklenemedi!");
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Çıkış hatası:', error);
+                        alert('Çıkış yaparken bir hata oluştu: ' + error.message);
+                    }
+                });
+            }
+        });
+    </script>
+
+    <style>
+        /* Aktivite listesi stilleri */
+        .activity-list {
+            margin-top: 1rem;
+        }
+        
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 1rem;
+            border-bottom: 1px solid var(--light-border);
+        }
+        
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+        }
+        
+        .activity-content {
+            flex: 1;
+        }
+        
+        .activity-content p {
+            margin: 0;
+            color: var(--light-text);
+        }
+        
+        .activity-time {
+            font-size: 0.9rem;
+            color: var(--light-text-secondary);
+        }
+        
+        /* Dark mode uyumluluğu */
+        .dark-theme .activity-item {
+            border-color: var(--dark-border);
+        }
+        
+        .dark-theme .activity-content p {
+            color: var(--dark-text);
+        }
+        
+        .dark-theme .activity-time {
+            color: var(--dark-text-secondary);
+        }
+    </style>
+</body>
+</html> 

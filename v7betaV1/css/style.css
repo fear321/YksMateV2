@@ -1071,6 +1071,7 @@ body.green-theme {
     padding: 15px;
     background-color: rgba(var(--primary-rgb), 0.1);
     border: 1px solid var(--primary-color);
+    min-height: 120px;
     overflow: hidden;
     position: relative;
 }
@@ -1512,6 +1513,7 @@ body.green-theme {
     
     .stats-container .stat-card:last-child {
         padding: 12px;
+        min-height: 100px;
     }
     
     .stats-container .stat-card:last-child .stat-info h3 {
@@ -2095,15 +2097,20 @@ body.green-theme {
 .exam-table-row {
     display: flex;
     background-color: var(--table-row-bg);
+    border: 1px solid var(--table-border);
+    border-top: none;
     height: 100px;
     transition: background-color 0.2s;
     font-size: 14px;
 }
 
 .exam-table-row:last-child {
-    border-radius: 10px;
+    border-radius: 0 0 8px 8px;
 }
 
+.exam-table-row:hover {
+    background-color: var(--table-row-hover);
+}
 
 .exam-column {
     padding: 12px 15px;
@@ -2663,6 +2670,7 @@ body.green-theme {
     
     .stats-container .stat-card:last-child {
         padding: 12px;
+        min-height: 100px;
     }
     
     .stats-container .stat-card:last-child .stat-info h3 {
@@ -3244,9 +3252,9 @@ body.green-theme {
 }
 
 .exam-table-row {
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     display: flex;
     background-color: var(--table-row-bg);
+    border: 1px solid var(--table-border);
     border-top: none;
     height: 100px;
     transition: background-color 0.2s;
@@ -3254,10 +3262,12 @@ body.green-theme {
 }
 
 .exam-table-row:last-child {
-    border-radius: 10px;
+    border-radius: 0 0 8px 8px;
 }
 
-
+.exam-table-row:hover {
+    background-color: var(--table-row-hover);
+}
 
 .exam-column {
     padding: 12px 15px;
@@ -3319,10 +3329,6 @@ body.green-theme {
     background-color: var(--dark-bg);
     border-color: var(--dark-border);
     color: var(--dark-text);
-}
-.exam-table-row:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .dark-theme .exam-table-row:hover {
@@ -3511,7 +3517,6 @@ body.green-theme {
     .graph-panel h3 {
         font-size: 14px;
     }
-    
 }
 
 @media (max-width: 450px) {
@@ -3817,6 +3822,7 @@ body.green-theme {
     
     .stats-container .stat-card:last-child {
         padding: 12px;
+        min-height: 100px;
     }
     
     .stats-container .stat-card:last-child .stat-info h3 {
@@ -4400,6 +4406,7 @@ body.green-theme {
 .exam-table-row {
     display: flex;
     background-color: var(--table-row-bg);
+    border: 1px solid var(--table-border);
     border-top: none;
     height: 100px;
     transition: background-color 0.2s;
@@ -4407,10 +4414,13 @@ body.green-theme {
 }
 
 .exam-table-row:last-child {
-    border-radius: 10px;
+    border-radius: 0 0 8px 8px;
 }
 
-    
+.exam-table-row:hover {
+    background-color: var(--table-row-hover);
+}
+
 .exam-column {
     padding: 12px 15px;
     display: flex;
@@ -6316,6 +6326,7 @@ body.green-theme {
     
     .stats-container .stat-card:last-child {
         padding: 12px;
+        min-height: 140px;
     }
 }
 
@@ -6338,7 +6349,9 @@ body.green-theme {
         margin-top: 1px;
     }
     
-
+    .stats-container .stat-card:last-child {
+        min-height: 160px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -6356,7 +6369,9 @@ body.green-theme {
         margin-top: 1px;
     }
     
-
+    .stats-container .stat-card:last-child {
+        min-height: 180px;
+    }
 }
 
 /* Okunmamış mesaj rozeti */
@@ -6501,3 +6516,7 @@ body.green-theme {
     .section {
         width: 100%;
     }
+
+
+
+
