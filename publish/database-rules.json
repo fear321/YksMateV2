@@ -1,0 +1,83 @@
+{
+  "rules": {
+    ".read": true,
+    "rooms": {
+      ".read": true,
+      ".write": "auth != null",
+      "active_workrooms": {
+        ".read": true,
+        ".write": "auth != null"
+      },
+      "user_presence": {
+        ".read": true,
+        ".write": "auth != null"
+      },
+      "user_statistics": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "$uid": {
+          ".read": "$uid === auth.uid",
+          ".write": "$uid === auth.uid" 
+        }
+      }
+    },
+    "workroom_messages": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "users": {
+      ".read": "auth != null",
+      ".indexOn": ["email", "name"],
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "$uid === auth.uid",
+        "friends": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          "$friendId": {
+            ".read": "auth != null",
+            ".write": "auth != null"
+          }
+        }
+      }
+    },
+    "pendingRequests": {
+      "$requestId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['fromUserId', 'toUserId', 'timestamp'])"
+      },
+      ".read": "auth != null",
+      ".write": "auth != null", 
+      ".indexOn": ["fromUserId", "toUserId"]
+    },
+    "blockedUsers": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "status": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "messages": {
+      "$chatId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "$messageId": {
+          ".validate": "newData.hasChildren(['senderId', 'receiverId', 'content', 'timestamp'])"
+        }
+      }
+    },
+    "lastMessages": {
+      "$chatId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['senderId', 'content', 'timestamp'])"
+      }
+    }
+  }
+}

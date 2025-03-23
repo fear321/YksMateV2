@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKSMate - Topluluk</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo(192).png">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Ana JavaScript -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth-check.js"></script>
+    <script src="js/theme-manager.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/user-token-display.js"></script>
+    
+    <!-- Oturum Kontrolü -->
+    <script>
+        // Sayfa yüklendiğinde çalışacak
+        document.addEventListener('DOMContentLoaded', function() {
+            // Firebase yüklendiyse
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                // Kullanıcı oturumunu kontrol et
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        // Kullanıcı giriş yapmış
+                        console.log("Kullanıcı giriş yapmış:", user.uid);
+                        
+                        // Kullanıcı bilgilerini getir
+                        firebase.database().ref('users/' + user.uid).once('value')
+                            .then((snapshot) => {
+                                const userData = snapshot.val();
+                                if (userData) {
+                                    // Kullanıcı verileri varsa
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = userData.name || user.email.split('@')[0];
+                                    
+                                    // Sınav türünü güncelle
+                                    document.getElementById("userExamType").textContent = "" + getExamTypeText(userData.examType);
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                } else {
+                                    // Kullanıcı verileri yoksa e-postadan isim oluştur
+                                    const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = name;
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Kullanıcı verileri alınırken hata:", error);
+                                
+                                // E-postadan isim oluştur
+                                const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                
+                                // Kullanıcı adını güncelle
+                                document.getElementById("userName").textContent = name;
+                                
+                                // Dashboard'u göster
+                                document.getElementById("dashboardContainer").style.display = "flex";
+                            });
+                    } else {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            // Misafir kullanıcı varsa
+                            const guestData = JSON.parse(guestUser);
+                            
+                            // Kullanıcı adını güncelle
+                            document.getElementById("userName").textContent = guestData.name;
+                            document.getElementById("userExamType").textContent = "" + getExamTypeText(guestData.examType);
+                            
+                            // Dashboard'u göster
+                            document.getElementById("dashboardContainer").style.display = "flex";
+                        } else {
+                            // Giriş sayfasına yönlendir
+                            console.log("Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...");
+                            window.location.href = "login.html";
+                        }
+                    }
+                });
+            } else {
+                console.error("Firebase yüklenemedi!");
+                alert("Sistem yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.");
+            }
+        });
+        
+        // Sınav türü metni alma fonksiyonu
+        function getExamTypeText(examType) {
+            switch(examType) {
+                case 'tyt': return 'TYT';
+                case 'sayisal': return 'Sayısal';
+                case 'sozel': return 'Sözel';
+                case 'esitagirlik': return 'Eşit Ağırlık';
+                case 'dil': return 'Dil';
+                default: return 'TYT';
+            }
+        }
+    </script>
+</head>
+<body class="light-theme">
+    <div class="container">
+        <!-- Ana Dashboard -->
+        <div class="dashboard-container" id="dashboardContainer" style="display: none;">
+            <!-- Sidebar -->
+            <div class="sidebar">
+
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <a href="profile.html" style="text-decoration: none; color: inherit;">
+                            <h3 id="userName">Kullanıcı Adı</h3>
+                            <p id="userExamType">TYT</p>
+                        </a>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li>
+                            <a href="index.html"><i class="fas fa-home"></i> Ana Sayfa</a>
+                        </li>
+                        <li>
+                            <a href="exams.html"><i class="fas fa-file-alt"></i> Denemelerim</a>
+                        </li>
+                        <li>
+                            <a href="timer.html"><i class="fas fa-clock"></i> Zamanlayıcı</a>
+                        </li>
+                        <li>
+                            <a href="calendar.html"><i class="fas fa-calendar-alt"></i> Takvim</a>
+                        </li>
+                        <li>
+                            <a href="notes.html"><i class="fas fa-sticky-note"></i> Notlarım</a>
+                        </li>
+                        <li class="active">
+                            <a href="community.html"><i class="fas fa-users"></i> Topluluk</a>
+                        </li>
+                        <li>
+                            <a href="friends.html"><i class="fas fa-user-friends"></i> Arkadaşlarım</a>
+                        </li>
+                        <li>
+                            <a href="messages.html"><i class="fas fa-comment"></i> Mesajlar</a>
+                        </li>
+                        <li>
+                            <a href="ai.html"><i class="fas fa-robot"></i> MateAI</a>
+                        </li>
+                        <li>
+                            <a href="work-together.html"><i class="fas fa-users-cog"></i> Birlikte Çalış</a>
+                        </li>
+                        <li>
+                            <a href="profile.html"><i class="fas fa-user-circle"></i> Profil</a>
+                        </li>
+                        <li>
+                            <a href="settings.html"><i class="fas fa-cog"></i> Ayarlar</a>
+                        </li>
+                    </ul>
+                </nav>
+
+            </div>
+
+            <!-- Sidebar Overlay -->
+            <div class="sidebar-overlay"></div>
+
+            <!-- Ana İçerik -->
+            <div class="main-content">
+                <header class="content-header">
+                    <button id="sidebarToggle" class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="header-actions">
+                        <button class="theme-toggle" id="themeToggle">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <div class="notifications">
+                            <button class="notification-btn">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge">3</span>
+                            </button>
+                            <div class="notification-dropdown">
+                                <div class="notification-header">
+                                    <h3>Bildirimler</h3>
+                                    <button class="mark-all-read">Tümünü Okundu İşaretle</button>
+                                </div>
+                                <div class="notification-list">
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-file-alt"></i></div>
+                                        <div class="notification-content">
+                                            <p>Yarın TYT Denemesi var!</p>
+                                            <span class="notification-time">2 saat önce</span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-tasks"></i></div>
+                                        <div class="notification-content">
+                                            <p>Matematik ödeviniz için son gün!</p>
+                                            <span class="notification-time">5 saat önce</span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-trophy"></i></div>
+                                        <div class="notification-content">
+                                            <p>Haftalık hedefinize ulaştınız!</p>
+                                            <span class="notification-time">1 gün önce</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="notification-footer">
+                                    <a href="#">Tüm Bildirimleri Gör</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Sayfa İçeriği -->
+                <div class="page-content">
+                    <h1 class="page-title">Topluluk</h1>
+                    
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Popüler Tartışmalar</h2>
+                            <button class="btn btn-primary" id="newPostBtn">
+                                <i class="fas fa-plus"></i> Yeni Gönderi
+                            </button>
+                        </div>
+                        
+                        <div class="forum-filters">
+                            <select id="forumCategory">
+                                <option value="all">Tüm Kategoriler</option>
+                                <option value="tyt">TYT</option>
+                                <option value="ayt">AYT</option>
+                                <option value="study">Çalışma Teknikleri</option>
+                                <option value="motivation">Motivasyon</option>
+                                <option value="university">Üniversiteler</option>
+                            </select>
+                            <select id="forumSort">
+                                <option value="recent">En Yeni</option>
+                                <option value="popular">En Popüler</option>
+                                <option value="comments">En Çok Yorum Alan</option>
+                            </select>
+                        </div>
+                        
+                        <div class="forum-posts">
+                            <div class="forum-post">
+                                <div class="post-votes">
+                                    <button class="vote-btn"><i class="fas fa-chevron-up"></i></button>
+                                    <span class="vote-count">42</span>
+                                    <button class="vote-btn"><i class="fas fa-chevron-down"></i></button>
+                                </div>
+                                <div class="post-content">
+                                    <div class="post-header">
+                                        <h3>TYT Matematik için kaynak önerisi</h3>
+                                        <span class="post-category">TYT</span>
+                                    </div>
+                                    <div class="post-text">
+                                        <p>Merhaba arkadaşlar, TYT Matematik için hangi kaynakları önerirsiniz? Özellikle soru bankası arıyorum...</p>
+                                    </div>
+                                    <div class="post-footer">
+                                        <div class="post-info">
+                                            <span class="post-author">Gönderen: <a href="#">matematik_sever</a></span>
+                                            <span class="post-date">2 gün önce</span>
+                                        </div>
+                                        <div class="post-stats">
+                                            <span><i class="fas fa-comment"></i> 15 yorum</span>
+                                            <span><i class="fas fa-eye"></i> 230 görüntülenme</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="forum-post">
+                                <div class="post-votes">
+                                    <button class="vote-btn"><i class="fas fa-chevron-up"></i></button>
+                                    <span class="vote-count">38</span>
+                                    <button class="vote-btn"><i class="fas fa-chevron-down"></i></button>
+                                </div>
+                                <div class="post-content">
+                                    <div class="post-header">
+                                        <h3>Motivasyon düşüklüğü ile nasıl başa çıkıyorsunuz?</h3>
+                                        <span class="post-category">Motivasyon</span>
+                                    </div>
+                                    <div class="post-text">
+                                        <p>Son zamanlarda motivasyonum çok düştü. Sınava az kaldı ve çalışmakta zorlanıyorum. Sizin motivasyon kaynaklarınız neler?</p>
+                                    </div>
+                                    <div class="post-footer">
+                                        <div class="post-info">
+                                            <span class="post-author">Gönderen: <a href="#">stresli_aday</a></span>
+                                            <span class="post-date">3 gün önce</span>
+                                        </div>
+                                        <div class="post-stats">
+                                            <span><i class="fas fa-comment"></i> 27 yorum</span>
+                                            <span><i class="fas fa-eye"></i> 345 görüntülenme</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="forum-post">
+                                <div class="post-votes">
+                                    <button class="vote-btn"><i class="fas fa-chevron-up"></i></button>
+                                    <span class="vote-count">29</span>
+                                    <button class="vote-btn"><i class="fas fa-chevron-down"></i></button>
+                                </div>
+                                <div class="post-content">
+                                    <div class="post-header">
+                                        <h3>Pomodoro tekniği hakkında ne düşünüyorsunuz?</h3>
+                                        <span class="post-category">Çalışma Teknikleri</span>
+                                    </div>
+                                    <div class="post-text">
+                                        <p>Pomodoro tekniğini denemeye başladım. 25 dakika çalışıp 5 dakika mola veriyorum. Sizce etkili bir yöntem mi?</p>
+                                    </div>
+                                    <div class="post-footer">
+                                        <div class="post-info">
+                                            <span class="post-author">Gönderen: <a href="#">verimli_calisan</a></span>
+                                            <span class="post-date">5 gün önce</span>
+                                        </div>
+                                        <div class="post-stats">
+                                            <span><i class="fas fa-comment"></i> 19 yorum</span>
+                                            <span><i class="fas fa-eye"></i> 278 görüntülenme</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="pagination">
+                            <button class="btn btn-outline active">1</button>
+                            <button class="btn btn-outline">2</button>
+                            <button class="btn btn-outline">3</button>
+                            <button class="btn btn-outline"><i class="fas fa-ellipsis-h"></i></button>
+                            <button class="btn btn-outline">10</button>
+                            <button class="btn btn-outline"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Çalışma Arkadaşları</h2>
+                            <button class="btn btn-primary" id="findStudyBuddyBtn">
+                                <i class="fas fa-search"></i> Çalışma Arkadaşı Bul
+                            </button>
+                        </div>
+                        
+                        <div class="study-buddies">
+                            <div class="buddy-card">
+                                <div class="buddy-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="buddy-info">
+                                    <h3>Ahmet K.</h3>
+                                    <p>Sınav Türü: Sayısal</p>
+                                    <p>Hedef: Tıp Fakültesi</p>
+                                </div>
+                                <button class="btn btn-outline">
+                                    <i class="fas fa-user-plus"></i> Bağlantı Kur
+                                </button>
+                            </div>
+                            
+                            <div class="buddy-card">
+                                <div class="buddy-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="buddy-info">
+                                    <h3>Ayşe M.</h3>
+                                    <p>Sınav Türü: Eşit Ağırlık</p>
+                                    <p>Hedef: Hukuk Fakültesi</p>
+                                </div>
+                                <button class="btn btn-outline">
+                                    <i class="fas fa-user-plus"></i> Bağlantı Kur
+                                </button>
+                            </div>
+                            
+                            <div class="buddy-card">
+                                <div class="buddy-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="buddy-info">
+                                    <h3>Mehmet Y.</h3>
+                                    <p>Sınav Türü: Sayısal</p>
+                                    <p>Hedef: Mühendislik</p>
+                                </div>
+                                <button class="btn btn-outline">
+                                    <i class="fas fa-user-plus"></i> Bağlantı Kur
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Yeni Gönderi Modalı -->
+    <div class="modal" id="postModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Yeni Gönderi Oluştur</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <i class="fas fa-heading"></i>
+                    <input type="text" id="postTitle" placeholder="Gönderi Başlığı">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-tag"></i>
+                    <select id="postCategory">
+                        <option value="">Kategori Seçin</option>
+                        <option value="tyt">TYT</option>
+                        <option value="ayt">AYT</option>
+                        <option value="study">Çalışma Teknikleri</option>
+                        <option value="motivation">Motivasyon</option>
+                        <option value="university">Üniversiteler</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-align-left"></i>
+                    <textarea id="postContent" placeholder="Gönderi içeriği..."></textarea>
+                </div>
+                <div class="note">
+                    <p><i class="fas fa-info-circle"></i> Gönderiniz topluluk kurallarına uygun olmalıdır. Saygılı ve yapıcı bir dil kullanmaya özen gösterin.</p>
+                </div>
+                <button class="btn btn-primary" id="submitPostBtn">
+                    <i class="fas fa-paper-plane"></i> Gönder
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Çıkış İşlemi İçin JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function() {
+                    try {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            if (confirm('Çıkış yapmak istediğinize emin misiniz? Misafir verileriniz silinecektir.')) {
+                                localStorage.removeItem('guestUser');
+                                window.location.href = "login.html";
+                            }
+                        } else {
+                            if (typeof firebase !== 'undefined' && firebase.auth) {
+                                await firebase.auth().signOut();
+                                window.location.href = "login.html";
+                            } else {
+                                throw new Error("Firebase yüklenemedi!");
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Çıkış hatası:', error);
+                        alert('Çıkış yaparken bir hata oluştu: ' + error.message);
+                    }
+                });
+            }
+            
+            // Yeni gönderi modalı
+            const newPostBtn = document.getElementById('newPostBtn');
+            const postModal = document.getElementById('postModal');
+            const closePostModal = postModal ? postModal.querySelector('.close-modal') : null;
+            
+            if (newPostBtn && postModal && closePostModal) {
+                newPostBtn.addEventListener('click', function() {
+                    postModal.style.display = 'flex';
+                });
+                
+                closePostModal.addEventListener('click', function() {
+                    postModal.style.display = 'none';
+                });
+                
+                window.addEventListener('click', function(event) {
+                    if (event.target === postModal) {
+                        postModal.style.display = 'none';
+                    }
+                });
+            }
+
+            // Firebase referansları
+            let postsRef = firebase.database().ref('community/posts');
+            let currentUser;
+
+            // Kullanıcı oturumunu kontrol et
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    currentUser = user;
+                    loadPosts();
+                }
+            });
+
+            // Gönderileri yükle
+            function loadPosts() {
+                const forumCategory = document.getElementById('forumCategory').value;
+                const forumSort = document.getElementById('forumSort').value;
+                
+                postsRef.orderByChild('timestamp').on('value', function(snapshot) {
+                    const forumPosts = document.querySelector('.forum-posts');
+                    forumPosts.innerHTML = ''; // Mevcut gönderileri temizle
+                    
+                    let posts = [];
+                    snapshot.forEach(function(childSnapshot) {
+                        const post = childSnapshot.val();
+                        post.id = childSnapshot.key;
+                        posts.push(post);
+                    });
+                    
+                    // Filtreleme ve sıralama
+                    posts = posts.filter(post => {
+                        return forumCategory === 'all' || post.category === forumCategory;
+                    });
+                    
+                    // Sıralama
+                    switch(forumSort) {
+                        case 'recent':
+                            posts.sort((a, b) => b.timestamp - a.timestamp);
+                            break;
+                        case 'popular':
+                            posts.sort((a, b) => (b.votes || 0) - (a.votes || 0));
+                            break;
+                        case 'comments':
+                            posts.sort((a, b) => (Object.keys(b.comments || {}).length) - (Object.keys(a.comments || {}).length));
+                            break;
+                    }
+                    
+                    // Gönderileri ekle
+                    posts.forEach(post => {
+                        const postElement = createPostElement(post);
+                        forumPosts.appendChild(postElement);
+                    });
+                });
+            }
+
+            // Gönderi elementi oluştur
+            function createPostElement(post) {
+                const div = document.createElement('div');
+                div.className = 'forum-post';
+                div.innerHTML = `
+                    <div class="post-votes">
+                        <button class="vote-btn" data-action="upvote" data-id="${post.id}">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                        <span class="vote-count">${post.votes || 0}</span>
+                        <button class="vote-btn" data-action="downvote" data-id="${post.id}">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div class="post-content">
+                        <div class="post-header">
+                            <h3>${post.title}</h3>
+                            <span class="post-category">${post.category}</span>
+                        </div>
+                        <div class="post-text">
+                            <p>${post.content}</p>
+                        </div>
+                        <div class="post-footer">
+                            <div class="post-info">
+                                <span class="post-author">Gönderen: <a href="#">${post.author}</a></span>
+                                <span class="post-date">${formatTimestamp(post.timestamp)}</span>
+                            </div>
+                            <div class="post-stats">
+                                <span><i class="fas fa-comment"></i> ${Object.keys(post.comments || {}).length} yorum</span>
+                                <span><i class="fas fa-eye"></i> ${post.views || 0} görüntülenme</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Oy verme işlemleri
+                div.querySelectorAll('.vote-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        if (!currentUser) {
+                            alert('Oy vermek için giriş yapmalısınız.');
+                            return;
+                        }
+                        
+                        const action = this.dataset.action;
+                        const postId = this.dataset.id;
+                        const userVotesRef = firebase.database().ref(`users/${currentUser.uid}/votes/${postId}`);
+                        
+                        userVotesRef.once('value').then(snapshot => {
+                            const currentVote = snapshot.val();
+                            const voteChange = action === 'upvote' ? 1 : -1;
+                            
+                            if (currentVote === voteChange) {
+                                // Oyunu geri al
+                                userVotesRef.remove();
+                                postsRef.child(postId).child('votes').transaction(votes => (votes || 0) - voteChange);
+                            } else {
+                                // Yeni oy ver
+                                userVotesRef.set(voteChange);
+                                postsRef.child(postId).child('votes').transaction(votes => {
+                                    if (currentVote) {
+                                        return (votes || 0) - currentVote + voteChange;
+                                    }
+                                    return (votes || 0) + voteChange;
+                                });
+                            }
+                        });
+                    });
+                });
+                
+                return div;
+            }
+
+            // Zaman damgasını formatla
+            function formatTimestamp(timestamp) {
+                const now = Date.now();
+                const diff = now - timestamp;
+                
+                const minute = 60 * 1000;
+                const hour = minute * 60;
+                const day = hour * 24;
+                
+                if (diff < minute) {
+                    return 'Az önce';
+                } else if (diff < hour) {
+                    const minutes = Math.floor(diff / minute);
+                    return `${minutes} dakika önce`;
+                } else if (diff < day) {
+                    const hours = Math.floor(diff / hour);
+                    return `${hours} saat önce`;
+                } else {
+                    const days = Math.floor(diff / day);
+                    return `${days} gün önce`;
+                }
+            }
+
+            // Filtreleme ve sıralama değişikliklerini dinle
+            document.getElementById('forumCategory').addEventListener('change', loadPosts);
+            document.getElementById('forumSort').addEventListener('change', loadPosts);
+
+            // Yeni gönderi ekleme
+            const submitPostBtn = document.getElementById('submitPostBtn');
+            if (submitPostBtn) {
+                submitPostBtn.addEventListener('click', function() {
+                    if (!currentUser) {
+                        alert('Gönderi paylaşmak için giriş yapmalısınız.');
+                        return;
+                    }
+                    
+                    const title = document.getElementById('postTitle').value.trim();
+                    const category = document.getElementById('postCategory').value;
+                    const content = document.getElementById('postContent').value.trim();
+                    
+                    if (!title || !category || !content) {
+                        alert('Lütfen tüm alanları doldurun.');
+                        return;
+                    }
+                    
+                    const newPost = {
+                        title: title,
+                        category: category,
+                        content: content,
+                        author: currentUser.displayName || currentUser.email.split('@')[0],
+                        authorId: currentUser.uid,
+                        timestamp: Date.now(),
+                        votes: 0,
+                        views: 0
+                    };
+                    
+                    postsRef.push(newPost).then(() => {
+                        document.getElementById('postModal').style.display = 'none';
+                        document.getElementById('postTitle').value = '';
+                        document.getElementById('postCategory').value = '';
+                        document.getElementById('postContent').value = '';
+                    }).catch(error => {
+                        console.error('Gönderi paylaşılırken hata:', error);
+                        alert('Gönderi paylaşılırken bir hata oluştu.');
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html> 
