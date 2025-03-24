@@ -184,25 +184,30 @@ body.has-background::before {
 
 /* Bulanıklık efekti için destek */
 @supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
-    body.has-background .sidebar {
+    body.has-background .sidebar,
+    body.has-background .sidebar-narrow {
         background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
     }
     
-    body.has-background.dark-theme .sidebar {
+    body.has-background.dark-theme .sidebar,
+    body.has-background.dark-theme .sidebar-narrow {
         background: rgba(30, 30, 30, 0.95);
     }
     
-    body.has-background.purple-theme .sidebar {
+    body.has-background.purple-theme .sidebar,
+    body.has-background.purple-theme .sidebar-narrow {
         background: rgba(255, 255, 255, 0.95);
     }
     
-    body.has-background.blue-theme .sidebar {
+    body.has-background.blue-theme .sidebar,
+    body.has-background.blue-theme .sidebar-narrow {
         background: rgba(255, 255, 255, 0.95);
     }
     
-    body.has-background.green-theme .sidebar {
+    body.has-background.green-theme .sidebar,
+    body.has-background.green-theme .sidebar-narrow {
         background: rgba(255, 255, 255, 0.95);
     }
 }
@@ -1111,7 +1116,7 @@ body.green-theme {
     padding: 15px;
     background-color: rgba(var(--primary-rgb), 0.1);
     border: 1px solid var(--primary-color);
-    min-height: 120px;
+    height: 100px;
     overflow: hidden;
     position: relative;
 }
@@ -1553,7 +1558,6 @@ body.green-theme {
     
     .stats-container .stat-card:last-child {
         padding: 12px;
-        min-height: 100px;
     }
     
     .stats-container .stat-card:last-child .stat-info h3 {
@@ -2710,7 +2714,6 @@ body.green-theme {
     
     .stats-container .stat-card:last-child {
         padding: 12px;
-        min-height: 100px;
     }
     
     .stats-container .stat-card:last-child .stat-info h3 {
@@ -3862,7 +3865,6 @@ body.green-theme {
     
     .stats-container .stat-card:last-child {
         padding: 12px;
-        min-height: 100px;
     }
     
     .stats-container .stat-card:last-child .stat-info h3 {
@@ -6366,7 +6368,6 @@ body.green-theme {
     
     .stats-container .stat-card:last-child {
         padding: 12px;
-        min-height: 140px;
     }
 }
 
@@ -6389,9 +6390,7 @@ body.green-theme {
         margin-top: 1px;
     }
     
-    .stats-container .stat-card:last-child {
-        min-height: 160px;
-    }
+
 }
 
 @media (max-width: 480px) {
@@ -6409,9 +6408,7 @@ body.green-theme {
         margin-top: 1px;
     }
     
-    .stats-container .stat-card:last-child {
-        min-height: 180px;
-    }
+
 }
 
 /* Okunmamış mesaj rozeti */
@@ -6613,6 +6610,46 @@ body.green-theme {
         left: 0;
     }
 }
+
+/* 1000px üstü için sidebar daraltma stili */
+.sidebar-narrow {
+    width: 130px !important;
+    min-width: 130px !important;
+    max-width: 130px !important;
+    background-color: var(--light-card-bg);
+    border-right: 1px solid var(--light-border);
+}
+
+.dark-theme .sidebar-narrow {
+    background-color: var(--dark-card-bg);
+    border-right: 1px solid var(--dark-border);
+}
+
+.purple-theme .sidebar-narrow {
+    background-color: var(--purple-card-bg);
+    border-right: 1px solid var(--purple-border);
+}
+
+.blue-theme .sidebar-narrow {
+    background-color: var(--blue-card-bg);
+    border-right: 1px solid var(--blue-border);
+}
+
+.green-theme .sidebar-narrow {
+    background-color: var(--green-card-bg);
+    border-right: 1px solid var(--green-border);
+}
+
+
+.sidebar-narrow .sidebar-nav a {
+    justify-content: center !important;
+    padding: 10px 5px !important;
+}
+
+.sidebar-narrow .sidebar-nav a i {
+    margin-right: 0 !important;
+}
+
 
 
 

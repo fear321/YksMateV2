@@ -32,11 +32,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Kullanıcı ve çalışma odası bilgileri
     let currentUser = null;
+    let currentUserName = null; // Kullanıcı adı için
     let currentRoom = null;
     let timerInterval = null;
     let timerRunning = false;
     let timerSeconds = 1500; // 25 dakika (Pomodoro varsayılan)
     let syncTimerRef = null;
+    let participantsListener = null; // Katılımcı değişikliklerini dinlemek için
     
     // Kullanıcı oturum durumunu kontrol et
     auth.onAuthStateChanged(function(user) {
@@ -335,9 +337,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Aksiyon butonlu bildirim göster
-    function showNotificationWithAction(type, title, message, actionText, actionCallback) {
+    function showNotificationWithAction(type, title, message, actionText, actionCallback, rejectText, rejectCallback, uniqueId) {
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
+        
+        // Benzersiz ID varsa bildirime ekle
+        if (uniqueId) {
+            notification.dataset.notificationId = uniqueId;
+        }
+        
+        // İkinci aksiyon butonu var mı kontrol et
+        const hasSecondAction = rejectText && typeof rejectCallback === 'function';
         
         notification.innerHTML = `
             <div class="notification-header">
@@ -348,6 +358,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p>${message}</p>
             </div>
             <div class="notification-actions">
+                ${hasSecondAction ? `<button class="btn-reject notification-reject">${rejectText}</button>` : ''}
                 <button class="btn-primary notification-action">${actionText}</button>
             </div>
         `;
@@ -358,10 +369,21 @@ document.addEventListener('DOMContentLoaded', function() {
             container = document.createElement('div');
             container.className = 'notification-container';
             document.body.appendChild(container);
+            
+            // Bildirim stillerini ekle (konteyner oluşturulduğunda)
+            applyNotificationStyles();
+        }
+        
+        // Mevcut bildirim varsa kaldır (aynı ID)
+        if (uniqueId) {
+            const existingNotification = document.querySelector(`.notification[data-notification-id="${uniqueId}"]`);
+            if (existingNotification) {
+                existingNotification.remove();
+            }
         }
         
         // Bildirim ekle
-        container.appendChild(notification);
+        container.prepend(notification); // Yeni bildirimi en üste ekle
         
         // Kapat butonu
         notification.querySelector('.notification-close').addEventListener('click', function() {
@@ -371,7 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 300);
         });
         
-        // Aksiyon butonu
+        // Ana aksiyon butonu
         notification.querySelector('.notification-action').addEventListener('click', function() {
             // Aksiyon geri çağırma fonksiyonunu çalıştır
             if (typeof actionCallback === 'function') {
@@ -385,7 +407,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 300);
         });
         
-        // 10 saniye sonra otomatik kapat (aksiyonlu bildirimlerde daha uzun süre)
+        // İkinci aksiyon butonu (varsa)
+        if (hasSecondAction) {
+            notification.querySelector('.notification-reject').addEventListener('click', function() {
+                // Reddet geri çağırma fonksiyonunu çalıştır
+                rejectCallback();
+                
+                // Bildirimi kapat
+                notification.classList.add('notification-closing');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            });
+        }
+        
+        // 15 saniye sonra otomatik kapat (aksiyonlu bildirimlerde daha uzun süre)
         setTimeout(() => {
             if (document.contains(notification)) {
                 notification.classList.add('notification-closing');
@@ -393,7 +429,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     notification.remove();
                 }, 300);
             }
-        }, 10000);
+        }, 15000);
+        
+        // Ses çal
+        try {
+            const audio = new Audio('/assets/sounds/notification.mp3');
+            audio.volume = 0.5;
+            audio.play().catch(e => console.log("Bildirim sesi çalınamadı:", e));
+        } catch (error) {
+            console.log("Bildirim sesi çalınamadı:", error);
+        }
+        
+        return notification;
     }
     
     // Odaya katıl
@@ -434,6 +481,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (userData && userData.name) {
                         userName = userData.name;
                         console.log("Kullanıcı adı doğrudan veritabanından alındı:", userName);
+                        
+                        // Global değişkene ata
+                        currentUserName = userName;
                     } else {
                         console.log("Veritabanında name özelliği bulunamadı, varsayılan isim kullanılacak");
                     }
@@ -666,7 +716,48 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Katılımcıları dinle
     function listenForParticipants(roomId) {
-        activeRoomsRef.child(`${roomId}/participants`).on('value', function(snapshot) {
+        // Önceki listener'ı temizle
+        if (participantsListener) {
+            participantsListener.off('value');
+        }
+        
+        participantsListener = activeRoomsRef.child(`${roomId}/participants`);
+        
+        // child_added olayını dinle (yeni katılımcıları takip etmek için)
+        participantsListener.on('child_added', function(childSnapshot) {
+            // Yeni katılımcı değilse işleme
+            if (childSnapshot.key === currentUser.uid) {
+                return; // Kendimizi saymıyoruz
+            }
+            
+            const participant = childSnapshot.val();
+            
+            // Sadece aktif kullanıcıları bildir
+            if (participant.status === 'active' || participant.status === 'break') {
+                // Son 10 saniye içinde katıldıysa bildirim göster
+                const joinedTime = participant.joined || 0;
+                const currentTime = Date.now();
+                
+                if (currentTime - joinedTime < 10000) { // 10 saniye içinde
+                    // Kullanıcı bilgilerini al ve bildirimi göster
+                    database.ref('users/' + childSnapshot.key).once('value')
+                        .then(userSnapshot => {
+                            const userData = userSnapshot.val() || {};
+                            const userName = userData.name || userData.displayName || participant.name || 'İsimsiz Kullanıcı';
+                            
+                            // Bildirim göster
+                            showNotification('info', 'Yeni Katılımcı', `${userName} odaya katıldı.`);
+                        })
+                        .catch(error => {
+                            console.error(`Katılımcı bilgileri alınamadı (${childSnapshot.key}):`, error);
+                            showNotification('info', 'Yeni Katılımcı', 'Bir kullanıcı odaya katıldı.');
+                        });
+                }
+            }
+        });
+        
+        // Tüm katılımcıları görüntüle
+        participantsListener.on('value', function(snapshot) {
             usersListContainer.innerHTML = '';
             
             if (!snapshot.exists()) {
@@ -698,24 +789,28 @@ document.addEventListener('DOMContentLoaded', function() {
                             // Kullanıcı adını belirle - veritabanında kayıtlı isim veya katılımcı listesindeki isim
                             const userName = userData.name || userData.displayName || participant.name || 'İsimsiz Kullanıcı';
                             
+                            // Durum etiketi oluştur
+                            let statusLabel = '';
+                            // Durum etiketlerini gösterme (Aktif, Mola) - kullanıcı isteğine göre kaldırıldı
+                            
                             // Kullanıcı öğesini oluştur
-                let userItem = document.createElement('div');
-                userItem.className = 'user-item';
-                
-                // Kullanıcının baş harflerini avatar olarak kullan
+                            let userItem = document.createElement('div');
+                            userItem.className = 'user-item';
+                            
+                            // Kullanıcının baş harflerini avatar olarak kullan
                             let initials = userName.split(' ').map(name => name && name[0]).join('').toUpperCase();
                             if (!initials) initials = 'U';
-                if (initials.length > 2) {
-                    initials = initials.substring(0, 2);
-                }
-                
-                userItem.innerHTML = `
-                    <div class="user-avatar">${initials}</div>
-                    <div class="user-info">
-                        <p class="user-name">${userName}</p>
-                    </div>
-                `;
-                
+                            if (initials.length > 2) {
+                                initials = initials.substring(0, 2);
+                            }
+                            
+                            userItem.innerHTML = `
+                                <div class="user-avatar">${initials}</div>
+                                <div class="user-info">
+                                    <p class="user-name">${userName}</p>
+                                </div>
+                            `;
+                            
                             return userItem;
                         })
                         .catch(error => {
@@ -749,7 +844,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     
                     // Kullanıcı sayısını güncelle
-            userCountElement.textContent = count;
+                    userCountElement.textContent = count;
                 })
                 .catch(error => {
                     console.error("Katılımcı listesi oluşturulurken hata:", error);
@@ -793,7 +888,9 @@ document.addEventListener('DOMContentLoaded', function() {
             syncTimerRef.update({
                 running: false,
                 lastUpdate: firebase.database.ServerValue.TIMESTAMP,
-                seconds: timerSeconds // Kalan süreyi kaydet
+                seconds: timerSeconds, // Kalan süreyi kaydet
+                lastChangedBy: currentUser.uid, // Kim tarafından değiştirildiğini kaydet
+                lastChangedByName: currentUserName // Kullanıcı adını da ekle
             });
         } else {
             // Başlat
@@ -807,7 +904,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 running: true,
                 startTime: firebase.database.ServerValue.TIMESTAMP,
                 lastUpdate: firebase.database.ServerValue.TIMESTAMP,
-                seconds: timerSeconds // Kalan süreyi kaydet
+                seconds: timerSeconds, // Kalan süreyi kaydet
+                lastChangedBy: currentUser.uid, // Kim tarafından değiştirildiğini kaydet
+                lastChangedByName: currentUserName // Kullanıcı adını da ekle
             });
             
             // Yerel zamanlayıcıyı başlat
@@ -847,7 +946,8 @@ document.addEventListener('DOMContentLoaded', function() {
             running: false,
             seconds: timerSeconds,
             lastUpdate: firebase.database.ServerValue.TIMESTAMP,
-            resetBy: currentUser.uid // Kim tarafından sıfırlandığını kaydet
+            resetBy: currentUser.uid, // Kim tarafından sıfırlandığını kaydet
+            resetByName: currentUserName // Sıfırlayan kullanıcının adını da ekle
         });
         
         // Bildirim göster
@@ -1105,6 +1205,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Timer referansını oluştur
         syncTimerRef = activeRoomsRef.child(`${roomId}/timer`);
         
+        // Değişken tanımla
+        let lastTimerState = null;
+        
         // Timer değişikliklerini dinle
         syncTimerRef.on('value', function(snapshot) {
             if (!snapshot.exists()) return;
@@ -1142,7 +1245,49 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (timerRunning) {
                     startLocalTimer();
                 }
+                
+                // Durumu bildirme kontrolü - kendimiz değiştirdiysek bildirme
+                if (lastTimerState !== null && // İlk defa geliyorsa bildirim gösterme
+                    timerData.lastChangedBy !== currentUser.uid && // Kendimiz değiştirmedik
+                    wasRunning !== timerRunning) { // Çalışma durumu değişti
+                    
+                    // Durum değişimini bildirme
+                    if (timerRunning) {
+                        showNotification('info', 'Zamanlayıcı Başlatıldı', 
+                            `${timerData.lastChangedByName || 'Başka bir kullanıcı'} zamanlayıcıyı başlattı.`);
+                    } else {
+                        showNotification('info', 'Zamanlayıcı Durduruldu', 
+                            `${timerData.lastChangedByName || 'Başka bir kullanıcı'} zamanlayıcıyı durdurdu.`);
+                    }
+                }
+                
+                // Zamanlayıcı sıfırlandıysa bildirim göster
+                if (lastTimerState !== null && 
+                    timerData.resetBy && 
+                    timerData.resetBy !== currentUser.uid) {
+                    
+                    database.ref(`users/${timerData.resetBy}`).once('value')
+                        .then(userSnapshot => {
+                            const userData = userSnapshot.val() || {};
+                            const userName = userData.name || userData.displayName || timerData.lastChangedByName || 'Başka bir kullanıcı';
+                            
+                            showNotification('info', 'Zamanlayıcı Sıfırlandı', 
+                                `${userName} zamanlayıcıyı sıfırladı.`);
+                        })
+                        .catch(error => {
+                            console.error("Kullanıcı bilgisi alınamadı:", error);
+                            showNotification('info', 'Zamanlayıcı Sıfırlandı', 
+                                'Bir kullanıcı zamanlayıcıyı sıfırladı.');
+                        });
+                }
             }
+            
+            // Mevcut durumu kaydet
+            lastTimerState = {
+                running: timerRunning,
+                seconds: timerSeconds,
+                resetBy: timerData.resetBy
+            };
         });
     }
     
@@ -1769,14 +1914,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     fromId: currentUser.uid,
                     fromName: inviterName,
                     status: 'pending',
+                    subType: 'room_invite', // Davet tipini belirt
                     timestamp: firebase.database.ServerValue.TIMESTAMP
                 };
                 
-                // Davet referansı oluştur
-                const inviteRef = database.ref(`room_invitations/${userId}/${currentRoom.id}_${currentUser.uid}`);
+                // Davet referansını oluştur - sadece alıcının erişim yoluna kaydet
+                const roomInvitationsRef = database.ref(`room_invitations/${userId}/${currentRoom.id}_${currentUser.uid}`);
                 
-                // Daveti veritabanına ekle
-                inviteRef.set(inviteData)
+                // Daveti veritabanına ekle - sadece tek bir yola
+                roomInvitationsRef.set(inviteData)
                     .then(function() {
                         console.log("Davet gönderildi:", inviteData);
                         showNotification('success', 'Davet Gönderildi', 'Arkadaşınıza oda daveti gönderildi.');
@@ -1838,9 +1984,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     friends.forEach(friendId => {
                         listenForInvitesFromFriend(friendId);
                     });
+                    
+                    // Doğrudan kendi davet listesini de dinle
+                    listenForDirectInvitations();
                 })
                 .catch(error => {
                     console.error("Arkadaş listesi alınırken hata:", error);
+                    
+                    // Hata durumunda bile doğrudan kendi davetlerini dinle
+                    listenForDirectInvitations();
                 });
         }
         
@@ -1848,63 +2000,118 @@ document.addEventListener('DOMContentLoaded', function() {
         function listenForInvitesFromFriend(friendId) {
             console.log(`${friendId} arkadaşından gelen davetler dinleniyor`);
             
-            const invitesRef = firebase.database().ref(`users/${friendId}/sentInvites/${userId}`);
+            // sentInvites yolundan yeni davetleri dinle
+            const sentInvitesRef = firebase.database().ref(`users/${friendId}/sentInvites/${userId}`);
             
-            // Yeni davetleri dinle
-            invitesRef.on('child_added', snapshot => {
-                const invite = snapshot.val();
+            // sentInvites yolundan yeni davetleri dinle
+            sentInvitesRef.on('child_added', snapshot => {
+                processInviteSnapshot(snapshot, friendId);
+            });
+            
+            // sentInvites yolundaki değişiklikleri dinle
+            sentInvitesRef.on('child_changed', snapshot => {
+                processInviteSnapshot(snapshot, friendId);
+            });
+        }
+        
+        // Doğrudan kullanıcının davet listesini dinle
+        function listenForDirectInvitations() {
+            console.log("Kullanıcının kendi davet listesi dinleniyor");
+            
+            // Room invitations yolu dinleme
+            const roomInvitesRef = firebase.database().ref(`room_invitations/${userId}`);
+            
+            // room_invitations yolundan gelen davetleri dinle
+            roomInvitesRef.on('child_added', snapshot => {
+                // Davet ID'sini parçala ve bilgileri işle
                 const inviteId = snapshot.key;
+                const invite = snapshot.val();
                 
-                if (!invite) return;
-                
-                console.log(`Yeni davet alındı: ${inviteId}`, invite);
-                
-                // Davet kontrolü için local storage'ı kontrol et
-                const processedInvites = JSON.parse(localStorage.getItem('processedInvites') || '{}');
-                
-                // Daha önce işlenmişse ve kabul edilmiş veya reddedilmişse gösterme
-                if (processedInvites[inviteId] && 
-                    (processedInvites[inviteId] === 'accepted' || processedInvites[inviteId] === 'rejected')) {
-                    console.log(`Davet daha önce işlenmiş (${processedInvites[inviteId]}), tekrar gösterilmeyecek:`, inviteId);
-                    return;
+                // Daveti sadece 'pending' durumundaysa işle
+                if (invite && invite.status === 'pending') {
+                    const parts = inviteId.split('_');
+                    
+                    // Davet ID formatı: roomId_fromUserId
+                    if (parts.length === 2) {
+                        const fromUserId = parts[1];
+                        processInviteSnapshot(snapshot, fromUserId);
+                    }
                 }
+            });
+            
+            // room_invitations yolundaki değişiklikleri dinle
+            roomInvitesRef.on('child_changed', snapshot => {
+                // Davet ID'sini parçala ve bilgileri işle
+                const inviteId = snapshot.key;
+                const invite = snapshot.val();
                 
-                // Sadece bekleyen durumdaki davetleri göster
-                if (invite.status === 'pending') {
-                    processReceivedInvite(invite, inviteId, friendId);
+                // Daveti sadece 'pending' durumundaysa işle
+                if (invite && invite.status === 'pending') {
+                    const parts = inviteId.split('_');
+                    
+                    // Davet ID formatı: roomId_fromUserId
+                    if (parts.length === 2) {
+                        const fromUserId = parts[1];
+                        processInviteSnapshot(snapshot, fromUserId);
+                    }
                 }
             });
         }
         
-        // Alınan daveti işle
-        function processReceivedInvite(invite, inviteId, friendId) {
-            console.log("Davet işleniyor:", invite);
+        // Davet snapshot'ını işle
+        function processInviteSnapshot(snapshot, senderId) {
+            const invite = snapshot.val();
+            const inviteId = snapshot.key;
             
-            if (invite.subType === 'room_invite') {
-                handleRoomInvite(invite, inviteId, friendId);
+            if (!invite) return;
+            
+            console.log(`Davet alındı: ${inviteId}`, invite);
+            
+            // Davet kontrolü için local storage'ı kontrol et
+            const processedInvites = JSON.parse(localStorage.getItem('processedInvites') || '{}');
+            
+            // Daha önce işlenmişse ve kabul edilmiş veya reddedilmişse gösterme
+            if (processedInvites[inviteId] && 
+                (processedInvites[inviteId] === 'accepted' || processedInvites[inviteId] === 'rejected')) {
+                console.log(`Davet daha önce işlenmiş (${processedInvites[inviteId]}), tekrar gösterilmeyecek:`, inviteId);
+                return;
+            }
+            
+            // Sadece bekleyen durumdaki davetleri göster
+            if (invite.status === 'pending') {
+                processReceivedInvite(invite, inviteId, senderId);
             }
         }
+    }
+    
+    // Alınan daveti işle
+    function processReceivedInvite(invite, inviteId, friendId) {
+        console.log("Davet işleniyor:", invite);
         
-        // Oda davet değişimlerini dinle
-        function listenForRoomInvitationChanges(roomId) {
-            // Kendi gönderdiğin davetlerin durumunu dinle
-            firebase.database().ref(`rooms/active_workrooms/${roomId}/invitations`).on('child_changed', snapshot => {
-                const userId = snapshot.key;
-                const invitations = snapshot.val();
-                
-                Object.keys(invitations || {}).forEach(inviteId => {
-                    const invite = invitations[inviteId];
-                    
-                    if (invite.status === 'accepted' && invite.from === currentUser.uid) {
-                        showNotification('success', 'Davet Kabul Edildi', 
-                            `${invite.toName || "Kullanıcı"} davetinizi kabul etti ve odaya katıldı.`);
-                    } else if (invite.status === 'rejected' && invite.from === currentUser.uid) {
-                        showNotification('info', 'Davet Reddedildi', 
-                            `${invite.toName || "Kullanıcı"} davetinizi reddetti.`);
-                    }
-                });
-            });
+        if (invite.subType === 'room_invite') {
+            handleRoomInvite(invite, inviteId, friendId);
         }
+    }
+    
+    // Oda davet değişimlerini dinle
+    function listenForRoomInvitationChanges(roomId) {
+        // Kendi gönderdiğin davetlerin durumunu dinle
+        firebase.database().ref(`rooms/active_workrooms/${roomId}/invitations`).on('child_changed', snapshot => {
+            const userId = snapshot.key;
+            const invitations = snapshot.val();
+            
+            Object.keys(invitations || {}).forEach(inviteId => {
+                const invite = invitations[inviteId];
+                
+                if (invite.status === 'accepted' && invite.from === currentUser.uid) {
+                    showNotification('success', 'Davet Kabul Edildi', 
+                        `${invite.toName || "Kullanıcı"} davetinizi kabul etti ve odaya katıldı.`);
+                } else if (invite.status === 'rejected' && invite.from === currentUser.uid) {
+                    showNotification('info', 'Davet Reddedildi', 
+                        `${invite.toName || "Kullanıcı"} davetinizi reddetti.`);
+                }
+            });
+        });
     }
     
     // Oda davet bildirimini işle
@@ -1936,113 +2143,38 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("Davet bildirimi gösteriliyor:", invite.roomName);
         
         try {
-            // Önce mevcut kalıcı davet listesini kontrol et
-            let inviteListContainer = document.getElementById('pendingInvitesContainer');
-            
-            // Kalıcı davet konteynerı yoksa oluştur
-            if (!inviteListContainer) {
-                inviteListContainer = document.createElement('div');
-                inviteListContainer.id = 'pendingInvitesContainer';
-                inviteListContainer.className = 'pending-invites-container';
-                document.body.appendChild(inviteListContainer);
-                
-                // Konteyner stillerini ekle
-                addPendingInvitesStyles();
-            }
-            
-            // Aynı davetin daha önce eklenip eklenmediğini kontrol et
-            const existingInvite = document.querySelector(`.invite-item[data-invite-id="${inviteId}"]`);
-            if (existingInvite) {
-                console.log("Bu davet zaten listede gösteriliyor:", inviteId);
+            // Daha önce işlenmiş davetleri kontrol et
+            const processedInvites = JSON.parse(localStorage.getItem('processedInvites') || '{}');
+            if (processedInvites[inviteId] === 'accepted' || processedInvites[inviteId] === 'rejected') {
+                console.log("Bu davet daha önce işlenmiş, gösterilmeyecek:", inviteId);
                 return;
             }
             
-            // Davet öğesi oluştur
-            const inviteItem = document.createElement('div');
-            inviteItem.className = 'invite-item';
-            inviteItem.dataset.inviteId = inviteId;
-            inviteItem.dataset.friendId = friendId;
+            // Sadece popup bildirim göster, kalıcı davet paneli KULLANMA
+            showNotificationWithAction(
+                'info', 
+                'Yeni Oda Daveti', 
+                `${invite.fromName} sizi "${invite.roomName}" odasına davet ediyor.`,
+                'Kabul Et',
+                function() {
+                    acceptInvitation(invite, inviteId, friendId);
+                },
+                'Reddet',
+                function() {
+                    rejectInvitation(invite, inviteId, friendId, null);
+                },
+                inviteId // Davet ID'sini ekle
+            );
             
-            inviteItem.innerHTML = `
-                <div class="invite-content">
-                    <div class="invite-info">
-                        <p class="invite-message">${message}</p>
-                        <p class="invite-time">${new Date(invite.timestamp).toLocaleTimeString()}</p>
-                    </div>
-                    <div class="invite-actions">
-                        <button class="btn-reject invite-reject">Reddet</button>
-                        <button class="btn-primary invite-accept">Kabul Et</button>
-                    </div>
-                </div>
-            `;
-            
-            // Davet öğesini konteynerın başına ekle
-            inviteListContainer.prepend(inviteItem);
-            
-            // Butonlara olay dinleyicileri ekle
-            inviteItem.querySelector('.invite-reject').addEventListener('click', function() {
-                rejectInvitation(invite, inviteId, friendId, null, inviteItem);
-            });
-            
-            inviteItem.querySelector('.invite-accept').addEventListener('click', function() {
-                acceptInvitation(invite, inviteId, friendId, inviteItem);
-            });
-            
-            // Bildirim stillerini ekle
-            addInvitationStyles();
-            
-            // Geçici bildirim göster (birkaç saniye sonra otomatik kaybolur)
-            const notification = document.createElement('div');
-            notification.className = `notification notification-info invitation-notification`;
-            notification.dataset.notificationId = inviteId;
-            
-            notification.innerHTML = `
-                <div class="notification-header">
-                    <h3>Yeni Oda Daveti</h3>
-                    <button class="notification-close"><i class="fas fa-times"></i></button>
-                </div>
-                <div class="notification-content">
-                    <p>${message}</p>
-                    <p>Bildirimleri kontrol edin.</p>
-                </div>
-            `;
-            
-            // Notification container kontrol et veya oluştur
-            let container = document.querySelector('.notification-container');
-            if (!container) {
-                container = document.createElement('div');
-                container.className = 'notification-container';
-                document.body.appendChild(container);
-                console.log("Bildirim konteyneri oluşturuldu");
-            }
-            
-            // Geçici bildirimi ekle
-            container.appendChild(notification);
-            
-            // Kapat butonu
-            notification.querySelector('.notification-close').addEventListener('click', function() {
-                notification.classList.add('notification-closing');
-                setTimeout(() => {
-                    notification.remove();
-                }, 300);
-            });
-            
-            // 5 saniye sonra geçici bildirimi kapat
-            setTimeout(() => {
-                if (document.contains(notification)) {
-                    notification.classList.add('notification-closing');
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 300);
-                }
-            }, 5000);
+            // Sesli bildirim çal
+            playNotificationSound();
             
             console.log("Davet bildirimi başarıyla gösterildi");
         } catch (error) {
             console.error("Davet bildirimi gösterilirken hata:", error);
             // Alternatif basit bildirim göster
             showNotification('info', 'Yeni Oda Daveti', 
-                'Bir çalışma odasına davet edildiniz. Sayfayı yenileyip bildirimleri kontrol edin.');
+                'Bir çalışma odasına davet edildiniz. Davet listesini kontrol edin.');
         }
     }
     
@@ -2050,7 +2182,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function addPendingInvitesStyles() {
         // Stil elemanı kontrol et
         let styleElement = document.getElementById('pending-invites-styles');
-        if (styleElement) return; // Zaten varsa tekrar ekleme
+        if (styleElement) {
+            styleElement.remove(); // Varsa sil, yeniden oluştur
+        }
         
         styleElement = document.createElement('style');
         styleElement.id = 'pending-invites-styles';
@@ -2062,7 +2196,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 bottom: 20px;
                 right: 20px;
                 width: 320px;
-                max-height: 70vh;
+                max-height: 80vh;
                 overflow-y: auto;
                 background-color: white;
                 border-radius: 10px;
@@ -2205,32 +2339,48 @@ document.addEventListener('DOMContentLoaded', function() {
     function acceptInvitation(invite, inviteId, friendId, notificationElement) {
         console.log("Davet kabul ediliyor:", invite);
         
-        // Bildirimi kapat
-        notificationElement.classList.add('notification-closing');
-        setTimeout(() => {
-            notificationElement.remove();
-        }, 300);
+        // Bildirimi kapat (varsa)
+        if (notificationElement) {
+            notificationElement.classList.add('notification-closing');
+            setTimeout(() => {
+                notificationElement.remove();
+            }, 300);
+        }
         
-        // Doğrudan oda davetlerini güncelle
-        firebase.database().ref(`rooms/active_workrooms/${invite.roomId}/invitations/${currentUser.uid}/${inviteId}`).update({
-            status: 'accepted',
-            acceptedAt: Date.now()
-        })
-        .then(() => {
-            // Odaya katıl
-            joinRoom(invite.roomId);
-            
-            // Local storage'a işlenen davetleri kaydet
+        // Davet başarılı olarak kabul edildi olarak işaretlemek için
+        // Local storage'a işlenen davetleri kaydet (offline çalışabilmek için)
+        try {
             const processedInvites = JSON.parse(localStorage.getItem('processedInvites') || '{}');
             processedInvites[inviteId] = 'accepted';
             localStorage.setItem('processedInvites', JSON.stringify(processedInvites));
+        } catch (error) {
+            console.error("LocalStorage güncelleme hatası:", error);
+        }
+        
+        // Bildirimi kapat
+        clearRelatedNotifications(inviteId);
+        
+        // Davet durumunu güncelle - sadece kendi yolumuzda güncelleme yap
+        // Bu işlem daha az hata riski taşır
+        firebase.database().ref(`room_invitations/${currentUser.uid}/${inviteId}`).update({
+            status: 'accepted',
+            acceptedAt: firebase.database.ServerValue.TIMESTAMP
+        })
+        .then(() => {
+            console.log("Davet kabul durumu güncellendi");
             
-            // Kullanıcıyı bilgilendir
-            showNotification('success', 'Davet Kabul Edildi', `"${invite.roomName}" odasına başarıyla katıldınız.`);
+            // Başarılı olarak sayalım ve odaya girmeye çalışalım
+            showNotification('success', 'Davet Kabul Edildi', `"${invite.roomName}" odasına katılıyorsunuz...`);
+            
+            // Odaya katıl
+            joinRoom(invite.roomId);
         })
         .catch(error => {
-            console.error("Davet kabul edilirken hata:", error);
-            showNotification('error', 'Hata', 'Davet kabul edilirken bir hata oluştu.');
+            console.error("Davet kabul durumu güncellenirken hata:", error);
+            
+            // Hata aldık ama yine de odaya girmeye çalışalım
+            showNotification('warning', 'Uyarı', 'Davet durumu güncellenirken bir sorun oluştu ama odaya katılmaya çalışılıyor...');
+            joinRoom(invite.roomId);
         });
     }
     
@@ -2246,34 +2396,48 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 300);
         }
         
-        // Oda davetlerinde güncelle (varsa)
-        if (invite.roomId) {
-            firebase.database().ref(`rooms/active_workrooms/${invite.roomId}/invitations/${currentUser.uid}/${inviteId}`).update({
-                status: 'rejected',
-                rejectedAt: Date.now(),
-                rejectReason: reason || 'user_rejected'
-            })
-            .then(() => {
-                // Local storage'a işlenen davetleri kaydet
-                const processedInvites = JSON.parse(localStorage.getItem('processedInvites') || '{}');
-                processedInvites[inviteId] = 'rejected';
-                localStorage.setItem('processedInvites', JSON.stringify(processedInvites));
-                
-                // Kullanıcıyı bilgilendir
-                showNotification('info', 'Davet Reddedildi', 'Oda daveti reddedildi.');
-            })
-            .catch(error => {
-                console.error("Davet reddedilirken hata:", error);
-                showNotification('error', 'Hata', 'Davet reddedilirken bir hata oluştu.');
-            });
-        } else {
-            // Local storage'a işlenen davetleri kaydet
+        // Davet başarılı olarak reddedildi olarak işaretlemek için
+        // Local storage'a işlenen davetleri kaydet (offline çalışabilmek için)
+        try {
             const processedInvites = JSON.parse(localStorage.getItem('processedInvites') || '{}');
             processedInvites[inviteId] = 'rejected';
             localStorage.setItem('processedInvites', JSON.stringify(processedInvites));
-            
-            showNotification('info', 'Davet Reddedildi', 'Davet reddedildi.');
+        } catch (error) {
+            console.error("LocalStorage güncelleme hatası:", error);
         }
+        
+        // Bildirimi kapat
+        clearRelatedNotifications(inviteId);
+        
+        // Davet durumunu güncelle - sadece kendi yolumuzda güncelleme yap
+        // Bu işlem daha az hata riski taşır
+        firebase.database().ref(`room_invitations/${currentUser.uid}/${inviteId}`).update({
+            status: 'rejected',
+            rejectedAt: firebase.database.ServerValue.TIMESTAMP,
+            rejectReason: reason || 'user_rejected'
+        })
+        .then(() => {
+            console.log("Davet ret durumu güncellendi");
+            showNotification('info', 'Davet Reddedildi', 'Oda daveti reddedildi.');
+        })
+        .catch(error => {
+            console.error("Davet ret durumu güncellenirken hata:", error);
+            showNotification('info', 'Davet Reddedildi', 'Davet reddedildi ancak durum güncellenirken bir sorun oluştu.');
+        });
+    }
+    
+    // İlgili bildirimleri temizle
+    function clearRelatedNotifications(inviteId) {
+        // Bildirim panelindeki ilgili bildirimleri temizle
+        const notifications = document.querySelectorAll(`.notification[data-notification-id="${inviteId}"]`);
+        notifications.forEach(notification => {
+            notification.classList.add('notification-closing');
+            setTimeout(() => {
+                if (document.contains(notification)) {
+                    notification.remove();
+                }
+            }, 300);
+        });
     }
     
     // Davet bildirimi stilleri ekle
@@ -2391,7 +2555,7 @@ function applyNotificationStyles() {
         /* Notification stilleri */
         .notification-container {
             position: fixed !important;
-            top: 20px !important; /* bottom yerine top kullan */
+            top: 20px !important;
             right: 20px !important;
             left: auto !important;
             bottom: auto !important;
@@ -2413,7 +2577,151 @@ function applyNotificationStyles() {
             overflow: hidden;
             pointer-events: auto;
             max-width: 100%;
-            animation: slideInRight 0.3s forwards;
+            animation: notification-slide-in 0.4s ease-out forwards;
+            transform-origin: center right;
+            border-left: 4px solid #4a6cf7;
+        }
+        
+        .notification-info {
+            border-left-color: #4a6cf7;
+        }
+        
+        .notification-success {
+            border-left-color: #10b981;
+        }
+        
+        .notification-warning {
+            border-left-color: #f59e0b;
+        }
+        
+        .notification-error {
+            border-left-color: #ef4444;
+        }
+        
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: rgba(0, 0, 0, 0.03);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .notification-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .notification-close {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            padding: 5px;
+            margin: -5px;
+            transition: color 0.2s;
+        }
+        
+        .notification-close:hover {
+            color: #333;
+        }
+        
+        .notification-content {
+            padding: 12px 15px;
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .notification-content p {
+            margin: 0;
+            line-height: 1.5;
+        }
+        
+        .notification-actions {
+            display: flex;
+            justify-content: flex-end;
+            padding: 0 15px 12px;
+            gap: 10px;
+        }
+        
+        .notification-action {
+            background-color: rgb(75, 33, 56);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        
+        .notification-action:hover {
+            background-color: rgba(75, 33, 56, 0.8);
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .notification-reject {
+            background-color: transparent;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+            border-radius: 4px;
+            padding: 7px 15px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        
+        .notification-reject:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .notification-closing {
+            animation: notification-slide-out 0.3s ease-in forwards;
+        }
+        
+        .invitation-notification {
+            border-left-color: #ff9800;
+            animation: notification-pulse 2s infinite;
+        }
+        
+        @keyframes notification-pulse {
+            0% {
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            }
+            50% {
+                box-shadow: 0 4px 20px rgba(255, 152, 0, 0.4);
+            }
+            100% {
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            }
+        }
+        
+        @keyframes notification-slide-in {
+            0% {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes notification-slide-out {
+            0% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(100%);
+                opacity: 0;
+            }
         }
         
         .timer-notification {
@@ -2429,6 +2737,50 @@ function applyNotificationStyles() {
             margin-bottom: 10px !important;
         }
         
+        .dark-theme .notification {
+            background-color: #2d3748;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .dark-theme .notification-header {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-bottom-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .dark-theme .notification-header h3 {
+            color: #e2e8f0;
+        }
+        
+        .dark-theme .notification-close {
+            color: #a0aec0;
+        }
+        
+        .dark-theme .notification-close:hover {
+            color: #e2e8f0;
+        }
+        
+        .dark-theme .notification-content {
+            color: #cbd5e0;
+        }
+        
+        .dark-theme .notification-action {
+            background-color: #7b5a86;
+        }
+        
+        .dark-theme .notification-action:hover {
+            background-color: #9370db;
+        }
+        
+        .dark-theme .notification-reject {
+            border-color: #e57373;
+            color: #e57373;
+        }
+        
+        .dark-theme .notification-reject:hover {
+            background-color: #e57373;
+            color: #2d3748;
+        }
+        
         .dark-theme .timer-notification {
             background-color: rgba(255, 255, 255, 0.15) !important;
         }
@@ -2442,15 +2794,6 @@ function applyNotificationStyles() {
             color: #e74c3c !important;
         }
 
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-            }
-            to {
-                transform: translateX(0);
-            }
-        }
-        
         @keyframes fadeInOut {
             0% { opacity: 0; transform: translateY(-20px); }
             10% { opacity: 1; transform: translateY(0); }
@@ -2458,6 +2801,8 @@ function applyNotificationStyles() {
             100% { opacity: 0; transform: translateY(-20px); }
         }
     `;
+    
+    console.log("Bildirim stilleri yüklendi");
 }
 
 // DOM yüklendiğinde bildirimleri başlat
@@ -2666,5 +3011,46 @@ function ensureNotificationContainer() {
         container.className = 'notification-container';
         document.body.appendChild(container);
         console.log("Bildirim konteyneri oluşturuldu");
+    }
+}
+
+// Bildirim sesi çal
+function playNotificationSound() {
+    try {
+        // Ses çalma denemesi - belirlenen ses dosyası
+        const audio = new Audio('/assets/sounds/notification.mp3');
+        audio.volume = 0.5;  // Ses düzeyini ayarla
+        
+        // Ses çalma başarısız olursa
+        audio.onerror = function() {
+            console.log("Birincil ses dosyası yüklenemedi, alternatif ses kullanılacak");
+            try {
+                // Alternatif olan Browser API'sini kullan
+                if (typeof AudioContext !== "undefined" || typeof webkitAudioContext !== "undefined") {
+                    const audioContext = new (AudioContext || webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    oscillator.type = "sine";
+                    oscillator.frequency.setValueAtTime(587.33, audioContext.currentTime); // D5 nota
+                    oscillator.connect(audioContext.destination);
+                    oscillator.start();
+                    setTimeout(() => oscillator.stop(), 200);
+                } else {
+                    console.log("AudioContext desteklenmiyor");
+                }
+            } catch (backupError) {
+                console.log("Alternatif ses de çalınamadı:", backupError);
+            }
+        };
+        
+        // Ses dosyasını çal
+        audio.play().catch(e => {
+            console.log("Ses çalınamadı:", e);
+            // AutoPlay politikaları engellediğinde alternatif çözüm
+            if (e.name === "NotAllowedError") {
+                console.log("Otomatik ses çalma engellendi - kullanıcı etkileşimi gerekiyor");
+            }
+        });
+    } catch (error) {
+        console.log("Bildirim sesi çalınamadı:", error);
     }
 } 
