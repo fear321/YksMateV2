@@ -72,17 +72,40 @@ document.addEventListener('DOMContentLoaded', function() {
     // Kullanıcı avatarını tüm sayfalarda güncelle
     function updateAvatars(user) {
         const sidebarAvatars = document.querySelectorAll('.sidebar .user-avatar');
+        let profileImage = null;
+        
+        // Kullanıcının profil resmini belirle
+        if (user && user.photoURL) {
+            profileImage = user.photoURL;
+            localStorage.setItem('userProfileImage', profileImage);
+        } else if (localStorage.getItem('userProfileImage')) {
+            // localStorage'dan yükle
+            profileImage = localStorage.getItem('userProfileImage');
+        }
         
         sidebarAvatars.forEach(avatar => {
             // Mevcut içeriği temizle
             avatar.innerHTML = '';
             
             // Kullanıcının profil resmi varsa göster, yoksa ikon göster
-            if (user && user.photoURL) {
+            if (profileImage) {
                 const img = document.createElement('img');
                 img.classList.add('avatar-image-small');
-                img.src = user.photoURL;
-                img.alt = user.displayName || 'Kullanıcı';
+                img.src = profileImage;
+                img.alt = user ? (user.displayName || 'Kullanıcı') : 'Kullanıcı';
+                img.style.width = "100%";
+                img.style.height = "100%";
+                img.style.objectFit = "cover";
+                img.style.zIndex = "10";
+                img.onerror = function() {
+                    // Resim yüklenemezse varsayılan ikonu göster
+                    avatar.innerHTML = '';
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-user';
+                    avatar.appendChild(icon);
+                    // Hatalı resmi localStorage'dan temizle
+                    localStorage.removeItem('userProfileImage');
+                };
                 avatar.appendChild(img);
             } else {
                 // Varsayılan ikon
