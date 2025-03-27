@@ -540,61 +540,43 @@
         <div class="dashboard-container" id="dashboardContainer" style="display: none;">
             <!-- Sidebar -->
             <div class="sidebar">
-
-                <div class="user-info">
-                    <div class="user-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="user-details">
-                        <a href="profile.html" style="text-decoration: none; color: inherit;">
-                            <h3 id="userName">Kullanıcı Adı</h3>
-                            <p id="userExamType">Sınav Türü: TYT</p>
-                        </a>
-                    </div>
-                </div>
                 <nav class="sidebar-nav">
                     <ul>
                         <li>
-                            <a href="index.html"><i class="fas fa-home"></i> Ana Sayfa</a>
+                            <a href="index.html"><i class="fas fa-home"></i><p>ana sayfa</p></a>
                         </li>
                         <li>
-                            <a href="exams.html"><i class="fas fa-file-alt"></i> Denemelerim</a>
+                            <a href="exams.html"><i class="fas fa-file-alt"></i><p>denemelerim</p></a>
                         </li>
                         <li>
-                            <a href="timer.html"><i class="fas fa-clock"></i> Zamanlayıcı</a>
+                            <a href="timer.html"><i class="fas fa-clock"></i><p>zamanlayıcı</p></a>
                         </li>
                         <li class="active">
-                            <a href="calendar.html"><i class="fas fa-calendar-alt"></i> Takvim</a>
+                            <a href="calendar.html"><i class="fas fa-calendar-alt"></i><p>takvim</p></a>
                         </li>
                         <li>
-                            <a href="notes.html"><i class="fas fa-sticky-note"></i> Notlarım</a>
+                            <a href="notes.html"><i class="fas fa-sticky-note"></i><p>notlarım</p></a>
                         </li>
                         <li>
-                            <a href="community.html"><i class="fas fa-users"></i> Topluluk</a>
+                            <a href="community.html"><i class="fas fa-users"></i><p>topluluk</p></a>
                         </li>
                         <li>
-                            <a href="friends.html"><i class="fas fa-user-friends"></i> Arkadaşlarım</a>
+                            <a href="friends.html"><i class="fas fa-user-friends"></i><p>arkadaşlarım</p></a>
                         </li>
                         <li>
-                            <a href="messages.html"><i class="fas fa-comment"></i> Mesajlar</a>
+                            <a href="messages.html"><i class="fas fa-comment"></i><p>mesajlar</p></a>
                         </li>
                         <li>
-                            <a href="ai.html"><i class="fas fa-robot"></i> MateAI</a>
+                            <a href="ai.html"><i class="fas fa-robot"></i><p>mateai</p></a>
                         </li>
                         <li>
-                            <a href="work-together.html"><i class="fas fa-users-cog"></i> Birlikte Çalış</a>
+                            <a href="work-together.html"><i class="fas fa-users-cog"></i><p>birlikte çalış</p></a>
                         </li>
                         <li>
-                            <a href="profile.html"><i class="fas fa-user-circle"></i> Profil</a>
-                        </li>
-                        <li>
-                            <a href="settings.html"><i class="fas fa-cog"></i> Ayarlar</a>
+                            <a href="settings.html"><i class="fas fa-cog"></i><p>ayarlar</p></a>
                         </li>
                     </ul>
                 </nav>
-                <div class="sidebar-footer">
-                
-                </div>
             </div>
 
             <!-- Sidebar Overlay -->
@@ -606,6 +588,17 @@
                     <button id="sidebarToggle" class="sidebar-toggle">
                         <i class="fas fa-bars"></i>
                     </button>
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-details">
+                            <a href="profile.html" style="text-decoration: none; color: inherit;">
+                                <h3 id="userName">Kullanıcı Adı</h3>
+                                <p id="userExamType">Sınav Türü: TYT</p>
+                            </a>
+                        </div>
+                    </div>
                     <div class="header-actions">
                         <button class="theme-toggle" id="themeToggle">
                             <i class="fas fa-moon"></i>
@@ -1058,6 +1051,9 @@
                         showEmptyState();
                     }
                 }
+                
+                // Silme butonlarını etkinleştir
+                addDeleteEventListeners();
             };
             
             // Görevleri yükle
@@ -1065,8 +1061,15 @@
                 const user = firebase.auth().currentUser;
                 
                 if (user) {
-                    // Firebase dinleyicisi zaten aktif, tekrar yüklemeye gerek yok
-                    return;
+                    // Firebase dinleyicisi ekle - değişiklik: realtime veritabanı dinleyicisi ekle
+                    firebase.database().ref('users/' + user.uid + '/tasks').on('value', (snapshot) => {
+                        const tasks = snapshot.val();
+                        console.log("Firebase'den görevler alındı:", tasks);
+                        processTasks(tasks);
+                    }, (error) => {
+                        console.error("Görevler yüklenirken hata:", error);
+                        showEmptyState();
+                    });
                 } else {
                     const guestUser = localStorage.getItem('guestUser');
                     if (guestUser) {
@@ -1299,7 +1302,7 @@
                     eventsList.appendChild(taskCard);
                 });
 
-                // Silme butonlarına tıklama olayı ekle
+                // Silme butonlarını etkinleştir
                 addDeleteEventListeners();
             };
             
@@ -1320,6 +1323,69 @@
                 });
             }
         });
+    </script>
+    
+    <!-- Etkinlik silme işlevini ekle -->
+    <script>
+        // Etkinlik silme işlevini ekle
+        const addDeleteEventListeners = () => {
+            const deleteButtons = document.querySelectorAll('.delete-event-btn');
+            
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', async function(e) {
+                    e.stopPropagation(); // Tıklama olayının üst öğelere yayılmasını engelle
+                    
+                    const taskId = this.getAttribute('data-task-id');
+                    
+                    // Onay al
+                    if (!confirm('Bu görevi silmek istediğinizden emin misiniz?')) {
+                        return;
+                    }
+                    
+                    try {
+                        const user = firebase.auth().currentUser;
+                        
+                        if (user) {
+                            // Firebase'den sil
+                            await firebase.database().ref(`users/${user.uid}/tasks/${taskId}`).remove();
+                            console.log('Görev silindi:', taskId);
+                            
+                            // Kullanıcıya bildirim göster
+                            alert('Görev başarıyla silindi!');
+                            
+                            // Görevleri yeniden yükle
+                            loadTasks();
+                        } else {
+                            // Misafir kullanıcı için localStorage'dan sil
+                            const guestUser = localStorage.getItem('guestUser');
+                            
+                            if (guestUser) {
+                                const guestData = JSON.parse(guestUser);
+                                
+                                if (guestData.tasks && Array.isArray(guestData.tasks)) {
+                                    // Görevi bul ve sil
+                                    guestData.tasks = guestData.tasks.filter(task => task.id !== taskId);
+                                    
+                                    // LocalStorage'a kaydet
+                                    localStorage.setItem('guestUser', JSON.stringify(guestData));
+                                    
+                                    console.log('Misafir kullanıcı için görev silindi:', taskId);
+                                    
+                                    // Kullanıcıya bildirim göster
+                                    alert('Görev başarıyla silindi!');
+                                    
+                                    // Görevleri yeniden yükle
+                                    loadTasks();
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Görev silinirken hata:', error);
+                        alert('Görev silinirken bir hata oluştu: ' + error.message);
+                    }
+                });
+            });
+        };
     </script>
 </body>
 </html> 
