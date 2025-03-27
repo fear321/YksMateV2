@@ -95,17 +95,41 @@ document.addEventListener('DOMContentLoaded', function() {
     // Sidebar avatar görüntüsünü güncelle
     function updateSidebarAvatar(profileImage) {
         console.log("auth-check.js: Avatar güncelleniyor:", profileImage);
+        
+        // ProfileImage'i localStorage'a kaydet
+        if (profileImage) {
+            localStorage.setItem('userProfileImage', profileImage);
+        }
+        
         const sidebarAvatarContainers = document.querySelectorAll('.user-avatar');
         sidebarAvatarContainers.forEach(container => {
             // Mevcut içeriği temizle
             container.innerHTML = '';
             
             // Yeni avatar imajını ekle
-            const sidebarAvatar = document.createElement('img');
-            sidebarAvatar.src = profileImage;
-            sidebarAvatar.alt = "Profil Fotoğrafı";
-            sidebarAvatar.className = "avatar-image-small";
-            container.appendChild(sidebarAvatar);
+            if (profileImage) {
+                const sidebarAvatar = document.createElement('img');
+                sidebarAvatar.src = profileImage;
+                sidebarAvatar.alt = "Profil Fotoğrafı";
+                sidebarAvatar.className = "avatar-image-small";
+                sidebarAvatar.style.width = "100%";
+                sidebarAvatar.style.height = "100%";
+                sidebarAvatar.style.objectFit = "cover";
+                sidebarAvatar.style.zIndex = "10";
+                sidebarAvatar.onerror = function() {
+                    // Resim yüklenemezse varsayılan ikonu göster
+                    container.innerHTML = '';
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-user';
+                    container.appendChild(icon);
+                };
+                container.appendChild(sidebarAvatar);
+            } else {
+                // Avatar yoksa ikon göster
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-user';
+                container.appendChild(icon);
+            }
         });
     }
 

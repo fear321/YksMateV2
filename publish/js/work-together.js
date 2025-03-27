@@ -617,6 +617,12 @@ document.addEventListener('DOMContentLoaded', function() {
         roomListContainer.style.display = 'none';
         workTogetherContainer.style.display = 'block';
         
+        // Oda oluştur butonunu gizle
+        const createRoomButtonContainer = document.getElementById('createRoomButtonContainer');
+        if (createRoomButtonContainer) {
+            createRoomButtonContainer.style.display = 'none';
+        }
+        
         roomTitleElement.textContent = room.name;
         
         // Oda sahibiyse katılımcı ekleme butonunu göster
@@ -1130,6 +1136,12 @@ document.addEventListener('DOMContentLoaded', function() {
             createRoomContainer.style.display = 'block';
             roomListContainer.style.display = 'block';
             
+            // Oda oluştur butonunu tekrar göster
+            const createRoomButtonContainer = document.getElementById('createRoomButtonContainer');
+            if (createRoomButtonContainer) {
+                createRoomButtonContainer.style.display = 'block';
+            }
+            
             // Odadan çıkış bildirimi göster
             showNotification('info', 'Odadan Ayrıldınız', 'Odadan başarıyla ayrıldınız.');
         })
@@ -1152,6 +1164,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (roomData && roomData.roomId) {
                     console.log("Kaydedilmiş oda oturumu bulundu:", roomData);
                     
+                    // Oda oluşturma butonunu gizle
+                    const createRoomButtonContainer = document.getElementById('createRoomButtonContainer');
+                    if (createRoomButtonContainer) {
+                        createRoomButtonContainer.style.display = 'none';
+                    }
+                    
                     // Oda hala aktif mi kontrol et
                     activeRoomsRef.child(roomData.roomId).once('value')
                         .then(snapshot => {
@@ -1162,6 +1180,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                 console.log("Kaydedilmiş oda artık aktif değil, oturumu temizliyorum");
                                 clearRoomSession();
                                 
+                                // Oda oluşturma butonunu tekrar göster
+                                if (createRoomButtonContainer) {
+                                    createRoomButtonContainer.style.display = 'block';
+                                }
+                                
                                 // Firebase presence bilgisini de kontrol et
                                 checkFirebasePresence();
                             }
@@ -1169,6 +1192,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         .catch(error => {
                             console.error("Oda kontrolü sırasında hata:", error);
                             clearRoomSession();
+                            
+                            // Oda oluşturma butonunu tekrar göster
+                            if (createRoomButtonContainer) {
+                                createRoomButtonContainer.style.display = 'block';
+                            }
+                            
                             checkFirebasePresence();
                         });
                     
@@ -1191,6 +1220,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (presence.status === 'online' && presence.room_id) {
                         // Kullanıcı zaten bir odada aktif, otomatik katıl
                         console.log("Firebase'de aktif oda bulundu, otomatik katılınıyor:", presence.room_id);
+                        
+                        // Oda oluşturma butonunu gizle
+                        const createRoomButtonContainer = document.getElementById('createRoomButtonContainer');
+                        if (createRoomButtonContainer) {
+                            createRoomButtonContainer.style.display = 'none';
+                        }
+                        
                         joinRoom(presence.room_id);
                     }
                 }

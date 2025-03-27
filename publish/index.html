@@ -1415,8 +1415,8 @@
                             </div>
                         </div>
 
-                        <div class="dashboard-sections">
-                            <div class="section">
+                        <div class="dashboard-sections split-sections" id="topSections">
+                            <div class="section" id="recentExamsSection">
                                 <div class="section-header">
                                     <h2>Son Denemeler</h2>
                                     <div class="header-actions">
@@ -1439,7 +1439,7 @@
                                 </div>
                             </div>
 
-                            <div class="section">
+                            <div class="section" id="todayTasksSection">
                                 <div class="section-header">
                                     <h2>Bugünkü Görevler</h2>
                                     <div class="header-actions">
@@ -1567,9 +1567,9 @@
                     <select id="examType" required>
                         <option value="">Sınav Türü Seçin</option>
                         <option value="tyt">TYT</option>
-                        <option value="ayt-sayisal">AYT Sayısal</option>
-                        <option value="ayt-sozel">AYT Sözel</option>
-                        <option value="ayt-esitagirlik">AYT Eşit Ağırlık</option>
+                        <option value="ayt-sayisal">Sayısal</option>
+                        <option value="ayt-sozel">Sözel</option>
+                        <option value="ayt-esitagirlik">Eşit Ağırlık</option>
                         <option value="ydt">YDT</option>
                     </select>
                 </div>
@@ -2448,9 +2448,9 @@
                         if (!examTypeText) {
                             switch(exam.type) {
                                 case 'tyt': examTypeText = 'TYT'; break;
-                                case 'ayt-sayisal': examTypeText = 'AYT Sayısal'; break;
-                                case 'ayt-sozel': examTypeText = 'AYT Sözel'; break;
-                                case 'ayt-esitagirlik': examTypeText = 'AYT Eşit Ağırlık'; break;
+                                case 'ayt-sayisal': examTypeText = 'Sayısal'; break;
+                                case 'ayt-sozel': examTypeText = 'Sözel'; break;
+                                case 'ayt-esitagirlik': examTypeText = 'Eşit Ağırlık'; break;
                                 case 'ydt': examTypeText = 'YDT'; break;
                                 default: examTypeText = 'TYT';
                             }

@@ -16,8 +16,7 @@
             max-height: 100%;
             display: flex;
             flex-direction: column;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: none;
             margin-bottom: 20px;
         }
         
@@ -209,8 +208,8 @@
             align-items: center;
             padding: 15px;
             border-bottom: 1px solid #eee;
-            background-color: #f9f9f9;
-            border-radius: 10px 10px 0 0;
+            background-color: #fff;
+            border-radius: 10px;
         }
         
         .room-header h3 {
@@ -262,14 +261,13 @@
         
         .room-content {
             display: flex;
-            height: 70vh;
-            background-color: #fff;
+            height: auto;
+            background: none;
         }
         
         /* Sol panel (timer ve kullanıcılar) */
         .left-panel {
             width: 70%;
-            border-right: 1px solid #eee;
             padding: 15px;
             display: flex;
             flex-direction: column;
@@ -277,10 +275,10 @@
         
         .timer-container {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
             padding: 25px 0;
             border-bottom: 1px solid #eee;
-            background-color: #f9f9f9;
+            background-color: #fff;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
@@ -295,7 +293,8 @@
         .timer-display {
             font-size: 4.5rem;
             font-weight: bold;
-            margin: 20px 0;
+            margin-bottom: 50px;
+            margin-top: 20px;
             color: rgb(75, 33, 56) !important;
             text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
@@ -338,8 +337,10 @@
         /* Kullanıcı listesini grid yapısına çevir */
         #usersList {
             display: grid;
+            background: #fff;
             grid-template-columns: repeat(2, 1fr);
             gap: 10px;
+            border-radius: 10px;
         }
         
         /* Mobil görünüm için düzenleme */
@@ -368,8 +369,8 @@
             align-items: center;
             margin-bottom: 0;
             padding: 10px;
-            border-radius: 5px;
-            background-color: #f9f9f9;
+            border-radius: 10px;
+            background-color: #fff;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
             transition: transform 0.2s, box-shadow 0.2s;
         }
@@ -424,7 +425,11 @@
             flex: 1;
             overflow-y: auto;
             padding: 15px;
-            max-height: 250px;
+            margin-top: 15px;
+            max-height: 54vh;
+            background-color: #fff;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
         
         .message {
@@ -463,9 +468,11 @@
         
         .chat-input-container {
             padding: 15px;
-            border-top: 1px solid #eee;
             display: flex;
             align-items: center;
+            background-color: #fff;
+            border-radius:0 0 10px 10px ;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
         
         .chat-input {
@@ -710,7 +717,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
         }
 
         .timer-header h4 {
@@ -723,7 +729,7 @@
             color: inherit;
             font-size: 1.2rem;
             cursor: pointer;
-            padding: 5px;
+            padding: 0px 15px;
             border-radius: 4px;
             transition: all 0.2s;
         }
@@ -1074,17 +1080,7 @@
         <div class="dashboard-container" id="dashboardContainer">
             <!-- Sidebar -->
             <div class="sidebar">
-                <div class="user-info">
-                    <div class="user-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="user-details">
-                        <a href="profile.html" style="text-decoration: none; color: inherit;">
-                            <h3 id="userName">Kullanıcı Adı</h3>
-                            <p id="userExamType"></p>
-                        </a>
-                    </div>
-                </div>
+
                 <nav class="sidebar-nav">
                     <ul>
                         <li>
@@ -1123,9 +1119,6 @@
                         </li>
                     </ul>
                 </nav>
-                <div class="sidebar-footer">
-
-                </div>
             </div>
 
             <!-- Sidebar Overlay -->
@@ -1137,6 +1130,17 @@
                     <button id="sidebarToggle" class="sidebar-toggle">
                         <i class="fas fa-bars"></i>
                     </button>
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-details">
+                            <a href="profile.html" style="text-decoration: none; color: inherit;">
+                                <h3 id="userName">Kullanıcı Adı</h3>
+                                <p id="userExamType"></p>
+                            </a>
+                        </div>
+                    </div>
                     <div class="header-actions">
                         <button class="theme-toggle" id="themeToggle">
                             <i class="fas fa-moon"></i>
@@ -1153,6 +1157,55 @@
                 <!-- Sayfa İçeriği -->
                 <div class="page-content">
                     <h1 class="page-title">Birlikte Çalışma</h1>
+                    
+                    <!-- Üstte Oda Oluştur Butonu -->
+                    <div class="create-room-button-container" id="createRoomButtonContainer">
+                        <button id="showCreateRoomBtn" class="btn-primary create-room-top-btn">
+                            <i class="fas fa-plus-circle"></i> Oda Oluştur
+                        </button>
+                    </div>
+                    
+                    <!-- Popup Oda Oluşturma Formu (başlangıçta gizli) -->
+                    <div id="createRoomPopup" class="create-room-popup">
+                        <div class="create-room-popup-content">
+                            <div class="popup-header">
+                                <h2>Yeni Çalışma Odası Oluştur</h2>
+                                <button id="closePopupBtn" class="close-popup-btn">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <form id="createRoomFormPopup" class="room-form">
+                                <div class="form-group">
+                                    <label for="roomNamePopup">Oda Adı</label>
+                                    <input type="text" id="roomNamePopup" class="form-control" placeholder="Oda adını girin" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="roomModePopup">Çalışma Modu</label>
+                                    <select id="roomModePopup" class="form-control" required>
+                                        <option value="pomodoro">Pomodoro (25dk çalışma + 5dk mola)</option>
+                                        <option value="free">Serbest Çalışma</option>
+                                        <option value="exam">Deneme Sınavı Modu</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group" id="examDurationContainerPopup" style="display:none;">
+                                    <label for="examDurationPopup">Sınav Süresi (dakika)</label>
+                                    <input type="number" id="examDurationPopup" class="form-control" value="135" min="30" max="180">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="roomVisibilityPopup">Oda Görünürlüğü</label>
+                                    <select id="roomVisibilityPopup" class="form-control" required>
+                                        <option value="public">Herkese Açık</option>
+                                        <option value="private">Sadece Davet İle</option>
+                                    </select>
+                                </div>
+                                
+                                <button type="submit" class="create-room-btn">Oda Oluştur</button>
+                            </form>
+                        </div>
+                    </div>
                     
                     <!-- Birlikte Çalışma İçeriği -->
                     <!-- İki sütunlu düzen için layout -->
@@ -1206,21 +1259,12 @@
                     
                     <!-- Çalışma Odası (Başlangıçta Gizli) -->
                     <div class="work-together-container" id="workTogetherContainer" style="display:none;">
-                        <div class="room-header">
-                            <h3 id="roomTitle">Oda Adı</h3>
-                            <div class="room-header-buttons">
-                                <button class="leave-room-btn" id="leaveRoomBtn">
-                                    <i class="fas fa-sign-out-alt"></i> Ayrıl
-                                </button>
-                            </div>
-                        </div>
                         
                         <div class="room-content">
                             <!-- Sol Panel (Timer ve Kullanıcılar) -->
                             <div class="left-panel">
                                 <div class="timer-container">
                                     <div class="timer-header">
-                                        <h4>Zamanlayıcı</h4>
                                         <button id="fullscreenTimerBtn" class="fullscreen-btn">
                                             <i class="fas fa-expand"></i>
                                         </button>
@@ -1229,6 +1273,14 @@
                                     <div class="timer-controls">
                                         <button id="startTimerBtn"><i class="fas fa-play"></i> Başlat</button>
                                         <button id="resetTimerBtn"><i class="fas fa-redo"></i> Sıfırla</button>
+                                    </div>
+                                </div>
+                                <div class="room-header">
+                                    <h3 id="roomTitle">Oda Adı</h3>
+                                    <div class="room-header-buttons">
+                                        <button class="leave-room-btn" id="leaveRoomBtn">
+                                            <i class="fas fa-sign-out-alt"></i> Ayrıl
+                                        </button>
                                     </div>
                                 </div>
                                 
@@ -1272,6 +1324,86 @@
                 } else {
                     examDurationContainer.style.display = 'none';
                 }
+            });
+
+            // Popup Oda Oluşturma
+            const showCreateRoomBtn = document.getElementById('showCreateRoomBtn');
+            const createRoomPopup = document.getElementById('createRoomPopup');
+            const closePopupBtn = document.getElementById('closePopupBtn');
+            const createRoomFormPopup = document.getElementById('createRoomFormPopup');
+            const roomModePopup = document.getElementById('roomModePopup');
+            const examDurationContainerPopup = document.getElementById('examDurationContainerPopup');
+            
+            // Popup'ı göster
+            showCreateRoomBtn.addEventListener('click', function() {
+                createRoomPopup.classList.add('active');
+                document.body.style.overflow = 'hidden'; // Arka planın scrollunu engelle
+            });
+            
+            // Popup'ı kapat
+            closePopupBtn.addEventListener('click', function() {
+                createRoomPopup.classList.remove('active');
+                document.body.style.overflow = 'auto'; // Scroll'u tekrar etkinleştir
+            });
+            
+            // Dışarı tıklanınca kapat
+            createRoomPopup.addEventListener('click', function(e) {
+                if (e.target === createRoomPopup) {
+                    createRoomPopup.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                }
+            });
+            
+            // Popup içinde çalışma modunu değiştirince süre ayarını göster/gizle
+            roomModePopup.addEventListener('change', function() {
+                if (this.value === 'exam') {
+                    examDurationContainerPopup.style.display = 'block';
+                } else {
+                    examDurationContainerPopup.style.display = 'none';
+                }
+            });
+            
+            // Popup form gönderildiğinde
+            createRoomFormPopup.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Form verilerini al
+                const roomName = document.getElementById('roomNamePopup').value;
+                const roomMode = roomModePopup.value;
+                const roomVisibility = document.getElementById('roomVisibilityPopup').value;
+                const examDuration = roomMode === 'exam' ? document.getElementById('examDurationPopup').value : null;
+                
+                // Ana formdaki alanlara değerleri aktar
+                document.getElementById('roomName').value = roomName;
+                document.getElementById('roomMode').value = roomMode;
+                document.getElementById('roomVisibility').value = roomVisibility;
+                
+                // Sınav modu seçiliyse, süre alanını ayarla
+                if (roomMode === 'exam') {
+                    document.getElementById('examDurationContainer').style.display = 'block';
+                    document.getElementById('examDuration').value = examDuration;
+                } else {
+                    document.getElementById('examDurationContainer').style.display = 'none';
+                }
+                
+                try {
+                    // createNewRoom fonksiyonunu doğrudan çağırıyoruz
+                    if (typeof createNewRoom === 'function') {
+                        console.log("createNewRoom fonksiyonu çağrılıyor...");
+                        createNewRoom();
+                    } else {
+                        console.error("createNewRoom fonksiyonu bulunamadı!");
+                        alert("Oda oluşturma işlevi bulunamadı. Lütfen sayfa yenileyip tekrar deneyin.");
+                    }
+                } catch (error) {
+                    console.error("Oda oluşturma hatası:", error);
+                    alert("Oda oluşturulurken bir hata oluştu: " + error.message);
+                }
+                
+                // Popup'ı kapat
+                createRoomFormPopup.reset();
+                createRoomPopup.classList.remove('active');
+                document.body.style.overflow = 'auto';
             });
 
             // Tam ekran modu için gerekli kodlar
