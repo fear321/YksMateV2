@@ -21,6 +21,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Chart.js Annotation Eklentisi -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0/dist/chartjs-plugin-annotation.min.js"></script>
+    <script>
+        // Annotation pluginini global olarak tanımla
+        const ChartAnnotation = window['chartjs-plugin-annotation'];
+    </script>
     
     <!-- Ana JavaScript -->
     <script src="js/firebase-config.js"></script>
@@ -52,11 +56,11 @@
                                     // Kullanıcı verileri varsa
                                     
                                     // Kullanıcı adını güncelle
-                                    document.getElementById("userName").textContent = userData.name || user.email.split('@')[0];
-                                    document.getElementById("welcomeUserName").textContent = userData.name || user.email.split('@')[0];
+                                    document.getElementById("userName").textContent = userData.name || userData.displayName || user.displayName || user.email.split('@')[0];
+                                    document.getElementById("welcomeUserName").textContent = userData.name || userData.displayName || user.displayName || user.email.split('@')[0];
                                     
                                     // Sınav türünü güncelle
-                                    document.getElementById("userExamType").textContent = "" + getExamTypeText(userData.examType);
+                                    document.getElementById("userExamType").textContent = "Bölüm: " + getExamTypeText(userData.examType);
                                     
                                     // Dashboard'u göster
                                     document.getElementById("dashboardContainer").style.display = "flex";
@@ -1466,19 +1470,8 @@
                         <div class="dashboard-sections">
                             <div class="section full-width">
                                 <div class="section-header">
-                                    <h2>Performans Grafikleri</h2>
+                                    <h2>Net Grafikleri</h2>
                                     <div class="graph-filters">
-                                        <select id="graphPeriod">
-                                            <option value="week">Haftalık</option>
-                                            <option value="month">Aylık</option>
-                                            <option value="year">Yıllık</option>
-                                        </select>
-                                        <select id="graphType">
-                                            <option value="all">Tüm Sınavlar</option>
-                                            <option value="tyt">TYT</option>
-                                            <option value="ayt">AYT</option>
-                                            <option value="ydt">YDT</option>
-                                        </select>
                                     </div>
                                 </div>
                                 <div class="performance-graphs">
@@ -1488,12 +1481,8 @@
                                         <p class="small-text">Deneme ekledikçe performans grafiğiniz burada görünecek</p>
                                     </div>
                                     <div id="examGraphsContainer" style="display: none;">
-                                        <div class="graph-tabs">
-                                            <button class="graph-tab active" data-graph="tyt">Tüm Sınavlar</button>
-                                        </div>
                                         <div class="graph-content">
                                             <div class="graph-panel active" id="tytGraphPanel">
-                                                <h3>Sınav Performans Grafiği</h3>
                                                 <div id="tytGraphContainer" style="height: 300px; width: 100%; position: relative;">
                                                     <!-- Grafik buraya dinamik olarak eklenecek -->
                                                     <canvas></canvas>
@@ -2852,7 +2841,7 @@
                 const container = document.getElementById('tytGraphContainer');
                 if (!container) return;
                 
-                // Mevcut grafik varsa temizle
+                // Grafik panelini temizle
                 while (container.firstChild) {
                     container.removeChild(container.firstChild);
                 }
@@ -2867,6 +2856,9 @@
             
             // Tüm sınav türlerini tek grafikte gösteren fonksiyon
             function createCombinedGraph(containerId, tytExams, aytExams, ydtExams) {
+                // Annotation pluginini kaydet
+                Chart.register(ChartAnnotation);
+                
                 const container = document.getElementById(containerId);
                 if (!container) return;
                 
@@ -2920,18 +2912,51 @@
                 const aytData = allExams.map(exam => exam.type === 'ayt' ? exam.netScore : null);
                 const ydtData = allExams.map(exam => exam.type === 'ydt' ? exam.netScore : null);
                 
+                // Ortalama değerleri hesapla
+                let tytSum = 0, tytCount = 0;
+                let aytSum = 0, aytCount = 0;
+                let ydtSum = 0, ydtCount = 0;
+                
+                tytData.forEach(net => {
+                    if (net !== null) {
+                        tytSum += net;
+                        tytCount++;
+                    }
+                });
+                
+                aytData.forEach(net => {
+                    if (net !== null) {
+                        aytSum += net;
+                        aytCount++;
+                    }
+                });
+                
+                ydtData.forEach(net => {
+                    if (net !== null) {
+                        ydtSum += net;
+                        ydtCount++;
+                    }
+                });
+                
+                const tytAvg = tytCount > 0 ? tytSum / tytCount : 0;
+                const aytAvg = aytCount > 0 ? aytSum / aytCount : 0;
+                const ydtAvg = ydtCount > 0 ? ydtSum / ydtCount : 0;
+                
                 // Tema renklerini al
                 const isDarkTheme = document.body.classList.contains('dark-theme');
                 
                 // Tema renklerini belirle
-                const tytColor = 'rgba(75, 192, 192, 1)'; // Turkuaz
-                const aytColor = 'rgba(255, 159, 64, 1)'; // Turuncu
-                const ydtColor = 'rgba(153, 102, 255, 1)'; // Mor
+                const tytColor = 'rgba(75, 33, 56, 1)'; // Bordo (Ana tema rengi)
+                const aytColor = 'rgba(103, 58, 183, 1)'; // Mor
+                const ydtColor = 'rgba(33, 150, 243, 1)'; // Mavi
                 
                 // Grafik oluştur
                 const ctx = canvas.getContext('2d');
                 
-                new Chart(ctx, {
+                // Dikey çizgi elementi artık kullanılmayacak
+                // Crosshair cursor kullanılacak
+                
+                const chart = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: labels,
@@ -2939,46 +2964,46 @@
                             {
                                 label: 'TYT Netler',
                                 data: tytData,
-                        backgroundColor: tytColor.replace('1)', '0.2)'),
-                        borderColor: tytColor,
-                        borderWidth: 2,
-                        tension: 0.3,
-                        pointBackgroundColor: tytColor,
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 5,
-                        pointHoverRadius: 7,
-                                fill: false,
+                                backgroundColor: tytColor.replace('1)', '0.2)'),
+                                borderColor: tytColor,
+                                borderWidth: 3,
+                                tension: 0.4,
+                                pointBackgroundColor: tytColor,
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 6,
+                                pointHoverRadius: 9,
+                                fill: true,
                                 spanGaps: true
                             },
                             {
                                 label: 'AYT Netler',
                                 data: aytData,
-                        backgroundColor: aytColor.replace('1)', '0.2)'),
-                        borderColor: aytColor,
-                        borderWidth: 2,
-                        tension: 0.3,
-                        pointBackgroundColor: aytColor,
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 5,
-                        pointHoverRadius: 7,
-                                fill: false,
+                                backgroundColor: aytColor.replace('1)', '0.2)'),
+                                borderColor: aytColor,
+                                borderWidth: 3,
+                                tension: 0.4,
+                                pointBackgroundColor: aytColor,
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 6,
+                                pointHoverRadius: 9,
+                                fill: true,
                                 spanGaps: true
                             },
                             {
                                 label: 'YDT Netler',
                                 data: ydtData,
-                        backgroundColor: ydtColor.replace('1)', '0.2)'),
-                        borderColor: ydtColor,
-                        borderWidth: 2,
-                        tension: 0.3,
-                        pointBackgroundColor: ydtColor,
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 5,
-                        pointHoverRadius: 7,
-                                fill: false,
+                                backgroundColor: ydtColor.replace('1)', '0.2)'),
+                                borderColor: ydtColor,
+                                borderWidth: 3,
+                                tension: 0.4,
+                                pointBackgroundColor: ydtColor,
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 6,
+                                pointHoverRadius: 9,
+                                fill: true,
                                 spanGaps: true
                             }
                         ]
@@ -2986,12 +3011,18 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'],
+                        hover: {
+                            mode: 'nearest',
+                            intersect: false,
+                            animationDuration: 0
+                        },
                         scales: {
                             y: {
                                 beginAtZero: true,
                                 max: yAxisMax,
                                 grid: {
-                                    color: isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                                    display: false, // Dikey çizgileri gizle
                                 },
                                 ticks: {
                                     color: isDarkTheme ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
@@ -2999,34 +3030,160 @@
                             },
                             x: {
                                 grid: {
-                                    color: isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                                    display: false, // Yatay çizgileri gizle
                                 },
                                 ticks: {
                                     color: isDarkTheme ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
+                                    display: false // X ekseni etiketlerini gizle
                                 }
                             }
                         },
                         plugins: {
                             legend: {
-                                position: 'top',
+                                position: 'bottom',
                                 labels: {
                                     color: isDarkTheme ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)',
-                                    boxWidth: 12,
-                                    padding: 15
+                                    boxWidth: 16,
+                                    padding: 20,
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    },
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                    align: 'center'
+                                }
+                            },
+                            annotation: {
+                                annotations: {
+                                    // TYT ortalama çizgisi
+                                    tytLine: tytCount > 0 ? {
+                                        type: 'line',
+                                        yMin: tytAvg,
+                                        yMax: tytAvg,
+                                        borderColor: tytColor,
+                                        borderWidth: 1,
+                                        borderDash: [5, 5],
+                                        label: {
+                                            content: `TYT Ort: ${tytAvg.toFixed(2)}`,
+                                            enabled: true,
+                                            position: 'end',
+                                            backgroundColor: tytColor,
+                                            color: '#fff',
+                                            font: {
+                                                size: 10,
+                                                weight: 'bold'
+                                            },
+                                            padding: 4
+                                        }
+                                    } : undefined,
+                                    
+                                    // AYT ortalama çizgisi
+                                    aytLine: aytCount > 0 ? {
+                                        type: 'line',
+                                        yMin: aytAvg,
+                                        yMax: aytAvg,
+                                        borderColor: aytColor,
+                                        borderWidth: 1,
+                                        borderDash: [5, 5],
+                                        label: {
+                                            content: `AYT Ort: ${aytAvg.toFixed(2)}`,
+                                            enabled: true,
+                                            position: 'end',
+                                            backgroundColor: aytColor,
+                                            color: '#fff',
+                                            font: {
+                                                size: 10,
+                                                weight: 'bold'
+                                            },
+                                            padding: 4
+                                        }
+                                    } : undefined,
+                                    
+                                    // YDT ortalama çizgisi
+                                    ydtLine: ydtCount > 0 ? {
+                                        type: 'line',
+                                        yMin: ydtAvg,
+                                        yMax: ydtAvg,
+                                        borderColor: ydtColor,
+                                        borderWidth: 1,
+                                        borderDash: [5, 5],
+                                        label: {
+                                            content: `YDT Ort: ${ydtAvg.toFixed(2)}`,
+                                            enabled: true,
+                                            position: 'end',
+                                            backgroundColor: ydtColor,
+                                            color: '#fff',
+                                            font: {
+                                                size: 10,
+                                                weight: 'bold'
+                                            },
+                                            padding: 4
+                                        }
+                                    } : undefined
                                 }
                             },
                             tooltip: {
-                                backgroundColor: isDarkTheme ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-                                titleColor: isDarkTheme ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)',
-                                bodyColor: isDarkTheme ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)',
-                                borderColor: isDarkTheme ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+                                enabled: true,
+                                mode: 'nearest',
+                                intersect: false,
+                                backgroundColor: isDarkTheme ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                                titleColor: isDarkTheme ? 'rgba(255, 255, 255, 1)' : 'rgba(0, 0, 0, 1)',
+                                bodyColor: isDarkTheme ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)',
+                                borderColor: isDarkTheme ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
                                 borderWidth: 1,
-                                padding: 10,
-                                boxPadding: 5
+                                padding: 12,
+                                boxPadding: 6,
+                                cornerRadius: 8,
+                                displayColors: true,
+                                boxWidth: 10,
+                                usePointStyle: true,
+                                callbacks: {
+                                    labelTextColor: function(context) {
+                                        return context.dataset.borderColor;
+                                    },
+                                    title: function(tooltipItems) {
+                                        return '';
+                                    },
+                                    label: function(context) {
+                                        // İlgili sınava ait tüm bilgileri al
+                                        const datasetIndex = context.datasetIndex;
+                                        const datasetLabel = context.dataset.label.split(' ')[0]; // TYT, AYT veya YDT
+                                        const netValue = context.raw ? context.raw.toFixed(2) : '0.00';
+                                        
+                                        // İlgili sınavın bilgilerini al
+                                        const examIndex = context.dataIndex;
+                                        let examTitle = '';
+                                        let examDate = '';
+                                        
+                                        if (datasetLabel === 'TYT' && allExams[examIndex] && allExams[examIndex].type === 'tyt') {
+                                            examTitle = allExams[examIndex].title || '';
+                                            const date = new Date(allExams[examIndex].date);
+                                            examDate = `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()}`;
+                                        } else if (datasetLabel === 'AYT' && allExams[examIndex] && allExams[examIndex].type === 'ayt') {
+                                            examTitle = allExams[examIndex].title || '';
+                                            const date = new Date(allExams[examIndex].date);
+                                            examDate = `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()}`;
+                                        } else if (datasetLabel === 'YDT' && allExams[examIndex] && allExams[examIndex].type === 'ydt') {
+                                            examTitle = allExams[examIndex].title || '';
+                                            const date = new Date(allExams[examIndex].date);
+                                            examDate = `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()}`;
+                                        }
+                                        
+                                        // Bilgileri 2'şer 2'şer yan yana gösterecek şekilde düzenle
+                                        return [
+                                            ` ${examTitle}        ${datasetLabel}`,
+                                            ` ${examDate}       ${netValue}`
+                                        ];
+                                    }
+                                }
                             }
                         }
                     }
                 });
+                
+                // Canvas için mouse olayları dinleyicilerine artık gerek yok
+                // Cursor crosshair stilini CSS'te tanımladık
             }
             
             // Bugünkü görevleri yükleme fonksiyonu

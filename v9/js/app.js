@@ -1,6 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Sayfa yüklendi, uygulama başlatılıyor...");
     
+    // localStorage'da sidebar genişliği ayarı yoksa varsayılan değeri ata
+    if (localStorage.getItem('sidebarWidth') === null) {
+        localStorage.setItem('sidebarWidth', '230');
+    }
+    
     // Önce localStorage'dan profil fotoğrafını yükle
     const cachedProfileImage = localStorage.getItem('userProfileImage');
     if (cachedProfileImage) {
@@ -203,6 +208,12 @@ function displayUserInfo() {
                                 element.textContent = userData.name || userData.displayName || user.displayName || "Kullanıcı";
                             });
                             
+                            // Ana sayfadaki karşılama mesajını da güncelle
+                            const welcomeUserName = document.getElementById('welcomeUserName');
+                            if (welcomeUserName) {
+                                welcomeUserName.textContent = userData.name || userData.displayName || user.displayName || "Kullanıcı";
+                            }
+                            
                             // Sınav türünü güncelle
                             userExamTypeElements.forEach(function(element) {
                                 const examType = userData.examType || "TYT";
@@ -357,6 +368,12 @@ function initializeSidebar() {
     // Sayfa yüklendiğinde sidebar durumunu kontrol et
     window.addEventListener('DOMContentLoaded', function() {
         checkScreenSize();
+        
+        // Eğer localStorage'da sidebarWidth değeri yoksa, varsayılan değer olarak 230 ata
+        if (localStorage.getItem('sidebarWidth') === null) {
+            localStorage.setItem('sidebarWidth', '230');
+        }
+        
         checkSidebarPreference();
     });
     
@@ -366,7 +383,11 @@ function initializeSidebar() {
         
         // 1000px üstü ve altı geçişlerde sidebar durumunu yeniden kontrol et
         const windowWidth = window.innerWidth;
-        if (windowWidth > 1000) {
+        if (windowWidth >= 1000) {
+            // Eğer localStorage'da sidebarWidth değeri yoksa, varsayılan değer olarak 230 ata
+            if (localStorage.getItem('sidebarWidth') === null) {
+                localStorage.setItem('sidebarWidth', '230');
+            }
             checkSidebarPreference();
         }
     });
@@ -431,9 +452,36 @@ function initializeSidebar() {
             }
         } else {
             // 1000px üstü için
-            if (sidebar.classList.contains('sidebar-narrow')) {
-                // Eğer daraltılmış sidebar ise, tema stillerini uygula
+            // localStorage'deki sidebar width değerine göre işlem yap
+            const sidebarWidth = localStorage.getItem('sidebarWidth');
+            
+            if (sidebarWidth === '70') {
+                // Daraltılmış sidebar
+                sidebar.classList.remove('sidebar-open');
+                sidebar.classList.add('sidebar-narrow');
+                
+                // Tema stillerini uygula
                 applyNarrowSidebarTheme();
+                
+                if (mainContent) {
+                    mainContent.classList.remove('content-pushed');
+                    mainContent.classList.add('content-pushed-narrow');
+                    document.body.classList.add('sidebar-narrow-active');
+                }
+            } else {
+                // Tam genişlik
+                sidebar.classList.add('sidebar-open');
+                sidebar.classList.remove('sidebar-narrow');
+                
+                // Tema stillerini temizle
+                sidebar.style.removeProperty('background-color');
+                sidebar.style.removeProperty('border-right');
+                
+                if (mainContent) {
+                    mainContent.classList.remove('content-pushed-narrow');
+                    mainContent.classList.add('content-pushed');
+                    document.body.classList.remove('sidebar-narrow-active');
+                }
             }
         }
     }
@@ -1428,22 +1476,49 @@ function checkSidebarPreference() {
     const sidebar = document.querySelector('.sidebar');
     const mainContent = document.querySelector('.main-content');
     
-    if (window.innerWidth > 1000 && sidebar) {
+    if (window.innerWidth >= 1000 && sidebar) {
         const sidebarWidth = localStorage.getItem('sidebarWidth');
         
+        // localStorage'daki değere göre kesin olarak sidebar durumunu zorla
         if (sidebarWidth === '70') {
-            // Daraltılmış sidebar
-            sidebar.classList.remove('sidebar-open');
+            // Daraltılmış sidebar - tüm sınıfları ve stilleri temizleyip yeniden uygula
+            sidebar.classList.remove('sidebar-open', 'active');
             sidebar.classList.add('sidebar-narrow');
             
-            // Tüm tema stillerini temizle ve tekrar uygula
+            // Tema stillerini tekrar uygula
             applyNarrowSidebarTheme();
             
+            // Görünürlük özelliklerini zorla
+            sidebar.style.left = '0';
+            sidebar.style.width = '70px';
+            sidebar.style.display = 'flex';
+            
             if (mainContent) {
-                mainContent.classList.remove('content-pushed');
+                mainContent.classList.remove('content-pushed', 'dimmed');
                 mainContent.classList.add('content-pushed-narrow');
+                mainContent.style.marginLeft = '70px';
+                mainContent.style.width = 'calc(100% - 70px)';
                 document.body.classList.add('sidebar-narrow-active');
             }
+            
+            // User details stilini düzenle ama gizleme
+            const userDetails = document.querySelectorAll('.user-details');
+            userDetails.forEach(el => {
+                el.style.fontSize = '0.8rem';
+                el.style.padding = '5px';
+                el.style.textAlign = 'center';
+            });
+            
+            // Sidebar nav span'lerini gizle (menü başlıkları)
+            const navSpans = document.querySelectorAll('.sidebar-nav a span');
+            navSpans.forEach(span => span.style.display = 'none');
+            
+            // İkonları ortala
+            const sidebarNavIcons = document.querySelectorAll('.sidebar-nav a i');
+            sidebarNavIcons.forEach(icon => icon.style.marginRight = '0');
+            
+            const sidebarNavLinks = document.querySelectorAll('.sidebar-nav a');
+            sidebarNavLinks.forEach(link => link.style.justifyContent = 'center');
             
             // Profil fotoğrafını yükle
             const cachedProfileImage = localStorage.getItem('userProfileImage');
@@ -1458,12 +1533,30 @@ function checkSidebarPreference() {
             sidebar.style.removeProperty('border-right');
             
             // Sonra sınıfları değiştir
-            sidebar.classList.remove('sidebar-narrow');
+            sidebar.classList.remove('sidebar-narrow', 'active');
             sidebar.classList.add('sidebar-open');
             
+            // Görünürlük özelliklerini zorla
+            sidebar.style.left = '0';
+            sidebar.style.width = '230px';
+            sidebar.style.display = 'flex';
+            
+            // User details ve span elemanlarını göster
+            const userDetails = document.querySelectorAll('.user-details, .sidebar-nav a span');
+            userDetails.forEach(el => el.style.display = 'block');
+            
+            // İkonları sola yasla
+            const sidebarNavIcons = document.querySelectorAll('.sidebar-nav a i');
+            sidebarNavIcons.forEach(icon => icon.style.marginRight = '10px');
+            
+            const sidebarNavLinks = document.querySelectorAll('.sidebar-nav a');
+            sidebarNavLinks.forEach(link => link.style.justifyContent = 'flex-start');
+            
             if (mainContent) {
-                mainContent.classList.remove('content-pushed-narrow');
+                mainContent.classList.remove('content-pushed-narrow', 'dimmed');
                 mainContent.classList.add('content-pushed');
+                mainContent.style.marginLeft = '230px';
+                mainContent.style.width = 'calc(100% - 230px)';
                 document.body.classList.remove('sidebar-narrow-active');
             }
             
@@ -1472,6 +1565,12 @@ function checkSidebarPreference() {
             if (cachedProfileImage) {
                 updateAvatarsWithImage(cachedProfileImage);
             }
+        }
+        
+        // Overlay'i kaldır
+        const sidebarOverlay = document.querySelector('.sidebar-overlay');
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.remove('active');
         }
     }
 }
