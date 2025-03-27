@@ -1,0 +1,409 @@
+/* Tema Geçiş Animasyonları */
+.theme-transition {
+    transition: background-color 0.3s ease,
+                color 0.3s ease,
+                border-color 0.3s ease,
+                box-shadow 0.3s ease !important;
+}
+
+.theme-transition * {
+    transition: background-color 0.3s ease,
+                color 0.3s ease,
+                border-color 0.3s ease,
+                box-shadow 0.3s ease !important;
+}
+
+/* Tema Kartları */
+.theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.theme-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.theme-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.theme-card.active {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.theme-card-header {
+    height: 80px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+    color: white;
+}
+
+.theme-card-title {
+    text-align: center;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+/* Tema Renk Şemaları */
+.theme-light .theme-card-header {
+    background: linear-gradient(45deg, #4b2138, #5c2845);
+}
+
+.theme-purple .theme-card-header {
+    background: linear-gradient(45deg, #7c37a6, #9645c7);
+}
+
+.theme-blue .theme-card-header {
+    background: linear-gradient(45deg, #1da1f2, #4db5f5);
+}
+
+.theme-green .theme-card-header {
+    background: linear-gradient(45deg, #2e7d32, #388e3c);
+}
+
+.theme-dark .theme-card-header {
+    background: linear-gradient(45deg, rgb(75, 33, 56), rgba(75, 33, 56, 0.8));
+}
+    
+/* Genel Tema Stilleri */
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* Koyu Tema Stilleri */
+.dark-theme {
+    color-scheme: dark;
+    --primary-color: rgb(75, 33, 56);
+    --secondary-color: #03dac6;
+    --accent-color: #cf6679;
+    --text-color: #ffffff;
+    --text-secondary: #b0b0b0;
+    --background-color: #0a0a0a;
+    --card-bg: #0a0a0a;
+    --sidebar-bg: #0a0a0a;
+    --hover-color: rgba(75, 33, 56, 0.8);
+    --border-color: #2d2d2d;
+    --input-bg: #0a0a0a;
+    --input-border: #3d3d3d;
+    --shadow-color: rgba(0, 0, 0, 0.5);
+    --gradient-start: #0a0a0a;
+    --gradient-end: #0a0a0a;
+    --button-gradient-start: rgb(75, 33, 56);
+    --button-gradient-end: rgba(75, 33, 56, 0.8);
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #0a0a0a;
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+    --border-color: #2d2d2d;
+    --sidebar-hover: rgba(75, 33, 56, 0.1);
+    --sidebar-active: rgba(75, 33, 56, 0.15);
+    --sidebar-text: #ffffff;
+    --sidebar-active-text: rgb(75, 33, 56);
+    --sidebar-border: #2d2d2d;
+    --bg-primary-rgb: 10, 10, 10;
+}
+
+/* Koyu Tema Uygulaması */
+body.dark-theme {
+    background: #0a0a0a;
+    color: var(--text-color);
+}
+
+/* Sidebar Stilleri */
+.sidebar {
+    width: 230px;
+    min-width: 230px;
+    height: 100vh;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--sidebar-border);
+    position: fixed;
+    left: -230px;
+    top: 0;
+    z-index: 9999;
+    overflow-y: auto;
+    transition: left 0.3s ease;
+}
+
+.sidebar.sidebar-open, .sidebar.active {
+    left: 0 !important;
+}
+
+.main-content {
+    width: 100%;
+    margin-left: 0;
+    transition: margin-left 0.3s ease;
+}
+
+.content-pushed {
+    margin-left: 230px;
+}
+
+.sidebar-toggle {
+    display: block !important;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    margin-right: 10px;
+    color: var(--light-text);
+}
+
+.sidebar-nav a {
+    color: var(--sidebar-text);
+}
+
+.sidebar-nav a:hover {
+    background-color: var(--sidebar-hover);
+}
+
+.sidebar-nav li.active a {
+    background-color: var(--sidebar-active);
+    color: var(--sidebar-active-text);
+}
+
+/* Karanlık Tema Özel Stilleri */
+.theme-dark {
+    color-scheme: dark;
+}
+
+/* Koyu Tema Arka Plan Stilleri */
+.dark-theme .main-content {
+    background-color: #0a0a0a;
+    background-image: none;
+}
+
+.dark-theme .sidebar {
+    background-color: #0a0a0a;
+}
+
+.dark-theme .card,
+.dark-theme .settings-content,
+.dark-theme .settings-tabs {
+    background-color: #0a0a0a;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.dark-theme .content-header {
+    background-color: #0a0a0a;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.dark-theme input, 
+.dark-theme select, 
+.dark-theme textarea {
+    background-color: #0a0a0a;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+}
+
+.dark-theme .search-bar {
+    background-color: #0a0a0a;
+    border: 1px solid var(--border-color);
+}
+
+.dark-theme .notification-btn {
+    background-color: #0a0a0a;
+}
+
+.dark-theme .btn-outline {
+    background-color: #0a0a0a;
+}
+
+.dark-theme .theme-card {
+    background-color: #0a0a0a;
+}
+
+/* Koyu Tema Global Stilleri */
+.dark-theme * {
+    --bg-color: #0a0a0a;
+}
+
+.dark-theme,
+.dark-theme body,
+.dark-theme html,
+.dark-theme .container,
+.dark-theme .dashboard-container,
+.dark-theme .main-content,
+.dark-theme .sidebar,
+.dark-theme .card,
+.dark-theme .settings-content,
+.dark-theme .settings-tabs,
+.dark-theme .content-header,
+.dark-theme input, 
+.dark-theme select, 
+.dark-theme textarea,
+.dark-theme .search-bar,
+.dark-theme .notification-btn,
+.dark-theme .btn-outline,
+.dark-theme .theme-card,
+.dark-theme .modal,
+.dark-theme .dropdown-menu,
+.dark-theme .task-item,
+.dark-theme .calendar-day,
+.dark-theme .note-card,
+.dark-theme .exam-card,
+.dark-theme .profile-card,
+.dark-theme .community-post,
+.dark-theme .comment-box,
+.dark-theme .page-content,
+.dark-theme .settings-page,
+.dark-theme .settings-container,
+.dark-theme .form-group,
+.dark-theme .checkbox-group,
+.dark-theme .danger-zone,
+.dark-theme .theme-options,
+.dark-theme .theme-option {
+    background-color: #0a0a0a !important;
+}
+
+.dark-theme .main-content {
+    background-image: none !important;
+}
+
+/* Responsive Tasarım */
+@media (max-width: 768px) {
+    .theme-grid {
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 12px;
+    }
+
+    .theme-card {
+        padding: 15px;
+    }
+
+    .theme-card-header {
+        height: 60px;
+    }
+
+    .theme-card-title {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .theme-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+    }
+
+    .theme-card {
+        padding: 12px;
+    }
+
+    .theme-card-header {
+        height: 50px;
+    }
+
+    .theme-card-title {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .sidebar {
+        left: -250px;
+    }
+    
+    .sidebar.active {
+        left: 0;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+@media (min-width: 769px) {
+    .sidebar-toggle {
+        display: block !important;
+    }
+}
+
+/* Tema Önizleme Stilleri */
+.light-theme-preview {
+    background-color: #f5f5f5;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.dark-theme-preview {
+    background-color: #0a0a0a;
+    color: #f5f5f5;
+    border: 1px solid #333;
+}
+
+/* Koyu tema seçildiğinde açık tema kutucuğunun rengini koru */
+body.dark-theme .light-theme-preview {
+    background-color: #f5f5f5 !important;
+}
+
+/* Koyu tema seçildiğinde açık tema kutucuğunun içindeki span etiketinin arkaplanını none yap */
+body.dark-theme .light-theme-preview span {
+    background: none !important;
+    color: #333 !important;
+}
+
+.dark-theme,
+.dark-theme body,
+.dark-theme html,
+.dark-theme .container,
+.dark-theme .dashboard-container,
+.dark-theme .main-content,
+.dark-theme .sidebar,
+.dark-theme .card,
+.dark-theme .settings-content,
+.dark-theme .settings-tabs,
+.dark-theme .content-header,
+.dark-theme input, 
+.dark-theme select, 
+.dark-theme textarea,
+.dark-theme .search-bar,
+.dark-theme .notification-btn,
+.dark-theme .btn-outline,
+.dark-theme .theme-card,
+.dark-theme .modal,
+.dark-theme .dropdown-menu,
+.dark-theme .task-item,
+.dark-theme .calendar-day,
+.dark-theme .note-card,
+.dark-theme .exam-card,
+.dark-theme .profile-card,
+.dark-theme .community-post,
+.dark-theme .comment-box,
+.dark-theme .page-content,
+.dark-theme .settings-page,
+.dark-theme .settings-container,
+.dark-theme .form-group,
+.dark-theme .checkbox-group,
+.dark-theme .danger-zone,
+.dark-theme .theme-options,
+.dark-theme .theme-option {
+    background-color: #0a0a0a !important;
+}
+
+.dark-theme .main-content {
+    background-image: none !important;
+}
+
+/* YksMate v1 tema kutucuğunun içindeki span etiketinin arkaplanını none yap */
+body .yksmate-v1-preview span {
+    background: none !important;
+} 

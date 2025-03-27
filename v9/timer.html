@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKSMate - Zamanlayıcı</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo(192).png">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Ana JavaScript -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth-check.js"></script>
+    <script src="js/theme-manager.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/user-token-display.js"></script>
+    
+    <!-- Oturum Kontrolü -->
+    <script>
+        // Sayfa yüklendiğinde çalışacak
+        document.addEventListener('DOMContentLoaded', function() {
+            // Firebase yüklendiyse
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                // Kullanıcı oturumunu kontrol et
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        // Kullanıcı giriş yapmış
+                        console.log("Kullanıcı giriş yapmış:", user.uid);
+                        
+                        // Kullanıcı bilgilerini getir
+                        firebase.database().ref('users/' + user.uid).once('value')
+                            .then((snapshot) => {
+                                const userData = snapshot.val();
+                                if (userData) {
+                                    // Kullanıcı verileri varsa
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = userData.name || user.email.split('@')[0];
+                                    
+                                    // Sınav türünü güncelle
+                                    document.getElementById("userExamType").textContent = "" + getExamTypeText(userData.examType);
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                } else {
+                                    // Kullanıcı verileri yoksa e-postadan isim oluştur
+                                    const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                    
+                                    // Kullanıcı adını güncelle
+                                    document.getElementById("userName").textContent = name;
+                                    
+                                    // Dashboard'u göster
+                                    document.getElementById("dashboardContainer").style.display = "flex";
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Kullanıcı verileri alınırken hata:", error);
+                                
+                                // E-postadan isim oluştur
+                                const name = user.email ? user.email.split('@')[0] : "Kullanıcı";
+                                
+                                // Kullanıcı adını güncelle
+                                document.getElementById("userName").textContent = name;
+                                
+                                // Dashboard'u göster
+                                document.getElementById("dashboardContainer").style.display = "flex";
+                            });
+                    } else {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            // Misafir kullanıcı varsa
+                            const guestData = JSON.parse(guestUser);
+                            
+                            // Kullanıcı adını güncelle
+                            document.getElementById("userName").textContent = guestData.name;
+                            document.getElementById("userExamType").textContent = "Sınav Türü: " + getExamTypeText(guestData.examType);
+                            
+                            // Dashboard'u göster
+                            document.getElementById("dashboardContainer").style.display = "flex";
+                        } else {
+                            // Giriş sayfasına yönlendir
+                            console.log("Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...");
+                            window.location.href = "login.html";
+                        }
+                    }
+                });
+            } else {
+                console.error("Firebase yüklenemedi!");
+                alert("Sistem yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.");
+            }
+        });
+        
+        // Sınav türü metni alma fonksiyonu
+        function getExamTypeText(examType) {
+            switch(examType) {
+                case 'tyt': return 'TYT';
+                case 'sayisal': return 'Sayısal';
+                case 'sozel': return 'Sözel';
+                case 'esitagirlik': return 'Eşit Ağırlık';
+                case 'dil': return 'Dil';
+                default: return 'TYT';
+            }
+        }
+    </script>
+</head>
+<body class="light-theme">
+    <div class="container">
+        <!-- Ana Dashboard -->
+        <div class="dashboard-container" id="dashboardContainer" style="display: none;">
+            <!-- Sidebar -->
+            <div class="sidebar">
+
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <a href="profile.html" style="text-decoration: none; color: inherit;">
+                            <h3 id="userName">Kullanıcı Adı</h3>
+                            <p id="userExamType">Sınav Türü: TYT</p>
+                        </a>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li>
+                            <a href="index.html"><i class="fas fa-home"></i><p>ana sayfa</p></a>
+                        </li>
+                        <li>
+                            <a href="exams.html"><i class="fas fa-file-alt"></i><p>denemelerim</p></a>
+                        </li>
+                        <li class="active">
+                            <a href="timer.html"><i class="fas fa-clock"></i><p>zamanlayıcı</p></a>
+                        </li>
+                        <li>
+                            <a href="calendar.html"><i class="fas fa-calendar-alt"></i><p>takvim</p></a>
+                        </li>
+                        <li>
+                            <a href="notes.html"><i class="fas fa-sticky-note"></i><p>notlarım</p></a>
+                        </li>
+                        <li>
+                            <a href="community.html"><i class="fas fa-users"></i><p>topluluk</p></a>
+                        </li>
+                        <li>
+                            <a href="friends.html"><i class="fas fa-user-friends"></i><p>arkadaşlarım</p></a>
+                        </li>
+                        <li>
+                            <a href="messages.html"><i class="fas fa-comment"></i><p>mesajlar</p></a>
+                        </li>
+                        <li>
+                            <a href="ai.html"><i class="fas fa-robot"></i><p>mateai</p></a>
+                        </li>
+                        <li>
+                            <a href="work-together.html"><i class="fas fa-users-cog"></i><p>birlikte çalış</p></a>
+                        </li>
+
+                        <li>
+                            <a href="settings.html"><i class="fas fa-cog"></i><p>ayarlar</p></a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="sidebar-footer">
+                    
+                </div>
+            </div>
+
+            <!-- Sidebar Overlay -->
+            <div class="sidebar-overlay"></div>
+
+            <!-- Ana İçerik -->
+            <div class="main-content">
+                <header class="content-header">
+                    <button id="sidebarToggle" class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="header-actions">
+                        <button class="theme-toggle" id="themeToggle">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <div class="notifications">
+                            <button class="notification-btn">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge">3</span>
+                            </button>
+                            <div class="notification-dropdown">
+                                <div class="notification-header">
+                                    <h3>Bildirimler</h3>
+                                    <button class="mark-all-read">Tümünü Okundu İşaretle</button>
+                                </div>
+                                <div class="notification-list">
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-file-alt"></i></div>
+                                        <div class="notification-content">
+                                            <p>Yarın TYT Denemesi var!</p>
+                                            <span class="notification-time">2 saat önce</span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-tasks"></i></div>
+                                        <div class="notification-content">
+                                            <p>Matematik ödeviniz için son gün!</p>
+                                            <span class="notification-time">5 saat önce</span>
+                                        </div>
+                                    </div>
+                                    <div class="notification-item unread">
+                                        <div class="notification-icon"><i class="fas fa-trophy"></i></div>
+                                        <div class="notification-content">
+                                            <p>Haftalık hedefinize ulaştınız!</p>
+                                            <span class="notification-time">1 gün önce</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="notification-footer">
+                                    <a href="#">Tüm Bildirimleri Gör</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Sayfa İçeriği -->
+                <div class="page-content">
+                    <h1 class="page-title">Zamanlayıcı</h1>
+                    
+                    <div class="section timer-section">
+                        <div class="section-header">
+                            <h2>Sınav Zamanlayıcısı</h2>
+                            <div class="timer-controls">
+                                <select id="examType" class="modern-select">
+                                    <option value="tyt">TYT (135 dk)</option>
+                                    <option value="ayt">AYT (180 dk)</option>
+                                    <option value="ydt">YDT (120 dk)</option>
+                                    <option value="custom">Özel Süre</option>
+                                </select>
+                                <div class="custom-time-container" id="customTimeContainer" style="display: none;">
+                                    <input type="number" id="customHours" class="time-input" placeholder="Saat" min="0" max="24">
+                                    <input type="number" id="customMinutes" class="time-input" placeholder="Dakika" min="0" max="59">
+                                    <input type="number" id="customSeconds" class="time-input" placeholder="Saniye" min="0" max="59">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="timer-display modern-timer">
+                            <div class="timer-progress-ring">
+                                <svg class="progress-ring" width="300" height="300">
+                                    <circle class="progress-ring-circle-bg" cx="150" cy="150" r="140" />
+                                    <circle class="progress-ring-circle" cx="150" cy="150" r="140" />
+                                </svg>
+                                <div class="timer-clock">
+                                    <span id="hours" class="time-unit">00</span>
+                                    <span class="time-separator">:</span>
+                                    <span id="minutes" class="time-unit">00</span>
+                                    <span class="time-separator">:</span>
+                                    <span id="seconds" class="time-unit">00</span>
+                                </div>
+                            </div>
+                            <div class="timer-buttons">
+                                <button class="btn btn-primary ripple" id="startTimer">
+                                    <i class="fas fa-play"></i> Başlat
+                                </button>
+                                <button class="btn btn-warning ripple" id="pauseTimer" disabled>
+                                    <i class="fas fa-pause"></i> Duraklat
+                                </button>
+                                <button class="btn btn-danger ripple" id="resetTimer" disabled>
+                                    <i class="fas fa-redo"></i> Sıfırla
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section timer-section">
+                        <div class="section-header">
+                            <h2>Pomodoro Zamanlayıcısı</h2>
+                            <div class="timer-controls">
+                                <select id="pomodoroType" class="modern-select">
+                                    <option value="25-5">25 dk Çalışma / 5 dk Mola</option>
+                                    <option value="50-10">50 dk Çalışma / 10 dk Mola</option>
+                                    <option value="custom">Özel Ayar</option>
+                                </select>
+                                <div class="custom-pomodoro-container" id="customPomodoroContainer" style="display: none;">
+                                    <div class="custom-pomodoro-inputs">
+                                        <div class="input-group">
+                                            <label>Çalışma Süresi (dk)</label>
+                                            <input type="number" id="customWorkTime" class="time-input" min="1" max="120" value="25">
+                                        </div>
+                                        <div class="input-group">
+                                            <label>Mola Süresi (dk)</label>
+                                            <input type="number" id="customBreakTime" class="time-input" min="1" max="30" value="5">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="timer-display modern-timer">
+                            <div class="timer-progress-ring">
+                                <svg class="progress-ring" width="300" height="300">
+                                    <circle class="progress-ring-circle-bg" cx="150" cy="150" r="140" />
+                                    <circle class="progress-ring-circle pomodoro-progress" cx="150" cy="150" r="140" />
+                                </svg>
+                                <div class="timer-clock">
+                                    <div class="pomodoro-phase" id="pomodoroPhase">Çalışma</div>
+                                    <span id="pomodoroMinutes" class="time-unit">25</span>
+                                    <span class="time-separator">:</span>
+                                    <span id="pomodoroSeconds" class="time-unit">00</span>
+                                </div>
+                            </div>
+                            <div class="timer-buttons">
+                                <button class="btn btn-primary ripple" id="startPomodoro">
+                                    <i class="fas fa-play"></i> Başlat
+                                </button>
+                                <button class="btn btn-warning ripple" id="pausePomodoro" disabled>
+                                    <i class="fas fa-pause"></i> Duraklat
+                                </button>
+                                <button class="btn btn-danger ripple" id="resetPomodoro" disabled>
+                                    <i class="fas fa-redo"></i> Sıfırla
+                                </button>
+                            </div>
+                            <div class="pomodoro-stats">
+                                <div class="pomodoro-counter">
+                                    <span>Tamamlanan Pomodoro: <span id="completedPomodoros">0</span></span>
+                                </div>
+                                <div class="pomodoro-total-time">
+                                    <span>Toplam Çalışma: <span id="totalWorkTime">0</span> dk</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Çıkış İşlemi İçin JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function() {
+                    try {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            if (confirm('Çıkış yapmak istediğinize emin misiniz? Misafir verileriniz silinecektir.')) {
+                                localStorage.removeItem('guestUser');
+                                window.location.href = "login.html";
+                            }
+                        } else {
+                            if (typeof firebase !== 'undefined' && firebase.auth) {
+                                await firebase.auth().signOut();
+                                window.location.href = "login.html";
+                            } else {
+                                throw new Error("Firebase yüklenemedi!");
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Çıkış hatası:', error);
+                        alert('Çıkış yaparken bir hata oluştu: ' + error.message);
+                    }
+                });
+            }
+            
+            // Sınav tipi değiştiğinde özel süre alanını göster/gizle
+            const examType = document.getElementById('examType');
+            const customTimeContainer = document.getElementById('customTimeContainer');
+            
+            if (examType && customTimeContainer) {
+                examType.addEventListener('change', function() {
+                    if (this.value === 'custom') {
+                        customTimeContainer.style.display = 'flex';
+                    } else {
+                        customTimeContainer.style.display = 'none';
+                    }
+                });
+            }
+        });
+    </script>
+
+    <!-- Zamanlayıcı JavaScript -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sınav Zamanlayıcısı
+        const examTimer = {
+            interval: null,
+            totalSeconds: 0,
+            initialSeconds: 0,
+            isRunning: false,
+            
+            elements: {
+                hours: document.getElementById('hours'),
+                minutes: document.getElementById('minutes'),
+                seconds: document.getElementById('seconds'),
+                startBtn: document.getElementById('startTimer'),
+                pauseBtn: document.getElementById('pauseTimer'),
+                resetBtn: document.getElementById('resetTimer'),
+                examType: document.getElementById('examType'),
+                customTimeContainer: document.getElementById('customTimeContainer'),
+                customHours: document.getElementById('customHours'),
+                customMinutes: document.getElementById('customMinutes'),
+                customSeconds: document.getElementById('customSeconds'),
+                progressRing: document.querySelector('.timer-display:first-of-type .progress-ring-circle')
+            },
+            
+            initialize() {
+                this.setupEventListeners();
+                this.updateCircleProgress(0);
+            },
+            
+            setupEventListeners() {
+                this.elements.startBtn.addEventListener('click', () => this.start());
+                this.elements.pauseBtn.addEventListener('click', () => this.pause());
+                this.elements.resetBtn.addEventListener('click', () => this.reset());
+                this.elements.examType.addEventListener('change', () => this.handleExamTypeChange());
+                
+                // Özel süre inputları için event listener'lar
+                [this.elements.customHours, this.elements.customMinutes, this.elements.customSeconds].forEach(input => {
+                    input.addEventListener('change', () => this.validateCustomTime(input));
+                });
+            },
+            
+            start() {
+                if (!this.isRunning) {
+                    if (this.totalSeconds === 0) {
+                        this.setInitialTime();
+                    }
+                    
+                    this.isRunning = true;
+                    this.elements.startBtn.disabled = true;
+                    this.elements.pauseBtn.disabled = false;
+                    this.elements.resetBtn.disabled = false;
+                    
+                    this.interval = setInterval(() => this.tick(), 1000);
+                }
+            },
+            
+            pause() {
+                if (this.isRunning) {
+                    this.isRunning = false;
+                    this.elements.startBtn.disabled = false;
+                    this.elements.pauseBtn.disabled = true;
+                    clearInterval(this.interval);
+                }
+            },
+            
+            reset() {
+                this.isRunning = false;
+                this.totalSeconds = 0;
+                clearInterval(this.interval);
+                
+                this.elements.startBtn.disabled = false;
+                this.elements.pauseBtn.disabled = true;
+                this.elements.resetBtn.disabled = true;
+                
+                this.updateDisplay();
+                this.updateCircleProgress(0);
+            },
+            
+            tick() {
+                if (this.totalSeconds > 0) {
+                    this.totalSeconds--;
+                    this.updateDisplay();
+                    this.updateCircleProgress((this.initialSeconds - this.totalSeconds) / this.initialSeconds);
+                    
+                    if (this.totalSeconds === 0) {
+                        this.timeUp();
+                    }
+                }
+            },
+            
+            setInitialTime() {
+                const examType = this.elements.examType.value;
+                
+                switch(examType) {
+                    case 'tyt':
+                        this.totalSeconds = 135 * 60;
+                        break;
+                    case 'ayt':
+                        this.totalSeconds = 180 * 60;
+                        break;
+                    case 'ydt':
+                        this.totalSeconds = 120 * 60;
+                        break;
+                    case 'custom':
+                        const hours = parseInt(this.elements.customHours.value) || 0;
+                        const minutes = parseInt(this.elements.customMinutes.value) || 0;
+                        const seconds = parseInt(this.elements.customSeconds.value) || 0;
+                        this.totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
+                        break;
+                }
+                
+                this.initialSeconds = this.totalSeconds;
+                this.updateDisplay();
+            },
+            
+            updateDisplay() {
+                const hours = Math.floor(this.totalSeconds / 3600);
+                const minutes = Math.floor((this.totalSeconds % 3600) / 60);
+                const seconds = this.totalSeconds % 60;
+                
+                this.elements.hours.textContent = hours.toString().padStart(2, '0');
+                this.elements.minutes.textContent = minutes.toString().padStart(2, '0');
+                this.elements.seconds.textContent = seconds.toString().padStart(2, '0');
+            },
+            
+            updateCircleProgress(progress) {
+                const circle = this.elements.progressRing;
+                const radius = circle.r.baseVal.value;
+                const circumference = radius * 2 * Math.PI;
+                
+                circle.style.strokeDasharray = `${circumference} ${circumference}`;
+                circle.style.strokeDashoffset = circumference * (1 - progress);
+            },
+            
+            handleExamTypeChange() {
+                const isCustom = this.elements.examType.value === 'custom';
+                this.elements.customTimeContainer.style.display = isCustom ? 'flex' : 'none';
+                
+                if (!isCustom) {
+                    this.reset();
+                }
+            },
+            
+            validateCustomTime(input) {
+                const value = parseInt(input.value);
+                if (isNaN(value) || value < 0) {
+                    input.value = 0;
+                } else if (input.id === 'customHours' && value > 24) {
+                    input.value = 24;
+                } else if ((input.id === 'customMinutes' || input.id === 'customSeconds') && value > 59) {
+                    input.value = 59;
+                }
+            },
+            
+            timeUp() {
+                this.pause();
+                this.playAlarm();
+                alert('Süre doldu!');
+            },
+            
+            playAlarm() {
+                // Bildirim sesi çal
+                const audio = new Audio('assets/sounds/alarm.mp3');
+                audio.play();
+            }
+        };
+        
+        // Pomodoro Zamanlayıcısı
+        const pomodoroTimer = {
+            interval: null,
+            totalSeconds: 0,
+            initialSeconds: 0,
+            isRunning: false,
+            isWorkPhase: true,
+            completedPomodoros: 0,
+            totalWorkTime: 0,
+            
+            elements: {
+                minutes: document.getElementById('pomodoroMinutes'),
+                seconds: document.getElementById('pomodoroSeconds'),
+                phase: document.getElementById('pomodoroPhase'),
+                startBtn: document.getElementById('startPomodoro'),
+                pauseBtn: document.getElementById('pausePomodoro'),
+                resetBtn: document.getElementById('resetPomodoro'),
+                type: document.getElementById('pomodoroType'),
+                customContainer: document.getElementById('customPomodoroContainer'),
+                workTime: document.getElementById('customWorkTime'),
+                breakTime: document.getElementById('customBreakTime'),
+                counter: document.getElementById('completedPomodoros'),
+                totalTime: document.getElementById('totalWorkTime'),
+                progressRing: document.querySelector('.pomodoro-progress')
+            },
+            
+            initialize() {
+                this.setupEventListeners();
+                this.setInitialTime();
+                this.updateCircleProgress(0);
+            },
+            
+            setupEventListeners() {
+                this.elements.startBtn.addEventListener('click', () => this.start());
+                this.elements.pauseBtn.addEventListener('click', () => this.pause());
+                this.elements.resetBtn.addEventListener('click', () => this.reset());
+                this.elements.type.addEventListener('change', () => this.handleTypeChange());
+            },
+            
+            start() {
+                if (!this.isRunning) {
+                    if (this.totalSeconds === 0) {
+                        this.setInitialTime();
+                    }
+                    
+                    this.isRunning = true;
+                    this.elements.startBtn.disabled = true;
+                    this.elements.pauseBtn.disabled = false;
+                    this.elements.resetBtn.disabled = false;
+                    
+                    this.interval = setInterval(() => this.tick(), 1000);
+                }
+            },
+            
+            pause() {
+                if (this.isRunning) {
+                    this.isRunning = false;
+                    this.elements.startBtn.disabled = false;
+                    this.elements.pauseBtn.disabled = true;
+                    clearInterval(this.interval);
+                }
+            },
+            
+            reset() {
+                this.isRunning = false;
+                this.isWorkPhase = true;
+                this.totalSeconds = 0;
+                clearInterval(this.interval);
+                
+                this.elements.startBtn.disabled = false;
+                this.elements.pauseBtn.disabled = true;
+                this.elements.resetBtn.disabled = true;
+                this.elements.phase.textContent = 'Çalışma';
+                
+                this.setInitialTime();
+                this.updateCircleProgress(0);
+            },
+            
+            tick() {
+                if (this.totalSeconds > 0) {
+                    this.totalSeconds--;
+                    if (this.isWorkPhase) {
+                        this.totalWorkTime++;
+                        this.elements.totalTime.textContent = this.totalWorkTime;
+                    }
+                    
+                    this.updateDisplay();
+                    this.updateCircleProgress((this.initialSeconds - this.totalSeconds) / this.initialSeconds);
+                    
+                    if (this.totalSeconds === 0) {
+                        this.phaseComplete();
+                    }
+                }
+            },
+            
+            setInitialTime() {
+                const type = this.elements.type.value;
+                let workMinutes, breakMinutes;
+                
+                if (type === 'custom') {
+                    workMinutes = parseInt(this.elements.workTime.value);
+                    breakMinutes = parseInt(this.elements.breakTime.value);
+                } else {
+                    [workMinutes, breakMinutes] = type.split('-').map(Number);
+                }
+                
+                this.totalSeconds = (this.isWorkPhase ? workMinutes : breakMinutes) * 60;
+                this.initialSeconds = this.totalSeconds;
+                this.updateDisplay();
+            },
+            
+            updateDisplay() {
+                const minutes = Math.floor(this.totalSeconds / 60);
+                const seconds = this.totalSeconds % 60;
+                
+                this.elements.minutes.textContent = minutes.toString().padStart(2, '0');
+                this.elements.seconds.textContent = seconds.toString().padStart(2, '0');
+            },
+            
+            updateCircleProgress(progress) {
+                const circle = this.elements.progressRing;
+                const radius = circle.r.baseVal.value;
+                const circumference = radius * 2 * Math.PI;
+                
+                circle.style.strokeDasharray = `${circumference} ${circumference}`;
+                circle.style.strokeDashoffset = circumference * (1 - progress);
+                
+                // Renk değişimi
+                if (this.isWorkPhase) {
+                    circle.style.stroke = '#4CAF50';
+                } else {
+                    circle.style.stroke = '#2196F3';
+                }
+            },
+            
+            handleTypeChange() {
+                const isCustom = this.elements.type.value === 'custom';
+                this.elements.customContainer.style.display = isCustom ? 'flex' : 'none';
+                this.reset();
+            },
+            
+            phaseComplete() {
+                this.playAlarm();
+                
+                if (this.isWorkPhase) {
+                    this.completedPomodoros++;
+                    this.elements.counter.textContent = this.completedPomodoros;
+                    this.elements.phase.textContent = 'Mola';
+                } else {
+                    this.elements.phase.textContent = 'Çalışma';
+                }
+                
+                this.isWorkPhase = !this.isWorkPhase;
+                this.setInitialTime();
+                this.updateCircleProgress(0);
+            },
+            
+            playAlarm() {
+                const audio = new Audio('assets/sounds/alarm.mp3');
+                audio.play();
+            }
+        };
+        
+        // Zamanlayıcıları başlat
+        examTimer.initialize();
+        pomodoroTimer.initialize();
+        
+        // Ripple efekti için
+        document.querySelectorAll('.ripple').forEach(button => {
+            button.addEventListener('click', function(e) {
+                const ripple = document.createElement('span');
+                const rect = button.getBoundingClientRect();
+                
+                ripple.className = 'ripple-effect';
+                ripple.style.left = `${e.clientX - rect.left}px`;
+                ripple.style.top = `${e.clientY - rect.top}px`;
+                
+                button.appendChild(ripple);
+                
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+    });
+    </script>
+
+    <style>
+    /* Zamanlayıcı Stilleri */
+    .timer-section {
+        background: var(--light-card-bg);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .timer-section:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .modern-select {
+        padding: 0.8rem 1.2rem;
+        border-radius: 10px;
+        border: 2px solid var(--light-border);
+        background: var(--light-card-bg);
+        font-size: 1rem;
+        color: var(--light-text);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .modern-select:hover {
+        border-color: var(--primary-color);
+    }
+
+    .custom-time-container,
+    .custom-pomodoro-container {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+        align-items: center;
+    }
+
+    .time-input {
+        width: 80px;
+        padding: 0.8rem;
+        border-radius: 8px;
+        border: 2px solid var(--light-border);
+        text-align: center;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .time-input:focus {
+        border-color: var(--primary-color);
+        outline: none;
+    }
+
+    .modern-timer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 2rem;
+    }
+
+    .timer-progress-ring {
+        position: relative;
+        width: 300px;
+        height: 300px;
+        margin: 2rem 0;
+    }
+
+    .progress-ring-circle-bg {
+        fill: none;
+        stroke: var(--light-border);
+        stroke-width: 8;
+    }
+
+    .progress-ring-circle {
+        fill: none;
+        stroke: var(--primary-color);
+        stroke-width: 8;
+        stroke-linecap: round;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+        transition: stroke-dashoffset 0.3s ease;
+    }
+
+    .timer-clock {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        font-size: 3rem;
+        font-weight: 600;
+        color: var(--light-text);
+    }
+
+    .time-unit {
+        display: inline-block;
+        min-width: 60px;
+        text-align: center;
+    }
+
+    .time-separator {
+        animation: blink 1s infinite;
+    }
+
+    .timer-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .btn {
+        position: relative;
+        overflow: hidden;
+        padding: 0.8rem 1.5rem;
+        border-radius: 10px;
+        border: none;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .btn-warning {
+        background: #FFC107;
+        color: black;
+    }
+
+    .btn-danger {
+        background: #DC3545;
+        color: white;
+    }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .ripple {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .ripple-effect {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.7);
+        transform: scale(0);
+        animation: ripple 0.6s linear;
+        pointer-events: none;
+    }
+
+    .pomodoro-stats {
+        margin-top: 1.5rem;
+        text-align: center;
+        font-size: 1.1rem;
+    }
+
+    .pomodoro-phase {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+
+    @keyframes blink {
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    @keyframes ripple {
+        to {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+
+    /* Dark mode uyumluluğu */
+    .dark-theme .timer-section {
+        background: var(--dark-card-bg);
+    }
+
+    .dark-theme .modern-select,
+    .dark-theme .time-input {
+        background: var(--dark-card-bg);
+        color: var(--dark-text);
+        border-color: var(--dark-border);
+    }
+
+    .dark-theme .timer-clock {
+        color: var(--dark-text);
+    }
+
+    .dark-theme .progress-ring-circle-bg {
+        stroke: var(--dark-border);
+    }
+
+    /* Responsive tasarım */
+    @media (max-width: 768px) {
+        .timer-progress-ring {
+            width: 250px;
+            height: 250px;
+        }
+        
+        .timer-clock {
+            font-size: 2.5rem;
+        }
+        
+        .time-unit {
+            min-width: 50px;
+        }
+        
+        .custom-time-container,
+        .custom-pomodoro-container {
+            flex-direction: column;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .timer-progress-ring {
+            width: 200px;
+            height: 200px;
+        }
+        
+        .timer-clock {
+            font-size: 2rem;
+        }
+        
+        .time-unit {
+            min-width: 40px;
+        }
+        
+        .timer-buttons {
+            flex-direction: column;
+        }
+        
+        .btn {
+            width: 100%;
+        }
+    }
+    </style>
+</body>
+</html> 
