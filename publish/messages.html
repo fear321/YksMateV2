@@ -861,20 +861,16 @@
                             // Kişi listesini oluştur
                             friendItem.innerHTML = `
                                 <div class="friend-avatar">
-                                    ${userData.profileImage ? 
-                                        `<img src="${userData.profileImage}" alt="${userData.name || 'Kullanıcı'}" class="avatar-image-small">` : 
+                                    ${friendData.profileImage ? 
+                                        `<img src="${friendData.profileImage}" alt="${friendData.name || 'Kullanıcı'}" class="avatar-image-small">` : 
                                         `<i class="fas fa-user"></i>`}
                                 </div>
                                 <div class="friend-info">
-                                    <h4 class="friend-name">${userData.name || 'İsimsiz Kullanıcı'}</h4>
+                                    <h4 class="friend-name">${friendData.name || 'İsimsiz Kullanıcı'}</h4>
                                     <p class="friend-status">
-                                        <i class="fas fa-circle" style="color: ${userData.isOnline ? '#28a745' : '#6c757d'};"></i>
-                                        ${userData.isOnline ? 'Çevrimiçi' : 'Çevrimdışı'}
+                                        <i class="fas fa-circle" style="color: #6c757d;"></i>
+                                        Çevrimdışı
                                     </p>
-                                </div>
-                                <div class="chat-meta">
-                                    <span class="chat-time">${formatTimestamp(conversation.lastTimestamp)}</span>
-                                    ${unreadCount > 0 ? `<span class="unread-count">${unreadCount}</span>` : ''}
                                 </div>
                             `;
                             
@@ -1914,6 +1910,40 @@
         // Arkadaşlar sayfasından mesaj gönderme fonksiyonu
         function sendMessage(friendId) {
             window.location.href = `messages.html?friend=${friendId}`;
+        }
+
+        // Zaman damgası biçimlendirme fonksiyonu
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return '';
+            
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            // Aynı gün için saat:dakika
+            if (diffDays < 1) {
+                return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+            }
+            // Dün için
+            else if (diffDays === 1) {
+                return 'Dün';
+            }
+            // Bu hafta için gün adı
+            else if (diffDays < 7) {
+                const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+                return days[date.getDay()];
+            }
+            // Bu yıl için gün/ay
+            else if (date.getFullYear() === now.getFullYear()) {
+                return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+            }
+            // Diğer durumlar için gün/ay/yıl
+            else {
+                return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()}`;
+            }
         }
     </script>
 </body>

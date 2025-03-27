@@ -130,17 +130,7 @@
             <!-- Sidebar -->
             <div class="sidebar">
 
-                <div class="user-info">
-                    <div class="user-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="user-details">
-                        <a href="profile.html" style="text-decoration: none; color: inherit;">
-                            <h3 id="userName">Kullanıcı Adı</h3>
-                            <p id="userExamType">Sınav Türü: TYT</p>
-                        </a>
-                    </div>
-                </div>
+
                 <nav class="sidebar-nav">
                     <ul>
                         <li>
@@ -178,9 +168,6 @@
                         </li>
                     </ul>
                 </nav>
-                <div class="sidebar-footer">
-                  
-                </div>
             </div>
 
             <!-- Sidebar Overlay -->
@@ -192,6 +179,17 @@
                     <button id="sidebarToggle" class="sidebar-toggle">
                         <i class="fas fa-bars"></i>
                     </button>
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-details">
+                            <a href="profile.html" style="text-decoration: none; color: inherit;">
+                                <h3 id="userName">Kullanıcı Adı</h3>
+                                <p id="userExamType">Bölüm: TYT</p>
+                            </a>
+                        </div>
+                    </div>
                     <div class="header-actions">
                         <button class="theme-toggle" id="themeToggle">
                             <i class="fas fa-moon"></i>
@@ -923,12 +921,9 @@
                 // Önce tarihe göre sırala
                 const dateCompare = new Date(a.date) - new Date(b.date);
                 
-                // Tarihler aynıysa, oluşturulma zamanına göre sırala (son eklenen en sonra)
-                if (dateCompare === 0) {
-                    // createdAt varsa kullan, yoksa date'i kullan
-                    const aTime = a.createdAt ? new Date(a.createdAt) : new Date(a.date);
-                    const bTime = b.createdAt ? new Date(b.createdAt) : new Date(b.date);
-                    return aTime - bTime;
+                // Tarihler aynıysa, oluşturulma zamanına göre sırala (önce eklenen önce)
+                if (dateCompare === 0 && a.createdAt && b.createdAt) {
+                    return new Date(a.createdAt) - new Date(b.createdAt);
                 }
                 
                 return dateCompare;
@@ -1114,195 +1109,6 @@
             }
         }
         
-        // Grafik oluşturma fonksiyonu
-        function createExamStatsGraph(containerId, exams, label) {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            
-            // Canvas oluştur
-            let canvas = container.querySelector('canvas');
-            if (!canvas) {
-                canvas = document.createElement('canvas');
-                container.appendChild(canvas);
-            }
-            
-            // Grafik verilerini hazırla
-            const labels = exams.map(exam => {
-                const date = new Date(exam.date);
-                return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-            });
-            
-            const netScores = exams.map(exam => exam.netScore);
-            
-            // Grafik oluştur
-            const ctx = canvas.getContext('2d');
-            return new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: label,
-                        data: netScores,
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 2,
-                        tension: 0.3,
-                        pointBackgroundColor: 'rgba(75, 192, 192, 1)',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 5,
-                        pointHoverRadius: 7
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(200, 200, 200, 0.2)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                            titleFont: {
-                                size: 14
-                            },
-                            bodyFont: {
-                                size: 13
-                            },
-                            callbacks: {
-                                title: function(tooltipItems) {
-                                    const index = tooltipItems[0].dataIndex;
-                                    return exams[index].title;
-                                },
-                                label: function(context) {
-                                    return `Net: ${context.raw.toFixed(2)}`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // İstatistikleri güncelleme fonksiyonu
-        function updateExamStats(exams) {
-            // Filtreleri al
-            const period = document.getElementById('examGraphPeriod').value;
-            const examType = document.getElementById('examGraphType').value;
-            
-            // Filtreleme için tarih sınırı belirle
-            const now = new Date();
-            let startDate = new Date();
-            
-            if (period === 'week') {
-                startDate.setDate(now.getDate() - 7);
-            } else if (period === 'month') {
-                startDate.setMonth(now.getMonth() - 1);
-            } else if (period === 'year') {
-                startDate.setFullYear(now.getFullYear() - 1);
-            } else {
-                // Tüm zamanlar için çok eski bir tarih
-                startDate = new Date(0);
-            }
-            
-            // Tarihe göre denemeleri filtrele
-            let filteredExams = exams.filter(exam => new Date(exam.date) >= startDate);
-            
-            // Denemeleri tarihe göre sırala
-            filteredExams.sort((a, b) => new Date(a.date) - new Date(b.date));
-            
-            // Sınav türlerine göre denemeleri ayır
-            const tytExams = [];
-            const aytExams = [];
-            const ydtExams = [];
-            
-            filteredExams.forEach(exam => {
-                // TYT verileri olan tüm sınavları TYT listesine ekle
-                if (exam.subjects && exam.subjects.tyt) {
-                    let tytNet = 0;
-                    
-                    // Tüm dersler için toplam net
-                    Object.keys(exam.subjects.tyt).forEach(subj => {
-                        tytNet += exam.subjects.tyt[subj].net || 0;
-                    });
-                    
-                    tytExams.push({
-                        ...exam,
-                        netScore: tytNet
-                    });
-                }
-                
-                // AYT verileri olan sınavları AYT listesine ekle
-                if (exam.subjects && exam.subjects.ayt) {
-                    let aytNet = 0;
-                    
-                    // Tüm dersler için toplam net
-                    Object.keys(exam.subjects.ayt).forEach(subj => {
-                        aytNet += exam.subjects.ayt[subj].net || 0;
-                    });
-                    
-                    aytExams.push({
-                        ...exam,
-                        netScore: aytNet
-                    });
-                }
-                
-                // YDT verileri olan sınavları YDT listesine ekle
-                if (exam.subjects && exam.subjects.ydt) {
-                    let ydtNet = 0;
-                    
-                    // Tüm dersler için toplam net
-                    Object.keys(exam.subjects.ydt).forEach(subj => {
-                        ydtNet += exam.subjects.ydt[subj].net || 0;
-                    });
-                    
-                    ydtExams.push({
-                        ...exam,
-                        netScore: ydtNet
-                    });
-                }
-            });
-            
-            // Mevcut grafiği temizle
-            const container = document.getElementById('tytStatsContainer');
-            if (!container) return;
-            
-            // Eski canvas'ı kaldır
-            while (container.firstChild) {
-                container.removeChild(container.firstChild);
-            }
-            
-            // Yeni canvas oluştur
-            const canvas = document.createElement('canvas');
-            container.appendChild(canvas);
-            
-            // Sınav türü filtresine göre grafik oluştur
-            if (examType === 'tyt') {
-                createCombinedExamStatsGraph('tytStatsContainer', tytExams, [], []);
-            } else if (examType === 'ayt') {
-                createCombinedExamStatsGraph('tytStatsContainer', [], aytExams, []);
-            } else if (examType === 'ydt') {
-                createCombinedExamStatsGraph('tytStatsContainer', [], [], ydtExams);
-            } else {
-                // Tüm sınav türlerini göster (all)
-                createCombinedExamStatsGraph('tytStatsContainer', tytExams, aytExams, ydtExams);
-            }
-        }
-        
         // Tüm sınav türlerini tek grafikte gösteren fonksiyon
         function createCombinedExamStatsGraph(containerId, tytExams, aytExams, ydtExams) {
             const container = document.getElementById(containerId);
@@ -1314,6 +1120,9 @@
                 canvas = document.createElement('canvas');
                 container.appendChild(canvas);
             }
+            
+            // Dikey çizgi elementi artık kullanılmayacak
+            // Crosshair cursor kullanılacak
             
             // Aktif sınav türünü belirle
             const graphType = document.getElementById('examGraphType').value;
@@ -1419,9 +1228,9 @@
             const isDarkTheme = document.body.classList.contains('dark-theme');
             
             // Tema renklerini belirle
-            const tytColor = isDarkTheme ? 'rgba(75, 192, 192, 1)' : 'rgba(75, 192, 192, 1)'; // Turkuaz
-            const aytColor = isDarkTheme ? 'rgba(255, 159, 64, 1)' : 'rgba(255, 159, 64, 1)'; // Turuncu
-            const ydtColor = isDarkTheme ? 'rgba(153, 102, 255, 1)' : 'rgba(153, 102, 255, 1)'; // Mor
+            const tytColor = isDarkTheme ? 'rgba(75, 33, 56, 1)' : 'rgba(75, 33, 56, 1)'; // Bordo (Ana tema rengi)
+            const aytColor = isDarkTheme ? 'rgba(103, 58, 183, 1)' : 'rgba(103, 58, 183, 1)'; // Mor
+            const ydtColor = isDarkTheme ? 'rgba(33, 150, 243, 1)' : 'rgba(33, 150, 243, 1)'; // Mavi
             
             // Grafik oluştur
             const ctx = canvas.getContext('2d');
@@ -1533,7 +1342,7 @@
             // Tekrar eden deneme adlarını filtrele ve sırala
             const uniqueExamTitles = [...new Set(allExamTitles)];
             
-            return new Chart(ctx, {
+            const chart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: uniqueExamTitles,
@@ -1542,6 +1351,12 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'],
+                    hover: {
+                        mode: 'nearest',
+                        intersect: false,
+                        animationDuration: 0
+                    },
                     scales: {
                         y: {
                             beginAtZero: true,
@@ -1562,7 +1377,8 @@
                                 color: isDarkTheme ? '#e0e0e0' : '#333',
                                 autoSkip: false,
                                 maxRotation: 45,
-                                minRotation: 45
+                                minRotation: 45,
+                                display: false // X ekseni etiketlerini gizle
                             }
                         }
                     },
@@ -1577,6 +1393,9 @@
                             position: 'bottom'
                         },
                         tooltip: {
+                            enabled: true,
+                            mode: 'nearest',
+                            intersect: false,
                             backgroundColor: isDarkTheme ? 'rgba(50, 50, 50, 0.9)' : 'rgba(255, 255, 255, 0.9)',
                             titleColor: isDarkTheme ? '#fff' : '#333',
                             bodyColor: isDarkTheme ? '#e0e0e0' : '#666',
@@ -1588,11 +1407,36 @@
                                     const datasetIndex = tooltipItems[0].datasetIndex;
                                     const index = tooltipItems[0].dataIndex;
                                     const dataset = datasets[datasetIndex];
-                                    return dataset.labels[index] || '';
+                                    return '';
                                 },
                                 label: function(context) {
-                                    const datasetLabel = context.dataset.label || '';
-                                    return `${datasetLabel}: ${context.raw.toFixed(2)}`;
+                                    // İlgili sınava ait tüm bilgileri al
+                                    const datasetIndex = context.datasetIndex;
+                                    const index = context.dataIndex;
+                                    const dataset = datasets[datasetIndex];
+                                    
+                                    const examTitle = dataset.labels[index] || '';
+                                    const examType = dataset.label.split(' ')[0]; // TYT, AYT veya YDT
+                                    const netValue = context.raw.toFixed(2);
+                                    
+                                    // İlgili sınavın tarihini al
+                                    let examDate = '';
+                                    if (examType === 'TYT' && tytExams.length > 0 && tytExams[index]) {
+                                        const date = new Date(tytExams[index].date);
+                                        examDate = `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()}`;
+                                    } else if (examType === 'AYT' && aytExams.length > 0 && aytExams[index]) {
+                                        const date = new Date(aytExams[index].date);
+                                        examDate = `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()}`;
+                                    } else if (examType === 'YDT' && ydtExams.length > 0 && ydtExams[index]) {
+                                        const date = new Date(ydtExams[index].date);
+                                        examDate = `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()}`;
+                                    }
+                                    
+                                    // Bilgileri 2'şer 2'şer yan yana gösterecek şekilde düzenle
+                                    return [
+                                        `Deneme Adı: ${examTitle}       Sınav Türü: ${examType}`,
+                                        `Tarih: ${examDate}       Net: ${netValue}`
+                                    ];
                                 }
                             }
                         },
@@ -1608,7 +1452,7 @@
                                     borderDash: [5, 5],
                                     label: {
                                         content: `TYT Ort: ${tytAvg.toFixed(2)}`,
-                                        enabled: true,
+                                        enabled: false,
                                         position: 'end',
                                         backgroundColor: tytColor,
                                         color: '#fff',
@@ -1653,7 +1497,7 @@
                                     borderDash: [5, 5],
                                     label: {
                                         content: `AYT Ort: ${aytAvg.toFixed(2)}`,
-                                        enabled: true,
+                                        enabled: false,
                                         position: 'end',
                                         backgroundColor: aytColor,
                                         color: '#fff',
@@ -1698,7 +1542,7 @@
                                     borderDash: [5, 5],
                                     label: {
                                         content: `YDT Ort: ${ydtAvg.toFixed(2)}`,
-                                        enabled: true,
+                                        enabled: false,
                                         position: 'end',
                                         backgroundColor: ydtColor,
                                         color: '#fff',
@@ -1737,6 +1581,11 @@
                     }
                 }
             });
+            
+            // Canvas için mouse olayları dinleyicilerine artık gerek yok
+            // Cursor crosshair stilini CSS'te tanımladık
+            
+            return chart;
         }
 
         // Deneme silme fonksiyonu
