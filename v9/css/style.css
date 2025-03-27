@@ -6785,7 +6785,6 @@ body.green-theme {
 }
 
 .sidebar-narrow:hover p {
-    display: block; /* hover durumunda p etiketlerini göster */
     margin: 3px 0;
 }
 
