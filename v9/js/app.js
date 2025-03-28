@@ -330,10 +330,11 @@ function initializeTheme() {
 function initializeSidebar() {
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebar = document.querySelector('.sidebar');
+    const mainContent = document.querySelector('.main-content');
     
-    // Doğrulanmış elemanlar var mı?
-    if (!sidebar) {
-        console.error("Sidebar elemanı bulunamadı!");
+    // Gerekli elemanlar var mı kontrol et
+    if (!sidebar || !mainContent) {
+        console.error("Sidebar veya main content elemanı bulunamadı!");
         return;
     }
     
@@ -345,218 +346,242 @@ function initializeSidebar() {
         document.body.appendChild(sidebarOverlay);
     }
     
-    // Sidebar'ı görünür yap - Desktop ekranda
-    if (window.innerWidth > 992) {
-        sidebar.style.left = '0';
-        sidebar.classList.add('sidebar-open');
-    }
-    
-    // Daraltma durumu varsa kaldır
-    localStorage.removeItem('sidebarCollapsed');
-    if (sidebar.classList.contains('collapsed')) {
-        sidebar.classList.remove('collapsed');
-    }
-    
-    // Sabit menü genişliği için ana içeriği ayarla
-    const mainContent = document.querySelector('.main-content');
-    if (mainContent && window.innerWidth > 992) {
-        mainContent.style.marginLeft = '230px';
-        mainContent.style.width = 'calc(100% - 230px)';
-        mainContent.classList.add('content-pushed');
-    }
-    
     // Sayfa yüklendiğinde sidebar durumunu kontrol et
     window.addEventListener('DOMContentLoaded', function() {
         checkScreenSize();
-        
-        // Eğer localStorage'da sidebarWidth değeri yoksa, varsayılan değer olarak 230 ata
-        if (localStorage.getItem('sidebarWidth') === null) {
-            localStorage.setItem('sidebarWidth', '230');
-        }
-        
-        checkSidebarPreference();
     });
     
-    // Ekran boyutu değiştiğinde kontrol et
+    // Ekran boyutu değiştiğinde sidebar durumunu kontrol et
     window.addEventListener('resize', function() {
         checkScreenSize();
-        
-        // 1000px üstü ve altı geçişlerde sidebar durumunu yeniden kontrol et
-        const windowWidth = window.innerWidth;
-        if (windowWidth >= 1000) {
-            // Eğer localStorage'da sidebarWidth değeri yoksa, varsayılan değer olarak 230 ata
-            if (localStorage.getItem('sidebarWidth') === null) {
-                localStorage.setItem('sidebarWidth', '230');
-            }
-            checkSidebarPreference();
-        }
     });
+    
+    // Mobil sürükleme (swipe) işlemleri için değişkenler
+    let touchStartX = 0;
+    let touchEndX = 0;
+    let swipeThreshold = 90; // Piksel cinsinden eşik değeri (ilk 30 piksel yok sayılacak)
+    let minSwipeDistance = 100; // Minimum sürükleme mesafesi
+    
+    // Dokunma başlangıcı olayı dinleyicisi
+    document.addEventListener('touchstart', function(e) {
+        touchStartX = e.changedTouches[0].screenX;
+    }, false);
+    
+    // Dokunma bitişi olayı dinleyicisi
+    document.addEventListener('touchend', function(e) {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    }, false);
+    
+    // Sürükleme işlemini ele alma
+    function handleSwipe() {
+        // Sadece mobil görünümde (992px ve altı) sürükleme işlemi çalışsın
+        if (window.innerWidth > 992) return;
+        
+        // Sürükleme mesafesini hesapla (sağdan sola negatif, soldan sağa pozitif)
+        let swipeDistance = touchEndX - touchStartX;
+        
+        // Soldan sağa sürükleme (sidebar'ı açmak için)
+        if (touchStartX < swipeThreshold) {
+            // İlk sürükleme başlangıç noktası eşik değerinin altındaysa (ekranın sol kenarına yakınsa) işlemi yoksay
+            return;
+        } else if (swipeDistance > minSwipeDistance) {
+            // Sidebar kapalıysa ve belirli bir mesafe kaydırıldıysa aç
+            if (!sidebar.classList.contains('active')) {
+                sidebar.classList.add('active');
+                sidebar.style.left = '0';
+                
+                if (sidebarOverlay) {
+                    sidebarOverlay.classList.add('active');
+                }
+                
+                mainContent.classList.add('dimmed');
+                
+                // İkon değiştir
+                const toggleIcon = sidebarToggle.querySelector('i');
+                if (toggleIcon) {
+                    toggleIcon.className = 'fas fa-times';
+                }
+            }
+        } 
+        // Sağdan sola sürükleme (sidebar'ı kapatmak için)
+        else if (swipeDistance < -minSwipeDistance) {
+            // Sidebar açıksa ve belirli bir mesafe kaydırıldıysa kapat
+            if (sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+                sidebar.style.left = '-230px';
+                
+                if (sidebarOverlay) {
+                    sidebarOverlay.classList.remove('active');
+                }
+                
+                mainContent.classList.remove('dimmed');
+                
+                // İkon değiştir
+                const toggleIcon = sidebarToggle.querySelector('i');
+                if (toggleIcon) {
+                    toggleIcon.className = 'fas fa-bars';
+                }
+            }
+        }
+    }
     
     // Ekran boyutuna göre sidebar görünümünü ayarla
     function checkScreenSize() {
         const windowWidth = window.innerWidth;
-        const isMobile = windowWidth <= 992;
-        const sidebar = document.querySelector('.sidebar');
-        const mainContent = document.querySelector('.main-content');
-        const sidebarOverlay = document.querySelector('.sidebar-overlay');
         
-        if (isMobile) {
-            // Mobil görünüm
-            sidebar.classList.remove('sidebar-open');
-            sidebar.classList.remove('sidebar-narrow'); // Mobilde narrow sınıfını kaldır
+        // Mobil görünüm (992px ve altı)
+        if (windowWidth <= 992) {
+            // Mobil modda sidebar başlangıçta gizli olsun
             sidebar.style.left = '-230px';
-            sidebar.style.width = '230px'; // Mobilde her zaman tam genişlik
-            
-            // Sidebar içeriğini sıfırla
-            const userDetails = document.querySelectorAll('.user-details, .sidebar-nav a span');
-            userDetails.forEach(el => el.style.display = 'block');
-            
-            const sidebarNavIcons = document.querySelectorAll('.sidebar-nav a i');
-            sidebarNavIcons.forEach(icon => icon.style.marginRight = '10px');
-            
-            const sidebarNavLinks = document.querySelectorAll('.sidebar-nav a');
-            sidebarNavLinks.forEach(link => link.style.justifyContent = 'flex-start');
-            
-            if (sidebarOverlay) sidebarOverlay.classList.remove('active');
-            if (mainContent) {
-                mainContent.style.marginLeft = '0';
-                mainContent.style.width = '100%';
-                mainContent.classList.remove('dimmed');
-                mainContent.classList.remove('content-pushed');
-                mainContent.classList.remove('content-pushed-narrow');
-                document.body.classList.remove('sidebar-narrow-active');
-            }
-        } else if (windowWidth <= 1000) {
-            // Tablet görünüm - 993px-1000px arası
-            sidebar.classList.add('sidebar-open');
-            sidebar.classList.remove('sidebar-narrow'); // Tabletlerde narrow sınıfını kaldır
-            sidebar.style.left = '0';
             sidebar.style.width = '230px';
+            sidebar.classList.remove('sidebar-open', 'sidebar-narrow');
             
-            // Sidebar içeriğini sıfırla
-            const userDetails = document.querySelectorAll('.user-details, .sidebar-nav a span');
-            userDetails.forEach(el => el.style.display = 'block');
-            
-            const sidebarNavIcons = document.querySelectorAll('.sidebar-nav a i');
-            sidebarNavIcons.forEach(icon => icon.style.marginRight = '10px');
-            
-            const sidebarNavLinks = document.querySelectorAll('.sidebar-nav a');
-            sidebarNavLinks.forEach(link => link.style.justifyContent = 'flex-start');
+            // Mobil modda içerik tam genişlikte ve margin'siz
+            mainContent.style.marginLeft = '0';
+            mainContent.style.width = '100%';
+            mainContent.classList.remove('content-pushed', 'content-pushed-narrow');
+            document.body.classList.remove('sidebar-narrow-active');
             
             if (sidebarOverlay) sidebarOverlay.classList.remove('active');
-            if (mainContent) {
-                mainContent.style.marginLeft = '230px';
-                mainContent.style.width = 'calc(100% - 230px)';
-                mainContent.classList.remove('dimmed');
-                document.body.classList.remove('sidebar-narrow-active');
-            }
-        } else {
-            // 1000px üstü için
-            // localStorage'deki sidebar width değerine göre işlem yap
-            const sidebarWidth = localStorage.getItem('sidebarWidth');
+        } 
+        // Desktop görünüm (992px üstü)
+        else {
+            // localStorage'dan sideber genişliğini oku
+            const sidebarWidth = localStorage.getItem('sidebarWidth') || '230';
             
             if (sidebarWidth === '70') {
-                // Daraltılmış sidebar
+                // Daraltılmış sidebar (narrow mode)
+                sidebar.style.width = '70px';
+                sidebar.style.left = '0';
                 sidebar.classList.remove('sidebar-open');
                 sidebar.classList.add('sidebar-narrow');
                 
-                // Tema stillerini uygula
-                applyNarrowSidebarTheme();
+                // İçeriği sidebar genişliğine göre ayarla
+                mainContent.style.marginLeft = '70px';
+                mainContent.style.width = 'calc(100% - 70px)';
+                mainContent.classList.remove('content-pushed');
+                mainContent.classList.add('content-pushed-narrow');
+                document.body.classList.add('sidebar-narrow-active');
                 
-                if (mainContent) {
-                    mainContent.classList.remove('content-pushed');
-                    mainContent.classList.add('content-pushed-narrow');
-                    document.body.classList.add('sidebar-narrow-active');
-                }
+                // Dar sidebar için tema stilleri uygula
+                applyNarrowSidebarTheme();
             } else {
-                // Tam genişlik
+                // Tam genişlikte sidebar
+                sidebar.style.width = '230px';
+                sidebar.style.left = '0';
                 sidebar.classList.add('sidebar-open');
                 sidebar.classList.remove('sidebar-narrow');
+                
+                // İçeriği sidebar genişliğine göre ayarla
+                mainContent.style.marginLeft = '230px';
+                mainContent.style.width = 'calc(100% - 230px)';
+                mainContent.classList.add('content-pushed');
+                mainContent.classList.remove('content-pushed-narrow');
+                document.body.classList.remove('sidebar-narrow-active');
                 
                 // Tema stillerini temizle
                 sidebar.style.removeProperty('background-color');
                 sidebar.style.removeProperty('border-right');
-                
-                if (mainContent) {
-                    mainContent.classList.remove('content-pushed-narrow');
-                    mainContent.classList.add('content-pushed');
-                    document.body.classList.remove('sidebar-narrow-active');
-                }
             }
         }
     }
     
-    // Mobil menü toggle butonu
+    // Sidebar toggle butonu olayı
     if (sidebarToggle) {
         sidebarToggle.addEventListener('click', function() {
             const windowWidth = window.innerWidth;
-            const isMobile = windowWidth <= 992;
             
-            // 1000px üzerinde ekran genişliği varsa
-            if (windowWidth > 1000) {
-                const mainContent = document.querySelector('.main-content');
-                if (sidebar.classList.contains('sidebar-open')) {
-                    // Sidebar zaten açık, daralt
+            // Desktop görünüm için toggle davranışı (992px üstü)
+            if (windowWidth > 992) {
+                // Mevcut genişliği kontrol et
+                const isWide = sidebar.classList.contains('sidebar-open') || 
+                               !sidebar.classList.contains('sidebar-narrow');
+                
+                if (isWide) {
+                    // Geniş durumdaysa daralt
                     localStorage.setItem('sidebarWidth', '70');
                     
-                    // Sidebar sınıflarını değiştir
+                    // Animasyonlu geçiş için önce stil ayarla
+                    sidebar.style.width = '70px';
+                    mainContent.style.marginLeft = '70px';
+                    mainContent.style.width = 'calc(100% - 70px)';
+                    
+                    // Sınıfları güncelle
                     sidebar.classList.remove('sidebar-open');
                     sidebar.classList.add('sidebar-narrow');
+                    mainContent.classList.remove('content-pushed');
+                    mainContent.classList.add('content-pushed-narrow');
+                    document.body.classList.add('sidebar-narrow-active');
                     
-                    // Tüm tema stillerini temizle ve tekrar uygula
+                    // Daraltılmış tema stillerini uygula
                     applyNarrowSidebarTheme();
-                    
-                    if (mainContent) {
-                        mainContent.classList.remove('content-pushed');
-                        mainContent.classList.add('content-pushed-narrow');
-                        document.body.classList.add('sidebar-narrow-active');
-                    }
                 } else {
-                    // Sidebar kapalı veya daraltılmış, tam genişlikte aç
+                    // Dar durumdaysa genişlet
                     localStorage.setItem('sidebarWidth', '230');
                     
-                    // Önce stil özelliklerini temizle
+                    // Animasyonlu geçiş için önce stil ayarla
+                    sidebar.style.width = '230px';
+                    mainContent.style.marginLeft = '230px';
+                    mainContent.style.width = 'calc(100% - 230px)';
+                    
+                    // Sınıfları güncelle
+                    sidebar.classList.add('sidebar-open');
+                    sidebar.classList.remove('sidebar-narrow');
+                    mainContent.classList.add('content-pushed');
+                    mainContent.classList.remove('content-pushed-narrow');
+                    document.body.classList.remove('sidebar-narrow-active');
+                    
+                    // Tema stillerini temizle
                     sidebar.style.removeProperty('background-color');
                     sidebar.style.removeProperty('border-right');
-                    
-                    // Sonra sınıfları değiştir
-                    sidebar.classList.remove('sidebar-narrow');
-                    sidebar.classList.add('sidebar-open');
-                    
-                    if (mainContent) {
-                        mainContent.classList.remove('content-pushed-narrow');
-                        mainContent.classList.add('content-pushed');
-                        document.body.classList.remove('sidebar-narrow-active');
-                    }
                 }
-            } else {
-                // Mevcut mobil davranışı
-                sidebar.classList.toggle('active');
+            } 
+            // Mobil görünüm için toggle davranışı (992px ve altı)
+            else {
+                // Sidebar görünürlüğünü değiştir
+                const isActive = sidebar.classList.contains('active');
                 
-                // Sadece mobil görünümde overlay'i aktifleştir
-                if (isMobile) {
-                    if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
+                if (isActive) {
+                    // Aktifse kapat
+                    sidebar.classList.remove('active');
+                    sidebar.style.left = '-230px';
                     
-                    // Sidebar açık/kapalı durumuna göre sidebarToggle butonunun içeriğini değiştir
+                    if (sidebarOverlay) {
+                        sidebarOverlay.classList.remove('active');
+                    }
+                    
+                    mainContent.classList.remove('dimmed');
+                    
+                    // İkon değiştir
                     const toggleIcon = sidebarToggle.querySelector('i');
                     if (toggleIcon) {
-                        if (sidebar.classList.contains('active')) {
-                            toggleIcon.className = 'fas fa-times';
-                        } else {
-                            toggleIcon.className = 'fas fa-bars';
-                        }
+                        toggleIcon.className = 'fas fa-bars';
+                    }
+                } else {
+                    // Kapalıysa aç
+                    sidebar.classList.add('active');
+                    sidebar.style.left = '0';
+                    
+                    if (sidebarOverlay) {
+                        sidebarOverlay.classList.add('active');
                     }
                     
-                    // Ekran boyutuna göre içeriği ayarla
-                    const mainContent = document.querySelector('.main-content');
-                    if (mainContent) {
-                        if (sidebar.classList.contains('active')) {
-                            mainContent.classList.add('dimmed');
-                        } else {
-                            mainContent.classList.remove('dimmed');
-                        }
+                    mainContent.classList.add('dimmed');
+                    
+                    // İkon değiştir
+                    const toggleIcon = sidebarToggle.querySelector('i');
+                    if (toggleIcon) {
+                        toggleIcon.className = 'fas fa-times';
                     }
                 }
+            }
+            
+            // Butonun yönünü değiştir
+            const iconElement = this.querySelector('i');
+            
+            if (iconElement) {
+                iconElement.className = isWide ? 'fas fa-chevron-right' : 'fas fa-chevron-left';
             }
         });
     }
@@ -564,149 +589,51 @@ function initializeSidebar() {
     // Overlay tıklama olayı
     if (sidebarOverlay) {
         sidebarOverlay.addEventListener('click', function() {
-            const windowWidth = window.innerWidth;
-            
-            if (windowWidth <= 1000) {
-                // 1000px ve altında sidebar tamamen gizlenir
+            // Sadece mobil görünümde overlay aktif olacak
+            if (window.innerWidth <= 992) {
                 sidebar.classList.remove('active');
+                sidebar.style.left = '-230px';
                 sidebarOverlay.classList.remove('active');
+                mainContent.classList.remove('dimmed');
                 
-                // Sidebar toggle butonundaki ikonu güncelle
-                const sidebarToggle = document.getElementById('sidebarToggle');
-                if (sidebarToggle) {
-                    const toggleIcon = sidebarToggle.querySelector('i');
-                    if (toggleIcon) {
-                        toggleIcon.className = 'fas fa-bars';
-                    }
-                }
-                
-                // Main content üzerindeki dimmed efektini kaldır
-                const mainContent = document.querySelector('.main-content');
-                if (mainContent) {
-                    mainContent.classList.remove('dimmed');
-                }
-            } else {
-                // 1000px üstünde sidebar daraltılır
-                const mainContent = document.querySelector('.main-content');
-                
-                // Eğer sidebar zaten narrow değilse, narrow yap
-                if (!sidebar.classList.contains('sidebar-narrow')) {
-                    localStorage.setItem('sidebarWidth', '70');
-                    
-                    // Sidebar sınıflarını güncelle
-                    sidebar.classList.remove('sidebar-open');
-                    sidebar.classList.add('sidebar-narrow');
-                    
-                    // Tema stillerini uygula
-                    applyNarrowSidebarTheme();
-                    
-                    // Main content sınıflarını güncelle
-                    if (mainContent) {
-                        mainContent.classList.remove('content-pushed');
-                        mainContent.classList.add('content-pushed-narrow');
-                        document.body.classList.add('sidebar-narrow-active');
-                    }
-                    
-                    // Overlay'i gizle
-                    sidebarOverlay.classList.remove('active');
+                // Toggle butonunun ikonunu güncelle
+                const toggleIcon = sidebarToggle.querySelector('i');
+                if (toggleIcon) {
+                    toggleIcon.className = 'fas fa-bars';
                 }
             }
         });
     }
     
-    // Sidebar içindeki linkler için olay dinleyicileri ekle
+    // Sidebar içindeki linklere tıklama olayı ekle
     const sidebarLinks = sidebar.querySelectorAll('a');
     sidebarLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            // Sadece mobil modda otomatik kapat
+        link.addEventListener('click', function() {
+            // Sadece mobil modda sidebar'ı kapat
             if (window.innerWidth <= 992) {
                 sidebar.classList.remove('active');
-                if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+                sidebar.style.left = '-230px';
                 
-                // Main content üzerindeki dimmed efektini kaldır
-                const mainContent = document.querySelector('.main-content');
-                if (mainContent) {
-                    mainContent.classList.remove('dimmed');
+                if (sidebarOverlay) {
+                    sidebarOverlay.classList.remove('active');
                 }
                 
+                mainContent.classList.remove('dimmed');
+                
                 // Toggle butonunun ikonunu güncelle
-                const sidebarToggle = document.getElementById('sidebarToggle');
-                if (sidebarToggle) {
-                    const toggleIcon = sidebarToggle.querySelector('i');
-                    if (toggleIcon) {
-                        toggleIcon.className = 'fas fa-bars';
-                    }
+                const toggleIcon = sidebarToggle.querySelector('i');
+                if (toggleIcon) {
+                    toggleIcon.className = 'fas fa-bars';
                 }
             }
         });
     });
     
-    // Dokunma olayları için yardımcı değişkenler
-    let touchStartX = 0;
-    let touchEndX = 0;
-    
-    // Dokunma başlangıcı
-    document.addEventListener('touchstart', function(e) {
-        touchStartX = e.touches[0].clientX;
-    }, false);
-    
-    // Dokunma hareketi
-    document.addEventListener('touchmove', function(e) {
-        if (!sidebar) return;
-        
-        touchEndX = e.touches[0].clientX;
-        const swipeDistance = touchEndX - touchStartX;
-        
-        // Sadece mobil görünümde çalış
-        if (window.innerWidth <= 992) {
-            // Sağdan sola kaydırma (menüyü kapat)
-            if (swipeDistance < -70 && sidebar.classList.contains('active')) {
-                sidebar.classList.remove('active');
-                if (sidebarOverlay) sidebarOverlay.classList.remove('active');
-                
-                // Sidebar toggle butonundaki ikonu güncelle
-                const sidebarToggle = document.getElementById('sidebarToggle');
-                if (sidebarToggle) {
-                    const toggleIcon = sidebarToggle.querySelector('i');
-                    if (toggleIcon) {
-                        toggleIcon.className = 'fas fa-bars';
-                    }
-                }
-                
-                // Main content üzerindeki dimmed efektini kaldır
-                const mainContent = document.querySelector('.main-content');
-                if (mainContent) {
-                    mainContent.classList.remove('dimmed');
-                }
-            }
-            // Soldan sağa kaydırma (menüyü aç)
-            else if (swipeDistance > 70 && !sidebar.classList.contains('active')) {
-                sidebar.classList.add('active');
-                if (sidebarOverlay) sidebarOverlay.classList.add('active');
-                
-                // Sidebar toggle butonundaki ikonu güncelle
-                const sidebarToggle = document.getElementById('sidebarToggle');
-                if (sidebarToggle) {
-                    const toggleIcon = sidebarToggle.querySelector('i');
-                    if (toggleIcon) {
-                        toggleIcon.className = 'fas fa-times';
-                    }
-                }
-                
-                // Main content dimmed efekti ekle
-                const mainContent = document.querySelector('.main-content');
-                if (mainContent) {
-                    mainContent.classList.add('dimmed');
-                }
-            }
-        }
-    }, false);
-    
-    // Dokunma bitişi
-    document.addEventListener('touchend', function() {
-        touchStartX = 0;
-        touchEndX = 0;
-    }, false);
+    // İlk yüklemede localStorage'dan sidebar genişliğini kontrolü
+    // Eğer değer yoksa, varsayılan olarak 230 ata
+    if (localStorage.getItem('sidebarWidth') === null) {
+        localStorage.setItem('sidebarWidth', '230');
+    }
 }
 
 // Bildirim yönetimi
@@ -1577,35 +1504,40 @@ function checkSidebarPreference() {
 
 // Narrow sidebar için tema stillerini uygula
 function applyNarrowSidebarTheme() {
-    const sidebar = document.querySelector('.sidebar');
-    if (!sidebar) return;
-    
-    // Önce tüm stilleri temizle
-    sidebar.style.removeProperty('background-color');
-    sidebar.style.removeProperty('border-right');
-    
-    // Tema sınıflarını kontrol et
-    const isDarkTheme = document.body.classList.contains('dark-theme');
-    const isPurpleTheme = document.body.classList.contains('purple-theme'); 
-    const isBlueTheme = document.body.classList.contains('blue-theme');
-    const isGreenTheme = document.body.classList.contains('green-theme');
-    
-    // Tema değişkenine göre stil uygula
-    if (isDarkTheme) {
-        sidebar.style.setProperty('background-color', 'var(--dark-card-bg)', 'important');
-        sidebar.style.setProperty('border-right', '1px solid var(--dark-border)', 'important');
-    } else if (isPurpleTheme) {
-        sidebar.style.setProperty('background-color', 'var(--purple-card-bg)', 'important');
-        sidebar.style.setProperty('border-right', '1px solid var(--purple-border)', 'important');
-    } else if (isBlueTheme) {
-        sidebar.style.setProperty('background-color', 'var(--blue-card-bg)', 'important');
-        sidebar.style.setProperty('border-right', '1px solid var(--blue-border)', 'important');
-    } else if (isGreenTheme) {
-        sidebar.style.setProperty('background-color', 'var(--green-card-bg)', 'important');
-        sidebar.style.setProperty('border-right', '1px solid var(--green-border)', 'important');
+    // theme-manager.js içindeki applyNarrowSidebarTheme fonksiyonunu çağır
+    if (typeof window.themeManager !== 'undefined' && typeof window.themeManager.applyNarrowSidebarTheme === 'function') {
+        window.themeManager.applyNarrowSidebarTheme();
     } else {
-        // Varsayılan light tema
-        sidebar.style.setProperty('background-color', 'var(--light-card-bg)', 'important');
-        sidebar.style.setProperty('border-right', '1px solid var(--light-border)', 'important');
+        const sidebar = document.querySelector('.sidebar');
+        if (!sidebar) return;
+        
+        // Önce tüm stilleri temizle
+        sidebar.style.removeProperty('background-color');
+        sidebar.style.removeProperty('border-right');
+        
+        // Tema sınıflarını kontrol et
+        const isDarkTheme = document.body.classList.contains('dark-theme');
+        const isPurpleTheme = document.body.classList.contains('purple-theme'); 
+        const isBlueTheme = document.body.classList.contains('blue-theme');
+        const isGreenTheme = document.body.classList.contains('green-theme');
+        
+        // Tema değişkenine göre stil uygula
+        if (isDarkTheme) {
+            sidebar.style.setProperty('background-color', 'var(--dark-card-bg)', 'important');
+            sidebar.style.setProperty('border-right', '1px solid var(--dark-border)', 'important');
+        } else if (isPurpleTheme) {
+            sidebar.style.setProperty('background-color', 'var(--purple-card-bg)', 'important');
+            sidebar.style.setProperty('border-right', '1px solid var(--purple-border)', 'important');
+        } else if (isBlueTheme) {
+            sidebar.style.setProperty('background-color', 'var(--blue-card-bg)', 'important');
+            sidebar.style.setProperty('border-right', '1px solid var(--blue-border)', 'important');
+        } else if (isGreenTheme) {
+            sidebar.style.setProperty('background-color', 'var(--green-card-bg)', 'important');
+            sidebar.style.setProperty('border-right', '1px solid var(--green-border)', 'important');
+        } else {
+            // Varsayılan light tema
+            sidebar.style.setProperty('background-color', 'var(--light-card-bg)', 'important');
+            sidebar.style.setProperty('border-right', '1px solid var(--light-border)', 'important');
+        }
     }
 } 

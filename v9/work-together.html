@@ -17,7 +17,8 @@
             display: flex;
             flex-direction: column;
             background: none;
-            margin-bottom: 20px;
+            margin: 0 0 20px 0;
+            padding: 0;
         }
         
         /* Yeni iki sütunlu düzen */
@@ -40,8 +41,208 @@
             }
             
             .room-list-container {
-                width: 40%;
+                width: 100%;
             }
+        }
+        
+        /* Popup Stilleri */
+        .create-room-popup {
+            display: none;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            -webkit-backdrop-filter: blur(5px);
+            -moz-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .create-room-popup.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .create-room-popup-content {
+            width: 90%;
+            max-width: 500px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        
+        .create-room-popup.active .create-room-popup-content {
+            transform: scale(1);
+        }
+        
+        .create-room-popup-header {
+            background: linear-gradient(135deg, rgb(75, 33, 56) 0%, rgb(120, 40, 70) 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .create-room-popup-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .popup-close-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+        
+        .popup-close-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+        
+        .create-room-popup-body {
+            padding: 20px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        .create-room-form input[type="text"],
+        .create-room-form select {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+            background-color: #fafafa;
+        }
+        
+        .create-room-form input[type="text"]:focus,
+        .create-room-form select:focus {
+            border-color: rgb(75, 33, 56);
+            box-shadow: 0 0 0 3px rgba(75, 33, 56, 0.1);
+            outline: none;
+            background-color: white;
+        }
+        
+        .create-room-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: #555;
+        }
+        
+        .create-room-form button {
+            background: rgb(75, 33, 56);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+            width: 100%;
+        }
+        
+        .create-room-form button:hover {
+            background: rgb(100, 40, 70);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(75, 33, 56, 0.2);
+        }
+        
+        /* Dark theme uyumluluğu */
+        .dark-theme .create-room-popup-content {
+            background-color: #2a2a2a;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+        
+        .dark-theme .create-room-popup-header {
+            background: linear-gradient(135deg, rgb(75, 33, 56) 0%, rgb(90, 30, 50) 100%);
+        }
+        
+        .dark-theme .create-room-form input[type="text"],
+        .dark-theme .create-room-form select {
+            background-color: #333;
+            border-color: #444;
+            color: #eee;
+        }
+        
+        .dark-theme .create-room-form input[type="text"]:focus,
+        .dark-theme .create-room-form select:focus {
+            background-color: #3a3a3a;
+            border-color: rgb(120, 40, 70);
+        }
+        
+        .dark-theme .create-room-form label {
+            color: #ccc;
+        }
+        
+        .dark-theme .timer-settings {
+            background-color: #333;
+            border-left: 4px solid rgb(120, 40, 70);
+        }
+        
+        .dark-theme .form-check-label {
+            color: #ccc;
+        }
+        
+        /* Oda oluştur butonu stilleri */
+        .create-room-button-container {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .create-room-top-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 30px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .create-room-top-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Karanlık tema uyumluluğu - Popup */
+        .dark-theme .popup-content {
+            background-color: #222;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+        }
+        
+        .dark-theme .popup-close-btn {
+            color: #777;
+        }
+        
+        .dark-theme .popup-close-btn:hover {
+            color: #ccc;
         }
         
         .create-room-container,
@@ -157,61 +358,82 @@
         .room-form {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 20px;
+            padding: 25px;
         }
         
         .form-group {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 8px;
         }
         
         .form-group label {
-            font-weight: 500;
-            font-size: 0.9rem;
-            color: #555;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #333;
         }
         
         .form-control {
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
             font-family: 'Poppins', sans-serif;
-            transition: border-color 0.2s;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            background-color: #f9f9f9;
         }
         
         .form-control:focus {
             border-color: rgb(75, 33, 56);
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(75, 33, 56, 0.1);
             outline: none;
         }
         
         .create-room-btn {
-            padding: 12px;
+            padding: 14px;
             background-color: rgb(75, 33, 56);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 16px;
             margin-top: 10px;
-            transition: background-color 0.2s;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(75, 33, 56, 0.2);
         }
         
         .create-room-btn:hover {
-            background-color: rgba(75, 33, 56, 0.8);
+            background-color: rgba(85, 38, 63, 1);
+            box-shadow: 0 6px 10px rgba(75, 33, 56, 0.3);
+            transform: translateY(-2px);
         }
         
-        /* Eski stilleri koru */
+        /* Eski stilleri güncellendi - başlık sola, butonlar sağa hizalandı */
         .room-header {
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .room-header-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 15px;
             border-bottom: 1px solid #eee;
             background-color: #fff;
-            border-radius: 10px;
+            cursor: pointer;
+            user-select: none;
         }
-        
         .room-header h3 {
             margin: 0;
             font-size: 1.2rem;
@@ -222,6 +444,7 @@
             display: flex;
             gap: 10px;
             align-items: center;
+            margin-left: auto; /* Butonları sağa hizalar */
         }
         
         .leave-room-btn {
@@ -259,23 +482,174 @@
             }
         }
         
+        /* Katılımcılar butonu */
+        .participants-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            padding: 6px 15px !important;
+            font-weight: 600;
+            background-color: rgb(75, 33, 56);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .participants-btn:hover {
+            background-color: rgba(75, 33, 56, 0.8);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .dark-theme .participants-btn {
+            background-color: rgba(75, 33, 56, 0.8);
+        }
+        
+        .dark-theme .participants-btn:hover {
+            background-color: rgb(75, 33, 56);
+        }
+        
+        /* Yeni chat tasarımı - Gizlenebilir chat */
         .room-content {
             display: flex;
             height: auto;
             background: none;
+            position: relative;
+            margin-top: 0;
+            padding-top: 0;
         }
         
         /* Sol panel (timer ve kullanıcılar) */
         .left-panel {
             width: 70%;
-            padding: 15px;
+            padding: 0;
+            padding-right: 15px;
+            margin-top: 0;
             display: flex;
             flex-direction: column;
+            transition: width 0.3s ease;
+        }
+        
+        /* Sağ panel (sohbet) */
+        .chat-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #f9f9f9;
+            min-width: 300px;
+            min-height: 500px;
+            margin: 0 0 0 10px;
+            padding: 0;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        /* Chat kapalı durum */
+        .chat-panel.collapsed {
+            min-width: 0 !important;
+            width: 0 !important;
+            max-width: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            overflow: hidden !important;
+            flex: 0 !important;
+            display: none !important;
+        }
+        
+        /* Chat paneli gizliyken sağ taraftaki header da gizlensin */
+        .chat-panel.collapsed .chat-header {
+            display: none !important;
+        }
+        
+        .chat-header {
+            padding: 12px 15px;
+            margin: 0;
+            background-color: #fff;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #333;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            z-index: 10;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .chat-header i {
+            margin-right: 8px;
+            color: rgb(75, 33, 56);
+            transition: transform 0.3s ease;
+        }
+        
+        .chat-panel.collapsed .chat-header {
+            justify-content: center;
+            padding: 12px 5px;
+        }
+        
+        .chat-panel.collapsed .chat-header span {
+            display: none;
+        }
+        
+        .chat-panel.collapsed .chat-header i {
+            margin-right: 0;
+            transform: rotate(180deg);
+        }
+        
+        .chat-messages, .chat-input-container {
+            transition: opacity 0.2s ease, transform 0.3s ease;
+        }
+        
+        .chat-panel.collapsed .chat-messages,
+        .chat-panel.collapsed .chat-input-container {
+            opacity: 0;
+            transform: translateX(100%);
+            height: 0;
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
+        }
+        
+        /* Karanlık tema uyumluluğu */
+        .dark-theme .chat-header {
+            background-color: #0a0a0a;
+            color: #eee;
+        }
+        
+        /* Mobil görünüm uyumluluğu */
+        @media (max-width: 768px) {
+            .left-panel {
+                width: calc(100% - 65px);
+                padding: 10px;
+            }
+            
+            .chat-panel {
+                position: absolute;
+                right: 0;
+                top: 0;
+                bottom: 0;
+                margin-left: 0;
+                height: 100%;
+            }
+            
+            .chat-panel.collapsed {
+                width: 55px;
+            }
         }
         
         .timer-container {
             text-align: center;
-            margin-bottom: 10px;
+            margin: 0 0 10px 0;
             padding: 25px 0;
             border-bottom: 1px solid #eee;
             background-color: #fff;
@@ -330,8 +704,75 @@
         }
         
         .users-container {
-            flex: 1;
+            height: auto;
+            max-height: 50px;
+            transition: max-height 0.3s ease;
+            margin-top: 10px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        
+        .users-container.expanded {
+            max-height: 500px;
+            overflow: visible;
+        }
+        
+        .users-header {
+            padding: 10px 15px;
+            background-color: #f9f9f9;
+            border-radius: 10px 10px 0 0;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s ease;
+        }
+        
+        .users-header:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .users-header h4 {
+            margin: 0;
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .users-header .toggle-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        .users-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .users-container.expanded .users-content {
+            max-height: 500px;
             overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .users-container.expanded .toggle-icon {
+            transform: rotate(180deg);
+        }
+        
+        .dark-theme .users-header {
+            background-color: #333;
+            border-bottom-color: #444;
+        }
+        
+        .dark-theme .users-header:hover {
+            background-color: #3a3a3a;
+        }
+        
+        .dark-theme .users-header h4 {
+            color: #eee;
         }
         
         /* Kullanıcı listesini grid yapısına çevir */
@@ -341,27 +782,6 @@
             grid-template-columns: repeat(2, 1fr);
             gap: 10px;
             border-radius: 10px;
-        }
-        
-        /* Mobil görünüm için düzenleme */
-        @media (max-width: 768px) {
-            #usersList {
-                grid-template-columns: 1fr;
-            }
-            
-            .left-panel {
-                width: 100%;
-                border-right: none;
-            }
-            
-            .room-content {
-                flex-direction: column;
-                height: auto;
-            }
-            
-            .chat-panel {
-                height: 300px;
-            }
         }
         
         .user-item {
@@ -413,57 +833,68 @@
             margin: 0;
         }
         
-        /* Sağ panel (sohbet) */
-        .chat-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: #f9f9f9;
-        }
-        
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-            margin-top: 15px;
-            max-height: 54vh;
-            background-color: #fff;
-            border-radius: 10px 10px 0 0;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        }
-        
         .message {
-            margin-bottom: 15px;
-            max-width: 80%;
+            margin-bottom: 8px;
+            max-width: 100%;
+            animation: fadeIn 0.2s ease-in-out;
+            padding: 2px 5px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .message:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .dark-theme .message:hover {
+            background-color: rgba(255, 255, 255, 0.05);
         }
         
         .message-sender {
-            font-weight: 600;
-            margin-bottom: 3px;
-            font-size: 0.9rem;
+            font-weight: 700;
+            margin-right: 5px;
+            display: inline;
+            font-size: 0.95rem;
         }
         
         .message-content {
-            padding: 10px;
-            border-radius: 10px;
-            background-color: #e9ecef;
-            display: inline-block;
-        }
-        
-        .message.own-message {
-            margin-left: auto;
-            text-align: right;
-        }
-        
-        .message.own-message .message-content {
-            background-color: rgb(75, 33, 56);
-            color: white;
+            display: inline;
+            background: none;
+            padding: 0;
+            border-radius: 0;
+            font-size: 0.95rem;
+            word-wrap: break-word;
+            color: #333;
         }
         
         .message-time {
             font-size: 0.7rem;
             color: #6c757d;
-            margin-top: 3px;
+            margin-left: 5px;
+            display: inline;
+        }
+        
+        /* Kullanıcı renkli isimler için */
+        .user-color-1 { color: #FF4500; }
+        .user-color-2 { color: #0E9DD9; }
+        .user-color-3 { color: #8205B4; }
+        .user-color-4 { color: #1E9974; }
+        .user-color-5 { color: #FC6A03; }
+        .user-color-6 { color: #AF2A56; }
+        .user-color-7 { color: #25B127; }
+        .user-color-8 { color: #6441A5; }
+        
+        .message.own-message .message-sender {
+            color: rgb(75, 33, 56);
+        }
+        
+        .message.own-message .message-content {
+            color: inherit;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .chat-input-container {
@@ -471,7 +902,7 @@
             display: flex;
             align-items: center;
             background-color: #fff;
-            border-radius:0 0 10px 10px ;
+            border-radius: 0 0 10px 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
         
@@ -481,11 +912,12 @@
             border: 1px solid #ced4da;
             border-radius: 20px;
             margin-right: 10px;
+            font-family: 'Poppins', sans-serif;
         }
         
         .chat-send-btn {
-            width: 40px;
-            height: 40px;
+            min-width: 40px;
+            min-height: 40px;
             border-radius: 50%;
             background-color: rgb(75, 33, 56);
             color: white;
@@ -494,6 +926,7 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            transition: all 0.2s;
         }
         
         .chat-send-btn:hover {
@@ -588,28 +1021,26 @@
         .dark-theme .work-together-container,
         .dark-theme .create-room-container,
         .dark-theme .room-item {
-            background-color: #2a2a2a;
+            background-color: #0a0a0a;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         }
         
-        .dark-theme .room-header,
-        .dark-theme .chat-input-container {
-            background-color: #333;
-            border-color: #444;
+        .dark-theme .room-header, .dark-theme .timer-header-buttons,
+        .dark-theme .chat-input-container, .dark-theme .room-header-top{
+            background-color: #0a0a0a;
         }
+        
         
         .dark-theme .room-header h3 {
             color: #eee;
         }
         
         .dark-theme .left-panel {
-            border-color: #444;
-            background-color: #2a2a2a;
+            background-color: #0a0a0a;
         }
         
         .dark-theme .timer-container {
-            background-color: #333;
-            border-color: #444;
+            background-color: #0a0a0a;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         }
         
@@ -651,7 +1082,7 @@
         }
         
         .dark-theme .chat-panel {
-            background-color: #333;
+            background-color: #0a0a0a;
         }
         
         .dark-theme .message-content {
@@ -713,35 +1144,6 @@
         }
 
         /* Tam ekran modu için CSS */
-        .timer-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .timer-header h4 {
-            margin: 0;
-        }
-
-        .fullscreen-btn {
-            background: transparent;
-            border: none;
-            color: inherit;
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 0px 15px;
-            border-radius: 4px;
-            transition: all 0.2s;
-        }
-
-        .fullscreen-btn:hover {
-            background-color: rgba(0, 0, 0, 0.1);
-        }
-
-        .dark-theme .fullscreen-btn:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
         .timer-fullscreen {
             position: fixed;
             top: 0;
@@ -749,7 +1151,7 @@
             width: 100%;
             height: 100%;
             z-index: 9999;
-            background-color: rgba(255, 255, 255, 0.95);
+            background-color: rgb(255, 255, 255);
             display: flex;
             flex-direction: row;
             padding: 20px;
@@ -757,16 +1159,31 @@
         }
 
         .dark-theme .timer-fullscreen {
-            background-color: rgba(10, 10, 10, 0.95);
+            background-color: rgb(10, 10, 10);
+        }
+        
+        .fullscreen-chat {
+            width: 30%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background-color: rgb(255, 255, 255);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .dark-theme .fullscreen-chat {
+            background-color: rgb(20, 20, 20);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .timer-fullscreen-content {
             display: flex;
             flex-direction: column;
-            width: calc(100% - 400px);
+            width: 70%;
             height: 100%;
             padding-right: 20px;
-            overflow-y: auto;
+            justify-content: space-between; /* Zamanlayıcı üstte, başlık altta */
         }
 
         .timer-fullscreen-top {
@@ -774,14 +1191,12 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 100%;
-            margin-bottom: 30px;
             padding: 20px 0;
         }
 
         .timer-fullscreen .timer-display {
-            font-size: 8rem;
-            margin: 20px 0;
+            font-size: 6rem;
+            margin: 40px 0;
             text-align: center;
             color: rgb(75, 33, 56);
             text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -799,80 +1214,33 @@
             margin-bottom: 10px;
         }
 
-        .timer-fullscreen-participants {
-            flex: 1;
-            overflow-y: auto;
-            background-color: rgba(255, 255, 255, 0.5);
+        .fullscreen-room-header {
+            margin-top: auto;
+            background-color: #fff;
             border-radius: 10px;
-            padding: 15px;
-        }
-
-        .dark-theme .timer-fullscreen-participants {
-            background-color: rgba(50, 50, 50, 0.5);
-        }
-
-        #fullscreenUsersList {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-        }
-
-        @media (max-width: 1200px) {
-            #fullscreenUsersList {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        
-        .fullscreen-exit {
-            position: absolute;
-            top: 20px;
-            right: 440px;
-            z-index: 10000;
-            background-color: rgba(0, 0, 0, 0.1);
-            color: #333;
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: all 0.3s;
-        }
-        
-        .fullscreen-exit:hover {
-            background-color: rgba(0, 0, 0, 0.2);
-        }
-        
-        .dark-theme .fullscreen-exit {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: #eee;
-        }
-        
-        .dark-theme .fullscreen-exit:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-        
-        .fullscreen-chat {
-            width: 400px;
-            height: 100%;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            margin-bottom: 10px;
+            max-height: 40%;
             display: flex;
             flex-direction: column;
-            position: absolute;
-            right: 0;
-            top: 0;
-            background-color: rgba(255, 255, 255, 0.8);
-            border-left: 1px solid rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            box-sizing: border-box;
-            overflow-y: auto;
         }
 
-        .dark-theme .fullscreen-chat {
-            background-color: rgba(20, 20, 20, 0.8);
-            border-left: 1px solid rgba(255, 255, 255, 0.1);
+        .dark-theme .fullscreen-room-header {
+            background-color: #333;
+        }
+
+        .fullscreen-room-header .users-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .fullscreen-room-header.expanded .users-content {
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            border-top: 1px solid #eee;
         }
 
         .fullscreen-chat-messages {
@@ -881,7 +1249,9 @@
             margin-bottom: 15px;
             padding: 10px;
             border-radius: 8px;
-            max-height: calc(100% - 120px);
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.5;
+            scroll-behavior: smooth;
         }
 
         .dark-theme .fullscreen-chat-messages {
@@ -900,6 +1270,7 @@
             padding: 10px 15px;
             border: 1px solid #ced4da;
             border-radius: 20px;
+            font-family: 'Poppins', sans-serif;
         }
 
         .dark-theme .fullscreen-chat-input input {
@@ -907,31 +1278,11 @@
             border-color: #555;
             color: #eee;
         }
-
-        .timer-fullscreen-center {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        .timer-fullscreen .timer-header {
-            width: 100%;
-            max-width: 600px;
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
         
         .fullscreen-exit {
             position: absolute;
-            top: 20px;
-            right: 440px;
+            top: 15px;
+            right: 15px;
             z-index: 10000;
             background-color: rgba(0, 0, 0, 0.1);
             color: #333;
@@ -960,7 +1311,40 @@
             background-color: rgba(255, 255, 255, 0.2);
         }
         
-        /* Bildirim stilleri güncellendi */
+        /* Mobil görünüm için tam ekran düzeni */
+        @media (max-width: 768px) {
+            .timer-fullscreen {
+                flex-direction: column;
+            }
+            
+            .timer-fullscreen-content {
+                width: 100%;
+                height: 60%;
+                padding-right: 0;
+            }
+            
+            .fullscreen-room-header {
+                display: none; /* Mobilde başlık gizlenecek */
+            }
+            
+            .fullscreen-chat {
+                width: 100%;
+                height: 40%;
+                border-left: none;
+                border-top: 1px solid rgba(0, 0, 0, 0.1);
+            }
+            
+            .dark-theme .fullscreen-chat {
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            
+            .timer-fullscreen .timer-display {
+                font-size: 5rem;
+                margin: 20px 0;
+            }
+        }
+        
+        /* Bildirim stilleri */
         .notification-container {
             position: fixed !important;
             top: 20px !important;
@@ -1000,61 +1384,573 @@
             100% { opacity: 0; transform: translateY(-20px); }
         }
 
-        /* Responsive fullscreen layout */
-        @media (max-width: 1000px) {
-            .timer-fullscreen {
+        /* Oda başlığı ve katılımcılar listesi için stiller */
+        .room-header {
+            display: flex;
                 flex-direction: column;
+            padding: 0;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 15px;
                 overflow: hidden;
-            }
-            
-            .timer-fullscreen-content {
-                width: 100%;
-                padding-right: 0;
-                height: 65%;
+            transition: all 0.3s ease;
+        }
+        
+        .room-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            background-color: #fff;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .room-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #333;
+        }
+        
+        .room-header-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-left: auto; /* Butonları sağa hizalar */
+            padding: 0px 10px !important;
+        }
+        
+        .users-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .room-header.expanded .users-content {
+            max-height: 300px;
                 overflow-y: auto;
+            padding: 10px;
+            border-top: 1px solid #eee;
+        }
+        
+        /* Sağa doğru dönen ok ikonunu ekleyelim */
+        .room-header-top::after {
+            content: "\f078"; /* Aşağı ok */
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            font-size: 0.8rem;
+            margin-left: 10px;
+            color: #777;
+            transition: transform 0.3s ease;
+        }
+        
+        .room-header.expanded .room-header-top::after {
+            transform: rotate(180deg);
+        }
+
+        /* Mobil görünüm için ek düzenlemeler */
+        @media (max-width: 768px) {
+            .room-header {
+                margin-bottom: 15px;
             }
             
-            .fullscreen-chat {
-                width: 100%;
-                height: 35%;
-                position: relative;
-                right: 0;
-                top: 0;
-                border-left: none;
-                border-top: 1px solid rgba(0, 0, 0, 0.1);
+            .room-header.expanded {
+                margin-bottom: 15px;
+            }
+            
+            .room-header .users-content {
+                max-height: 0;
+            }
+            
+            .room-header.expanded .users-content {
+                max-height: 200px;
+            }
+        }
+        
+        /* Timer başlık ve buton stilleri */
+        .timer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.5rem;
+            padding: 0px 15px 0 15px;
+            margin: 0;
+        }
+
+        .timer-header h2 {
+            margin: 0;
+        }
+
+        .timer-header-buttons {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background-color: #fff;
+            padding: 5px 5px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .fullscreen-btn, .settings-btn {
+            background: transparent;
+            border: none;
+            color: inherit;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0px 10px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .fullscreen-btn:hover, .settings-btn:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .dark-theme .fullscreen-btn:hover, .dark-theme .settings-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Ayarlar popup menüsü */
+        .settings-popup {
+            position: absolute;
+            top: 40px;
+            right: 10px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+            padding: 15px;
+            z-index: 1000;
+            width: 250px;
+            display: none;
+        }
+        
+        .settings-popup.show {
+            display: block;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+        
+        .dark-theme .settings-popup {
+            background-color: #333;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            color: #eee;
+        }
+        
+        .settings-popup h4 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 16px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .dark-theme .settings-popup h4 {
+            border-bottom-color: #555;
+        }
+        
+        .settings-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .settings-option:last-child {
+            margin-bottom: 0;
+        }
+        
+        .settings-option label {
+            flex: 1;
+            font-size: 14px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Karanlık tema uyumluluğu - Mesaj stilleri */
+        .dark-theme .message-content {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .dark-theme .chat-messages {
+            background-color: #0a0a0a;
+        }
+        
+        .dark-theme .message:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .dark-theme .message-time {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Sohbet içerik stilleri */
+        .chat-messages {
+            flex: 1;
                 overflow-y: auto;
-            }
-            
-            .fullscreen-exit {
-                right: 20px;
-            }
-            
-            .timer-fullscreen-top {
-                min-height: 400px;
+            padding: 15px;
+            margin-top: 0;
+            min-height: 200px;
+            max-height: 50vh;
+            background-color: #fff;
+            border-radius: 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+            transition: all 0.3s ease;
+        }
+        
+        .chat-input-container {
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            background-color: #fff;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 20px;
+            margin-right: 10px;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .chat-send-btn {
+            min-width: 40px;
+            min-height: 40px;
+            border-radius: 50%;
+            background-color: rgb(75, 33, 56);
+            color: white;
+            border: none;
                 display: flex;
-                flex-direction: column;
                 align-items: center;
                 justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .chat-send-btn:hover {
+            background-color: rgba(75, 33, 56, 0.8);
+        }
+        
+        /* Mobil responsive ayarlar */
+        @media (max-width: 768px) {
+            #usersList {
+                grid-template-columns: 1fr;
             }
             
-            .timer-fullscreen-participants {
-                display: none;
+            .timer-container {
+                margin-bottom: 15px;
+                padding: 15px 0;
             }
-
-            .fullscreen-chat-messages {
-                max-height: 150px;
+            
+            .room-header {
+                padding: 12px;
+                margin-bottom: 15px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+                border-radius: 10px;
             }
-
-            .timer-fullscreen .timer-display {
-                font-size: 6rem;
+            
+            .timer-display {
+                margin-bottom: 30px;
+            }
+            
+            .chat-messages {
+                max-height: 350px;
+                min-height: 300px;
+            }
+            
+            .users-container {
+                max-height: 50px;
+                margin-bottom: 15px;
+            }
+            
+            .users-container.expanded {
+                max-height: 300px;
             }
         }
 
-        @media (max-width: 1000px) {
-            .dark-theme .fullscreen-chat {
-                border-left: none;
-                border-top: 1px solid rgba(255, 255, 255, 0.1);
-            }
+        /* Tam ekran chat için collapsed stil */
+        .fullscreen-chat.collapsed {
+            min-width: 0 !important;
+            width: 0 !important;
+            max-width: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            overflow: hidden !important;
+            flex: 0 !important;
+            display: none !important;
+        }
+        
+        .fullscreen-chat.collapsed .chat-header {
+            display: none !important;
+        }
+        
+        .fullscreen-chat.collapsed .fullscreen-chat-messages,
+        .fullscreen-chat.collapsed .fullscreen-chat-input {
+            opacity: 0;
+            transform: translateX(100%);
+            height: 0;
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .fullscreen-chat-messages, .fullscreen-chat-input {
+            transition: opacity 0.2s ease, transform 0.3s ease;
+        }
+
+        /* Chat header'ın timer içine taşınması için stiller */
+        .chat-header-movable {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            z-index: 1001;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgb(255, 255, 255);
+            color: rgb(75, 33, 56);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .chat-header-movable:hover {
+            transform: scale(1.1);
+            background-color: rgb(245, 245, 245);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .dark-theme .chat-header-movable {
+            background-color: #0a0a0a;
+            color: rgb(240, 240, 240);
+            border: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+        .dark-theme .chat-header-movable i{
+            color: #eee;
+        }
+        
+        .dark-theme .chat-header-movable:hover {
+            background-color: rgb(60, 60, 60);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+        }
+
+        .chat-header-movable i {
+            margin-right: 0;
+        
+        }
+
+        .timer-container {
+            position: relative;
+        }
+
+        /* Tam ekran mod için chat header butonu */
+        .fullscreen-chat-btn {
+            position: absolute;
+            right: 70px !important; /* Çıkış butonuna çakışmaması için sağdan daha uzak */
+            top: 15px;
+            z-index: 1001;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            background-color: rgb(255, 255, 255);
+            color: rgb(75, 33, 56);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+            border: 1px solid rgba(75, 33, 56, 0.3);
+        }
+        
+        .fullscreen-chat-btn:hover {
+            transform: scale(1.1);
+            background-color: rgb(245, 245, 245);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .dark-theme .fullscreen-chat-btn {
+            background-color: rgb(50, 50, 50);
+            color: rgb(240, 240, 240);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+        }
+        
+        .dark-theme .fullscreen-chat-btn:hover {
+            background-color: rgb(60, 60, 60);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Chat panel daraltıldığında sağ taraftaki panel ve header tamamen gizlensin */
+        .chat-panel.collapsed .chat-header {
+            display: none;
+        }
+        
+        /* Sağdaki chat panel tamamen gizlenmiş durumda */
+        .chat-panel.collapsed {
+            min-width: auto;
+            width: 0;
+            padding: 0;
+            margin: 0;
+            border: none;
+            overflow: hidden;
+        }
+        .page-title{
+            margin-bottom: 0px !important;
+            margin-top: 10px !important;
+        }
+        
+        /* Çalışma odası içeriği - sadece odaya katıldıktan sonrası için */
+        #workTogetherContainer {
+            margin-top: 0 !important;
+        }
+
+        /* Chat buton rozet (badge) stilleri */
+        .chat-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: #ff3b30;
+            color: white;
+            border-radius: 50%;
+            min-width: 18px;
+            height: 18px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            padding: 0 4px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        
+        /* Chat header içindeki badge stil düzenlemesi */
+        .chat-header .chat-badge {
+            position: relative;
+            top: auto;
+            right: auto;
+            margin-left: 10px;
+            transform: scale(1);
+        }
+
+        /* Form stillerini düzenle */
+        .timer-settings-row {
+            display: flex;
+            gap: 15px;
+            margin-top: 8px;
+        }
+        
+        .timer-setting-item {
+            flex: 1;
+        }
+        
+        .timer-setting-item label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #444;
+        }
+        
+        .dark-theme .timer-setting-item label {
+            color: #bbb;
+        }
+
+        /* Timer renk düzeltmesi */
+        .dark-theme .timer-display {
+            color: rgb(75, 33, 56) !important;
+        }
+        
+        .dark-theme .timer-fullscreen .timer-display {
+            color: rgb(75, 33, 56) !important;
+        }
+        
+        /* Geliştirilmiş Popup Ek Stilleri */
+        .create-room-popup {
+            -webkit-backdrop-filter: blur(3px);
+            -moz-backdrop-filter: blur(3px);
+            backdrop-filter: blur(3px);
+        }
+        
+        .timer-settings {
+            background-color: #f5f5f5;
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 4px solid rgb(75, 33, 56);
+            transition: all 0.2s ease;
+        }
+        
+        /* Form-check elementi için stil */
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        
+        .form-check-input {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+        }
+        
+        .form-check-label {
+            font-size: 14px;
+            line-height: 1.2;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .create-room-form textarea {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+            background-color: #fafafa;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .create-room-form textarea:focus {
+            border-color: rgb(75, 33, 56);
+            box-shadow: 0 0 0 3px rgba(75, 33, 56, 0.1);
+            outline: none;
+            background-color: white;
+        }
+
+        .dark-theme .create-room-form textarea {
+            background-color: #333;
+            border-color: #444;
+            color: #eee;
+        }
+
+        .dark-theme .create-room-form textarea:focus {
+            background-color: #3a3a3a;
+            border-color: rgb(120, 40, 70);
         }
     </style>
     
@@ -1072,6 +1968,7 @@
     <script src="js/app.js"></script>
     <script src="js/user-token-display.js"></script>
     <script src="js/work-together.js"></script>
+    <script src="js/participants-button.js"></script>
 
 </head>
 <body class="light-theme">
@@ -1155,119 +2052,153 @@
                 </header>
 
                 <!-- Sayfa İçeriği -->
-                <div class="page-content">
-                    <h1 class="page-title">Birlikte Çalışma</h1>
-                    
-                    <!-- Üstte Oda Oluştur Butonu -->
-                    <div class="create-room-button-container" id="createRoomButtonContainer">
-                        <button id="showCreateRoomBtn" class="btn-primary create-room-top-btn">
-                            <i class="fas fa-plus-circle"></i> Oda Oluştur
-                        </button>
-                    </div>
-                    
-                    <!-- Popup Oda Oluşturma Formu (başlangıçta gizli) -->
-                    <div id="createRoomPopup" class="create-room-popup">
-                        <div class="create-room-popup-content">
-                            <div class="popup-header">
-                                <h2>Yeni Çalışma Odası Oluştur</h2>
-                                <button id="closePopupBtn" class="close-popup-btn">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                            <form id="createRoomFormPopup" class="room-form">
-                                <div class="form-group">
-                                    <label for="roomNamePopup">Oda Adı</label>
-                                    <input type="text" id="roomNamePopup" class="form-control" placeholder="Oda adını girin" required>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="roomModePopup">Çalışma Modu</label>
-                                    <select id="roomModePopup" class="form-control" required>
-                                        <option value="pomodoro">Pomodoro (25dk çalışma + 5dk mola)</option>
-                                        <option value="free">Serbest Çalışma</option>
-                                        <option value="exam">Deneme Sınavı Modu</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="form-group" id="examDurationContainerPopup" style="display:none;">
-                                    <label for="examDurationPopup">Sınav Süresi (dakika)</label>
-                                    <input type="number" id="examDurationPopup" class="form-control" value="135" min="30" max="180">
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="roomVisibilityPopup">Oda Görünürlüğü</label>
-                                    <select id="roomVisibilityPopup" class="form-control" required>
-                                        <option value="public">Herkese Açık</option>
-                                        <option value="private">Sadece Davet İle</option>
-                                    </select>
-                                </div>
-                                
-                                <button type="submit" class="create-room-btn">Oda Oluştur</button>
-                            </form>
-                        </div>
+                <div class="page-content" style="padding-top: 0;">
+                    <div style="display: flex; align-items: center; margin-top: 5px; margin-bottom: 5px;">
+                        <h1 class="page-title" style="margin: 0;">Birlikte Çalışma</h1>
                     </div>
                     
                     <!-- Birlikte Çalışma İçeriği -->
                     <!-- İki sütunlu düzen için layout -->
-                    <div class="work-together-layout">
-                        <!-- Oda Oluşturma Formu -->
-                        <div class="create-room-container" id="createRoomContainer">
-                            <h2 class="section-title">Yeni Çalışma Odası Oluştur</h2>
-                            <form id="createRoomForm" class="room-form">
-                                <div class="form-group">
-                                    <label for="roomName">Oda Adı</label>
-                                    <input type="text" id="roomName" class="form-control" placeholder="Oda adını girin" required>
+                    <div class="work-together-layout" style="margin-top: 5px; margin-bottom: 5px; gap: 10px;">
+                        <!-- Oda Oluşturma Formu (Popup olarak kullanılacak) -->
+                        <div class="create-room-popup" id="createRoomContainer">
+                            <div class="create-room-popup-content">
+                                <div class="create-room-popup-header">
+                                    <h3>Yeni Çalışma Odası Oluştur</h3>
+                                    <button class="popup-close-button" id="closeCreateRoomPopup"><i class="fas fa-times"></i></button>
                                 </div>
-                                
-                                <div class="form-group">
-                                    <label for="roomMode">Çalışma Modu</label>
-                                    <select id="roomMode" class="form-control" required>
-                                        <option value="pomodoro">Pomodoro (25dk çalışma + 5dk mola)</option>
-                                        <option value="free">Serbest Çalışma</option>
-                                        <option value="exam">Deneme Sınavı Modu</option>
-                                    </select>
+                                <div class="create-room-popup-body">
+                                    <form id="createRoomForm" class="create-room-form">
+                                        <div class="form-group">
+                                            <label for="roomName">Oda Adı</label>
+                                            <input type="text" id="roomName" placeholder="Oda adını girin" required>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="roomMode">Çalışma Modu</label>
+                                            <select id="roomMode" required>
+                                                <option value="pomodoro">Pomodoro (Çalışma + Mola)</option>
+                                                <option value="free">Serbest Çalışma</option>
+                                                <option value="exam">Deneme Sınavı Modu</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <!-- Pomodoro seçenekleri -->
+                                        <div class="form-group timer-settings" id="pomodoroSettingsContainer" style="display:none;">
+                                            <label>Pomodoro Ayarları</label>
+                                            <div class="timer-settings-row">
+                                                <div class="timer-setting-item">
+                                                    <label for="pomodoroWorkTime">Çalışma Süresi (dk)</label>
+                                                    <input type="number" id="pomodoroWorkTime" value="25" min="1" max="60">
+                                                </div>
+                                                <div class="timer-setting-item">
+                                                    <label for="pomodoroBreakTime">Mola Süresi (dk)</label>
+                                                    <input type="number" id="pomodoroBreakTime" value="5" min="1" max="30">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Deneme Sınavı seçenekleri -->
+                                        <div class="form-group timer-settings" id="examDurationContainer" style="display:none;">
+                                            <label for="examDuration">Sınav Süresi</label>
+                                            <div class="timer-settings-row">
+                                                <div class="timer-setting-item">
+                                                    <label for="examHours">Saat</label>
+                                                    <input type="number" id="examHours" value="2" min="0" max="4">
+                                                </div>
+                                                <div class="timer-setting-item">
+                                                    <label for="examMinutes">Dakika</label>
+                                                    <input type="number" id="examMinutes" value="15" min="0" max="59">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="roomVisibility">Oda Görünürlüğü</label>
+                                            <select id="roomVisibility" required>
+                                                <option value="public">Herkese Açık</option>
+                                                <option value="private">Sadece Davet İle</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="roomDescription">Oda Açıklaması:</label>
+                                            <textarea id="roomDescription" rows="2" class="text-area" placeholder="Oda açıklaması (isteğe bağlı)"></textarea>
+                                        </div>
+                                        
+                                        
+                                        <button type="submit">Oda Oluştur</button>
+                                    </form>
                                 </div>
-                                
-                                <div class="form-group" id="examDurationContainer" style="display:none;">
-                                    <label for="examDuration">Sınav Süresi (dakika)</label>
-                                    <input type="number" id="examDuration" class="form-control" value="135" min="30" max="180">
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="roomVisibility">Oda Görünürlüğü</label>
-                                    <select id="roomVisibility" class="form-control" required>
-                                        <option value="public">Herkese Açık</option>
-                                        <option value="private">Sadece Davet İle</option>
-                                    </select>
-                                </div>
-                                
-                                <button type="submit" class="create-room-btn">Oda Oluştur</button>
-                            </form>
+                            </div>
                         </div>
                         
                         <!-- Aktif Odalar Listesi -->
                         <div class="room-list-container" id="roomListContainer">
                             <h2 class="section-title">Aktif Çalışma Odaları</h2>
+                            
                             <div id="activeRooms" class="active-rooms">
                                 <div class="loading-rooms">
                                     <i class="fas fa-spinner fa-spin"></i> Odalar yükleniyor...
                                 </div>
                                 <!-- Odalar dinamik olarak buraya eklenecek -->
                             </div>
+                            
+                            <!-- Oda oluşturma kartını active-rooms içine taşıyalım -->
+                            <div class="active-rooms" style="margin-top: 15px;">
+                                <div class="room-card">
+                                    <div class="room-info">
+                                        <h3 class="room-name">Yeni Oda</h3>
+                                        <p class="room-creator">
+                                            <i class="fas fa-plus-circle"></i> Özel Oda
+                                        </p>
+                                        <p class="room-details">
+                                            <span class="mode">Kendi Çalışma Modunuzu Seçin</span>
+                                            <span class="participant-count">
+                                                <i class="fas fa-users"></i> 0/10
+                                            </span>
+                                        </p>
+                                    </div>
+                                    <div class="room-actions">
+                                        <button id="showCreateRoomBtn" class="join-room-btn">Oluştur</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
                     <!-- Çalışma Odası (Başlangıçta Gizli) -->
-                    <div class="work-together-container" id="workTogetherContainer" style="display:none;">
+                    <div class="work-together-container" id="workTogetherContainer" style="display:none; margin-top: 0; padding-top: 0;">
                         
-                        <div class="room-content">
+                        <div class="room-content" style="margin-top: 0; padding-top: 0;">
                             <!-- Sol Panel (Timer ve Kullanıcılar) -->
-                            <div class="left-panel">
-                                <div class="timer-container">
+                            <div class="left-panel" id="leftPanel">
+                                <div class="timer-container" id="timerContainer">
                                     <div class="timer-header">
+                                        <div class="timer-header-buttons">
+                                            <button id="settingsTimerBtn" class="settings-btn">
+                                                <i class="fas fa-cog"></i>
+                                            </button>
                                         <button id="fullscreenTimerBtn" class="fullscreen-btn">
                                             <i class="fas fa-expand"></i>
                                         </button>
+                                        </div>
+                                        <div class="settings-popup" id="timerSettingsPopup">
+                                            <h4>Zamanlayıcı Ayarları</h4>
+                                            <div class="settings-option">
+                                                <label for="keepScreenOn">Ekranı Açık Tut</label>
+                                                <input type="checkbox" id="keepScreenOn" checked>
+                                            </div>
+                                            <!-- Sonraki güncelleme için boş ayar alanları -->
+                                            <div class="settings-option">
+                                                <label for="timerSound">Bildirim Sesi</label>
+                                                <input type="checkbox" id="timerSound" checked>
+                                            </div>
+                                            <div class="settings-option">
+                                                <label for="autoStartNext">Otomatik Başlat</label>
+                                                <input type="checkbox" id="autoStartNext">
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="timer-display" id="timerDisplay">25:00</div>
                                     <div class="timer-controls">
@@ -1275,25 +2206,32 @@
                                         <button id="resetTimerBtn"><i class="fas fa-redo"></i> Sıfırla</button>
                                     </div>
                                 </div>
-                                <div class="room-header">
+                                <div class="room-header" id="roomHeader">
+                                    <div class="room-header-top">
                                     <h3 id="roomTitle">Oda Adı</h3>
                                     <div class="room-header-buttons">
                                         <button class="leave-room-btn" id="leaveRoomBtn">
-                                            <i class="fas fa-sign-out-alt"></i> Ayrıl
+                                                <i class="fas fa-sign-out-alt"></i>
+                                            </button>
+                                            <button class="participants-btn" id="showParticipantsBtn">
+                                                <i class="fas fa-users"></i> <span id="headerUserCount">0</span>
                                         </button>
                                     </div>
                                 </div>
-                                
-                                <div class="users-container">
-                                    <h4>Katılımcılar (<span id="userCount">0</span>)</h4>
+                                    <div class="users-content" id="usersContent">
                                     <div id="usersList">
                                         <!-- Kullanıcılar dinamik olarak buraya eklenecek -->
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             
                             <!-- Sağ Panel (Sohbet) -->
                             <div class="chat-panel">
+                                <div class="chat-header">
+                                    <i class="fas fa-comments"></i> <span>Sohbet Mesajları</span>
+                                    <span class="chat-badge" id="headerChatBadge">0</span>
+                                </div>
                                 <div class="chat-messages" id="chatMessages">
                                     <!-- Mesajlar dinamik olarak buraya eklenecek -->
                                 </div>
@@ -1313,101 +2251,148 @@
     </div>
 
     <script>
+        // Global değişkenler - dış kapsamda
+        window.isFullscreen = false;
+        window.fullscreenContainer = null;
+        window.fullscreenChatMessages = null;
+        window.fullscreenChatInput = null;
+        window.fullscreenChatSendBtn = null;
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Sınav modu seçildiğinde süre ayarını göster
             const roomModeSelect = document.getElementById('roomMode');
             const examDurationContainer = document.getElementById('examDurationContainer');
+            const pomodoroSettingsContainer = document.getElementById('pomodoroSettingsContainer');
+            
+            // Başlangıçta seçili olan modun ayarlarını göster
+            if (roomModeSelect.value === 'pomodoro') {
+                pomodoroSettingsContainer.style.display = 'block';
+            } else if (roomModeSelect.value === 'exam') {
+                examDurationContainer.style.display = 'block';
+            }
             
             roomModeSelect.addEventListener('change', function() {
-                if (this.value === 'exam') {
+                // Tüm ayar konteynerlerini gizle
+                document.querySelectorAll('.timer-settings').forEach(container => {
+                    container.style.display = 'none';
+                });
+                
+                // Seçilen moda göre ilgili ayarları göster
+                if (this.value === 'pomodoro') {
+                    pomodoroSettingsContainer.style.display = 'block';
+                } else if (this.value === 'exam') {
                     examDurationContainer.style.display = 'block';
-                } else {
-                    examDurationContainer.style.display = 'none';
-                }
-            });
-
-            // Popup Oda Oluşturma
-            const showCreateRoomBtn = document.getElementById('showCreateRoomBtn');
-            const createRoomPopup = document.getElementById('createRoomPopup');
-            const closePopupBtn = document.getElementById('closePopupBtn');
-            const createRoomFormPopup = document.getElementById('createRoomFormPopup');
-            const roomModePopup = document.getElementById('roomModePopup');
-            const examDurationContainerPopup = document.getElementById('examDurationContainerPopup');
-            
-            // Popup'ı göster
-            showCreateRoomBtn.addEventListener('click', function() {
-                createRoomPopup.classList.add('active');
-                document.body.style.overflow = 'hidden'; // Arka planın scrollunu engelle
-            });
-            
-            // Popup'ı kapat
-            closePopupBtn.addEventListener('click', function() {
-                createRoomPopup.classList.remove('active');
-                document.body.style.overflow = 'auto'; // Scroll'u tekrar etkinleştir
-            });
-            
-            // Dışarı tıklanınca kapat
-            createRoomPopup.addEventListener('click', function(e) {
-                if (e.target === createRoomPopup) {
-                    createRoomPopup.classList.remove('active');
-                    document.body.style.overflow = 'auto';
                 }
             });
             
-            // Popup içinde çalışma modunu değiştirince süre ayarını göster/gizle
-            roomModePopup.addEventListener('change', function() {
-                if (this.value === 'exam') {
-                    examDurationContainerPopup.style.display = 'block';
-                } else {
-                    examDurationContainerPopup.style.display = 'none';
-                }
-            });
+            // Ekran kilidi (Wake Lock) değişkeni
+            let wakeLock = null;
+            let keepScreenOnEnabled = true; // Varsayılan olarak açık
             
-            // Popup form gönderildiğinde
-            createRoomFormPopup.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Form verilerini al
-                const roomName = document.getElementById('roomNamePopup').value;
-                const roomMode = roomModePopup.value;
-                const roomVisibility = document.getElementById('roomVisibilityPopup').value;
-                const examDuration = roomMode === 'exam' ? document.getElementById('examDurationPopup').value : null;
-                
-                // Ana formdaki alanlara değerleri aktar
-                document.getElementById('roomName').value = roomName;
-                document.getElementById('roomMode').value = roomMode;
-                document.getElementById('roomVisibility').value = roomVisibility;
-                
-                // Sınav modu seçiliyse, süre alanını ayarla
-                if (roomMode === 'exam') {
-                    document.getElementById('examDurationContainer').style.display = 'block';
-                    document.getElementById('examDuration').value = examDuration;
-                } else {
-                    document.getElementById('examDurationContainer').style.display = 'none';
-                }
+            // Ekran kilidini etkinleştiren fonksiyon
+            async function requestWakeLock() {
+                // Eğer kullanıcı ekranı açık tutma özelliğini kapatmışsa, işlemi durdur
+                if (!keepScreenOnEnabled) return;
                 
                 try {
-                    // createNewRoom fonksiyonunu doğrudan çağırıyoruz
-                    if (typeof createNewRoom === 'function') {
-                        console.log("createNewRoom fonksiyonu çağrılıyor...");
-                        createNewRoom();
+                    // Screen Wake Lock API destekleniyorsa
+                    if ('wakeLock' in navigator) {
+                        // Varolan kilidi temizle
+                        if (wakeLock) {
+                            await wakeLock.release();
+                            wakeLock = null;
+                        }
+                        
+                        // Yeni bir ekran kilidi iste
+                        wakeLock = await navigator.wakeLock.request('screen');
+                        
+                        // Kilit serbest bırakıldığında tekrar deneyeceğiz
+                        wakeLock.addEventListener('release', () => {
+                            console.log('Ekran kilidi serbest bırakıldı, tekrar isteniyor...');
+                            // Kısa bir gecikme ile tekrar kilitlemeyi dene
+                            setTimeout(() => {
+                                if (keepScreenOnEnabled) {
+                                    requestWakeLock();
+                                }
+                            }, 1000);
+                        });
+                        
+                        console.log('Ekran kilidi başarıyla etkinleştirildi');
                     } else {
-                        console.error("createNewRoom fonksiyonu bulunamadı!");
-                        alert("Oda oluşturma işlevi bulunamadı. Lütfen sayfa yenileyip tekrar deneyin.");
+                        console.warn('Bu tarayıcıda Screen Wake Lock API desteklenmiyor');
                     }
-                } catch (error) {
-                    console.error("Oda oluşturma hatası:", error);
-                    alert("Oda oluşturulurken bir hata oluştu: " + error.message);
+                } catch (err) {
+                    console.error(`Ekran kilidi isteği başarısız oldu: ${err.name}, ${err.message}`);
                 }
+            }
+            
+            // Ekran kilidini serbest bırakan fonksiyon
+            async function releaseWakeLock() {
+                if (wakeLock) {
+                    try {
+                        await wakeLock.release();
+                        wakeLock = null;
+                        console.log('Ekran kilidi manuel olarak serbest bırakıldı');
+                    } catch (err) {
+                        console.error(`Ekran kilidi serbest bırakılırken hata: ${err.name}, ${err.message}`);
+                    }
+                }
+            }
+            
+            // Ekranı açık tutma ayarının değişimini izle
+            const keepScreenOnCheckbox = document.getElementById('keepScreenOn');
+            if (keepScreenOnCheckbox) {
+                keepScreenOnCheckbox.addEventListener('change', function() {
+                    keepScreenOnEnabled = this.checked;
+                    
+                    if (keepScreenOnEnabled) {
+                        // Ayar açıksa ekran kilidini etkinleştir
+                        requestWakeLock();
+                        console.log('Ekranı açık tutma özelliği etkinleştirildi');
+                    } else {
+                        // Ayar kapalıysa ekran kilidini serbest bırak
+                        releaseWakeLock();
+                        console.log('Ekranı açık tutma özelliği devre dışı bırakıldı');
+                    }
+                    
+                    // Kullanıcı tercihi local storage'da sakla
+                    localStorage.setItem('keepScreenOn', keepScreenOnEnabled);
+                });
                 
-                // Popup'ı kapat
-                createRoomFormPopup.reset();
-                createRoomPopup.classList.remove('active');
-                document.body.style.overflow = 'auto';
+                // Kaydedilmiş tercihi kontrol et
+                const savedPreference = localStorage.getItem('keepScreenOn');
+                if (savedPreference !== null) {
+                    keepScreenOnEnabled = savedPreference === 'true';
+                    keepScreenOnCheckbox.checked = keepScreenOnEnabled;
+                }
+            }
+            
+            // Sayfa görünür olduğunda ekran kilidini tekrar etkinleştir
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible' && wakeLock === null && keepScreenOnEnabled) {
+                    requestWakeLock();
+                }
             });
-
+            
+            // Sayfa yüklendiğinde ekran kilidini etkinleştir (eğer açıksa)
+            if (keepScreenOnEnabled) {
+                requestWakeLock();
+            }
+            
+            // Katılımcılar başlığına tıklandığında kutunun açılıp kapanması
+            const usersContainer = document.getElementById('usersContainer');
+            const usersHeader = document.getElementById('usersHeader');
+            
+            if (usersHeader) {
+                usersHeader.addEventListener('click', function() {
+                    usersContainer.classList.toggle('expanded');
+                });
+            }
+            
             // Tam ekran modu için gerekli kodlar
             const fullscreenTimerBtn = document.getElementById('fullscreenTimerBtn');
+            const settingsTimerBtn = document.getElementById('settingsTimerBtn');
+            const timerSettingsPopup = document.getElementById('timerSettingsPopup');
             const timerDisplay = document.getElementById('timerDisplay');
             const startTimerBtn = document.getElementById('startTimerBtn');
             const resetTimerBtn = document.getElementById('resetTimerBtn');
@@ -1415,17 +2400,30 @@
             const chatInput = document.getElementById('chatInput');
             const chatSendBtn = document.getElementById('chatSendBtn');
             
-            let isFullscreen = false;
-            let fullscreenContainer = null;
-            let fullscreenChatMessages = null;
-            let fullscreenChatInput = null;
-            let fullscreenChatSendBtn = null;
+            // Ayarlar butonu tıklama olayı
+            settingsTimerBtn.addEventListener('click', function(e) {
+                e.stopPropagation(); // Tıklamanın diğer elementlere geçmesini engelle
+                timerSettingsPopup.classList.toggle('show');
+            });
+            
+            // Popup dışına tıklandığında kapanması
+            document.addEventListener('click', function(e) {
+                if (!settingsTimerBtn.contains(e.target) && !timerSettingsPopup.contains(e.target)) {
+                    timerSettingsPopup.classList.remove('show');
+                }
+            });
+            
+            // isFullscreen global tanımlandı, burada tekrar tanımlamıyoruz
             
             // Tam ekran modunu açıp kapatan fonksiyon
             fullscreenTimerBtn.addEventListener('click', function() {
-                if (!isFullscreen) {
+                if (!window.isFullscreen) {
                     // Tam ekran modunu aç
                     openFullscreenMode();
+                    // Tam ekrana geçerken ekran kilidini yenile
+                    if (keepScreenOnEnabled) {
+                        requestWakeLock();
+                    }
                 } else {
                     // Tam ekran modundan çık
                     closeFullscreenMode();
@@ -1434,145 +2432,157 @@
             
             // Tam ekran modunu açan fonksiyon
             function openFullscreenMode() {
-                isFullscreen = true;
+                if (window.isFullscreen) return;
                 
-                // Tam ekran container oluştur
-                fullscreenContainer = document.createElement('div');
-                fullscreenContainer.className = 'timer-fullscreen';
+                // Tam ekran konteynerini oluştur
+                window.fullscreenContainer = document.createElement('div');
+                window.fullscreenContainer.className = 'timer-fullscreen';
+                document.body.appendChild(window.fullscreenContainer);
                 
-                // Çıkış butonu oluştur
+                // Sol kısım (Timer ve Oda Başlığı)
+                const timerContentContainer = document.createElement('div');
+                timerContentContainer.className = 'timer-fullscreen-content';
+                window.fullscreenContainer.appendChild(timerContentContainer);
+                
+                // Timer üst kısmı
+                const timerTopContainer = document.createElement('div');
+                timerTopContainer.className = 'timer-fullscreen-top';
+                timerContentContainer.appendChild(timerTopContainer);
+                
+                // Timer başlık satırını oluştur
+                const timerHeader = document.createElement('div');
+                timerHeader.className = 'timer-header';
+                timerHeader.style.width = '100%';
+                timerTopContainer.appendChild(timerHeader);
+                
+                // Timer başlık
+                const timerTitle = document.createElement('h2');
+                timerTitle.textContent = 'Çalışma Zamanlayıcısı';
+                timerHeader.appendChild(timerTitle);
+                
+                // Çıkış butonunu oluştur
                 const exitButton = document.createElement('button');
                 exitButton.className = 'fullscreen-exit';
                 exitButton.innerHTML = '<i class="fas fa-times"></i>';
+                exitButton.style.top = '15px';
+                exitButton.style.right = '15px';
                 exitButton.addEventListener('click', closeFullscreenMode);
+                window.fullscreenContainer.appendChild(exitButton);
                 
-                // Sol kısım için ana container
-                const timerContentContainer = document.createElement('div');
-                timerContentContainer.className = 'timer-fullscreen-content';
-                
-                // Üst kısım - timer ve kontroller
-                const timerTopContainer = document.createElement('div');
-                timerTopContainer.className = 'timer-fullscreen-top';
-                
-                // Timer header bölümünü ekle
-                const timerHeader = document.createElement('div');
-                timerHeader.className = 'timer-header';
-                
-                const headerTitle = document.createElement('h4');
-                headerTitle.textContent = 'Zamanlayıcı';
-                
-                timerHeader.appendChild(headerTitle);
-                
-                // Timer display ve kontrolleri ekle
+                // Timer display
                 const timerDisplayClone = document.createElement('div');
                 timerDisplayClone.className = 'timer-display';
                 timerDisplayClone.id = 'fullscreenTimerDisplay';
                 timerDisplayClone.textContent = timerDisplay.textContent;
+                timerTopContainer.appendChild(timerDisplayClone);
                 
+                // Timer kontrolleri
                 const timerControls = document.createElement('div');
                 timerControls.className = 'timer-controls';
+                timerTopContainer.appendChild(timerControls);
                 
                 const startBtnClone = startTimerBtn.cloneNode(true);
                 startBtnClone.id = 'fullscreenStartBtn';
+                timerControls.appendChild(startBtnClone);
                 
                 const resetBtnClone = resetTimerBtn.cloneNode(true);
                 resetBtnClone.id = 'fullscreenResetBtn';
-                
-                timerControls.appendChild(startBtnClone);
                 timerControls.appendChild(resetBtnClone);
                 
-                // Timer üst kısmını tamamla
-                timerTopContainer.appendChild(timerHeader);
-                timerTopContainer.appendChild(timerDisplayClone);
-                timerTopContainer.appendChild(timerControls);
+                // Oda başlığı (Webde sol altta, mobilde gizli)
+                const roomHeaderClone = document.createElement('div');
+                roomHeaderClone.className = 'fullscreen-room-header';
+                roomHeaderClone.innerHTML = document.getElementById('roomHeader').innerHTML;
+                timerContentContainer.appendChild(roomHeaderClone);
                 
-                // Alt kısım - katılımcılar
-                const participantsContainer = document.createElement('div');
-                participantsContainer.className = 'timer-fullscreen-participants';
-                
-                const participantsHeader = document.createElement('h4');
-                participantsHeader.textContent = 'Katılımcılar';
-                participantsHeader.style.marginTop = '0';
-                participantsHeader.style.marginBottom = '15px';
-                
-                const fullscreenUsersList = document.createElement('div');
-                fullscreenUsersList.id = 'fullscreenUsersList';
-                
-                // Mevcut kullanıcı listesini kopyala
-                if (document.getElementById('usersList')) {
-                    fullscreenUsersList.innerHTML = document.getElementById('usersList').innerHTML;
-                }
-                
-                participantsContainer.appendChild(participantsHeader);
-                participantsContainer.appendChild(fullscreenUsersList);
-                
-                // Sol kısımı tamamla
-                timerContentContainer.appendChild(timerTopContainer);
-                timerContentContainer.appendChild(participantsContainer);
-                
-                // Sağ tarafta sohbet bölümünü ekle
+                // Sağ kısım (Sohbet) - Başlığı güncelle
                 const fullscreenChat = document.createElement('div');
                 fullscreenChat.className = 'fullscreen-chat';
+                window.fullscreenContainer.appendChild(fullscreenChat);
                 
-                const chatHeader = document.createElement('h4');
-                chatHeader.textContent = 'Sohbet';
-                chatHeader.style.marginTop = '0';
-                chatHeader.style.marginBottom = '15px';
+                // Tam ekran modunda chat gizleme/gösterme işlevi için
+                const fullscreenChatHeader = document.createElement('div');
+                fullscreenChatHeader.className = 'chat-header';
+                fullscreenChatHeader.innerHTML = '<i class="fas fa-comments"></i> <span>Sohbet Mesajları</span><span class="chat-badge" id="fullscreenHeaderChatBadge">0</span>';
+                fullscreenChat.appendChild(fullscreenChatHeader);
                 
-                fullscreenChatMessages = document.createElement('div');
-                fullscreenChatMessages.className = 'fullscreen-chat-messages';
-                
-                const chatInputContainer = document.createElement('div');
-                chatInputContainer.className = 'fullscreen-chat-input';
-                
-                fullscreenChatInput = document.createElement('input');
-                fullscreenChatInput.type = 'text';
-                fullscreenChatInput.placeholder = 'Mesajınızı yazın...';
-                
-                fullscreenChatSendBtn = document.createElement('button');
-                fullscreenChatSendBtn.className = 'chat-send-btn';
-                fullscreenChatSendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
-                
-                chatInputContainer.appendChild(fullscreenChatInput);
-                chatInputContainer.appendChild(fullscreenChatSendBtn);
-                
-                fullscreenChat.appendChild(chatHeader);
-                fullscreenChat.appendChild(fullscreenChatMessages);
-                fullscreenChat.appendChild(chatInputContainer);
-                
-                // Tam ekran container'a elemanları ekleme
-                document.body.appendChild(fullscreenContainer);
-                fullscreenContainer.appendChild(exitButton);
-                fullscreenContainer.appendChild(timerContentContainer);
-                fullscreenContainer.appendChild(fullscreenChat);
-                
-                // Mevcut sohbet mesajlarını kopyala
-                fullscreenChatMessages.innerHTML = chatMessages.innerHTML;
-                
-                // Kullanıcı listesini sürekli güncelle
-                const userListObserver = new MutationObserver(function(mutations) {
-                    if (isFullscreen && fullscreenUsersList) {
-                        fullscreenUsersList.innerHTML = document.getElementById('usersList').innerHTML;
+                // Tam ekran modundaki chat header'a tıklama işlevi ekle
+                fullscreenChatHeader.addEventListener('click', function() {
+                    // Tam ekran chat bölümünü gizle/göster
+                    fullscreenChat.classList.toggle('collapsed');
+                    
+                    // Tam ekran chat durumunu localStorage'a kaydet
+                    localStorage.setItem('fullscreenChatCollapsed', fullscreenChat.classList.contains('collapsed'));
+                    
+                    // Tam ekran içerik genişliğini ayarla
+                    if (fullscreenChat.classList.contains('collapsed')) {
+                        timerContentContainer.style.width = '100%';
+                        
+                        // Timer içine chat butonu ekle
+                        const fullscreenTimerHeader = document.querySelector('.timer-fullscreen .timer-header');
+                        if (fullscreenTimerHeader) {
+                            // Chat butonu daha önce eklenmemişse ekle
+                            if (!document.querySelector('.fullscreen-chat-btn')) {
+                                const fullscreenChatBtn = document.createElement('button');
+                                fullscreenChatBtn.className = 'chat-header-movable fullscreen-chat-btn';
+                                fullscreenChatBtn.innerHTML = '<i class="fas fa-comments"></i><span class="chat-badge" id="fullscreenChatBadge">0</span>';
+                                fullscreenChatBtn.style.right = '70px'; // Çıkış butonuna çakışmaması için
+                                fullscreenTimerHeader.appendChild(fullscreenChatBtn);
+                                
+                                // Butona tıklanınca chat'i tekrar göster
+                                fullscreenChatBtn.addEventListener('click', function() {
+                                    fullscreenChat.classList.remove('collapsed');
+                                    localStorage.setItem('fullscreenChatCollapsed', false);
+                                    timerContentContainer.style.width = '70%';
+                                    this.remove(); // Butonu kaldır
+                                });
+                            }
+                        }
+                    } else {
+                        timerContentContainer.style.width = '70%';
+                        
+                        // Timer içindeki chat butonunu kaldır
+                        const fullscreenChatBtn = document.querySelector('.fullscreen-chat-btn');
+                        if (fullscreenChatBtn) {
+                            fullscreenChatBtn.remove();
+                        }
                     }
                 });
                 
-                if (document.getElementById('usersList')) {
-                    userListObserver.observe(document.getElementById('usersList'), { childList: true, subtree: true });
-                }
+                window.fullscreenChatMessages = document.createElement('div');
+                window.fullscreenChatMessages.className = 'fullscreen-chat-messages';
+                fullscreenChat.appendChild(window.fullscreenChatMessages);
+                
+                const chatInputContainer = document.createElement('div');
+                chatInputContainer.className = 'fullscreen-chat-input';
+                fullscreenChat.appendChild(chatInputContainer);
+                
+                window.fullscreenChatInput = document.createElement('input');
+                window.fullscreenChatInput.type = 'text';
+                window.fullscreenChatInput.placeholder = 'Mesajınızı yazın...';
+                chatInputContainer.appendChild(window.fullscreenChatInput);
+                
+                window.fullscreenChatSendBtn = document.createElement('button');
+                window.fullscreenChatSendBtn.className = 'chat-send-btn';
+                window.fullscreenChatSendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+                chatInputContainer.appendChild(window.fullscreenChatSendBtn);
+                
+                // Mevcut sohbet mesajlarını kopyala
+                window.fullscreenChatMessages.innerHTML = chatMessages.innerHTML;
                 
                 // Butonlara event listener ekle
                 startBtnClone.addEventListener('click', function() {
-                    // Orijinal butonu tetikle ve bildirim göster
+                    // Orijinal butonu tetikle
                     startTimerBtn.click();
                 });
                 
                 resetBtnClone.addEventListener('click', function() {
-                    // Orijinal butonu tetikle ve bildirim göster
+                    // Orijinal butonu tetikle
                     resetTimerBtn.click();
                 });
                 
-                fullscreenChatSendBtn.addEventListener('click', sendFullscreenMessage);
-                fullscreenChatInput.addEventListener('keypress', function(e) {
+                window.fullscreenChatSendBtn.addEventListener('click', sendFullscreenMessage);
+                window.fullscreenChatInput.addEventListener('keypress', function(e) {
                     if (e.key === 'Enter') {
                         sendFullscreenMessage();
                     }
@@ -1581,56 +2591,121 @@
                 // Tam ekran butonun ikonunu değiştir
                 fullscreenTimerBtn.innerHTML = '<i class="fas fa-compress"></i>';
                 
-                // Tema kontrolü - eğer karanlık tema aktifse tam ekrana da uygula
+                // Tema kontrolü
                 if (document.body.classList.contains('dark-theme')) {
-                    fullscreenContainer.classList.add('dark-theme');
+                    window.fullscreenContainer.classList.add('dark-theme');
+                }
+                
+                // Çalışma odası başlığına tıklandığında kutunun açılıp kapanması
+                const fullscreenRoomHeader = document.querySelector('.fullscreen-room-header');
+                if (fullscreenRoomHeader) {
+                    const fullscreenRoomHeaderTop = fullscreenRoomHeader.querySelector('.room-header-top');
+                    if (fullscreenRoomHeaderTop) {
+                        fullscreenRoomHeaderTop.addEventListener('click', function() {
+                            fullscreenRoomHeader.classList.toggle('expanded');
+                        });
+                    }
                 }
                 
                 // Input'a odaklanma
-                fullscreenChatInput.focus();
+                window.fullscreenChatInput.focus();
+                
+                // Tam ekran chat durumunu kontrol et ve uygula
+                const isFullscreenChatCollapsed = localStorage.getItem('fullscreenChatCollapsed') === 'true';
+                if (isFullscreenChatCollapsed) {
+                    // Chat panelini gizle
+                    fullscreenChat.classList.add('collapsed');
+                    // Timer alanını genişlet
+                    timerContentContainer.style.width = '100%';
+                    
+                    // Timer içine chat butonu ekle
+                    const fullscreenTimerHeader = document.querySelector('.timer-fullscreen .timer-header');
+                    if (fullscreenTimerHeader) {
+                        // Chat butonu daha önce eklenmemişse ekle
+                        if (!document.querySelector('.fullscreen-chat-btn')) {
+                            const fullscreenChatBtn = document.createElement('button');
+                            fullscreenChatBtn.className = 'chat-header-movable fullscreen-chat-btn';
+                            fullscreenChatBtn.innerHTML = '<i class="fas fa-comments"></i><span class="chat-badge" id="fullscreenChatBadge">0</span>';
+                            fullscreenChatBtn.style.right = '70px'; // Çıkış butonuna çakışmaması için
+                            fullscreenTimerHeader.appendChild(fullscreenChatBtn);
+                            
+                            // Butona tıklanınca chat'i tekrar göster
+                            fullscreenChatBtn.addEventListener('click', function() {
+                                fullscreenChat.classList.remove('collapsed');
+                                localStorage.setItem('fullscreenChatCollapsed', false);
+                                timerContentContainer.style.width = '70%';
+                                this.remove(); // Butonu kaldır
+                            });
+                        }
+                    }
+                }
+                
+                window.isFullscreen = true;
             }
             
             // Tam ekran modundan çıkan fonksiyon
             function closeFullscreenMode() {
-                if (fullscreenContainer) {
+                if (!window.isFullscreen || !window.fullscreenContainer) return;
+                
+                // Tam ekrandaki chat durumunu saklayıp çıkışta normal görünüme de uygula
+                const isFullscreenChatCollapsed = localStorage.getItem('fullscreenChatCollapsed') === 'true';
+                if (isFullscreenChatCollapsed && chatPanel) {
+                    // Normal görünümdeki chat panelini de gizle
+                    chatPanel.classList.add('collapsed');
+                    localStorage.setItem('chatCollapsed', 'true');
+                    
+                    // Sol panel genişliğini ayarla
+                    if (leftPanel) {
+                        leftPanel.style.width = '100%';
+                    }
+                    
+                    // Timer içindeki chat header'ı göster
+                    if (chatHeaderClone) {
+                        chatHeaderClone.style.display = 'flex';
+                    }
+                }
+                
                     // Container'ı kaldır
-                    document.body.removeChild(fullscreenContainer);
-                    fullscreenContainer = null;
+                document.body.removeChild(window.fullscreenContainer);
+                window.fullscreenContainer = null;
+                window.fullscreenChatMessages = null;
+                window.fullscreenChatInput = null;
+                window.fullscreenChatSendBtn = null;
                     
                     // Butonu eski haline getir
                     fullscreenTimerBtn.innerHTML = '<i class="fas fa-expand"></i>';
                     
-                    isFullscreen = false;
-                }
+                window.isFullscreen = false;
             }
             
             // Tam ekranda mesaj gönderme fonksiyonu
             function sendFullscreenMessage() {
-                const message = fullscreenChatInput.value.trim();
+                const message = window.fullscreenChatInput.value.trim();
                 if (message) {
-                    // Hem tam ekran chat hem de normal chat'e mesajı ekle
-                    const messageElement = createChatMessageElement(message, true);
-                    chatMessages.appendChild(messageElement.cloneNode(true));
+                    // Yeni fonksiyonu kullan
+                    const messageElement = createCustomChatMessage(message, true);
                     
-                    // Tam ekran chat'e de ekle
-                    if (fullscreenChatMessages) {
-                        fullscreenChatMessages.appendChild(messageElement);
-                        fullscreenChatMessages.scrollTop = fullscreenChatMessages.scrollHeight;
+                    // Normal sohbete ekle
+                    chatMessages.appendChild(messageElement.cloneNode(true));
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    // Tam ekran sohbete ekle
+                    if (window.fullscreenChatMessages) {
+                        window.fullscreenChatMessages.appendChild(messageElement);
+                        window.fullscreenChatMessages.scrollTop = window.fullscreenChatMessages.scrollHeight;
                     }
                     
                     // İnputu temizle
-                    fullscreenChatInput.value = '';
-                    
-                    // Bu noktada sunucuya mesaj gönderme işlemi yapılmalı
-                    // Bu örnek için sadece frontend gösterimi yapıyoruz
+                    window.fullscreenChatInput.value = '';
+                    window.fullscreenChatInput.focus();
                 }
             }
             
             // Normal mesaj değişikliklerini tam ekrana yansıtma
             const observer = new MutationObserver(function(mutations) {
-                if (isFullscreen && fullscreenChatMessages) {
-                    fullscreenChatMessages.innerHTML = chatMessages.innerHTML;
-                    fullscreenChatMessages.scrollTop = fullscreenChatMessages.scrollHeight;
+                if (window.isFullscreen && window.fullscreenChatMessages) {
+                    window.fullscreenChatMessages.innerHTML = chatMessages.innerHTML;
+                    window.fullscreenChatMessages.scrollTop = window.fullscreenChatMessages.scrollHeight;
                 }
             });
             
@@ -1638,13 +2713,109 @@
             
             // Timer değişikliklerini tam ekrana yansıtma
             setInterval(function() {
-                if (isFullscreen) {
+                if (window.isFullscreen) {
                     const fullscreenTimer = document.getElementById('fullscreenTimerDisplay');
                     if (fullscreenTimer) {
                         fullscreenTimer.textContent = timerDisplay.textContent;
                     }
                 }
             }, 1000);
+            
+            // Chat panelini gizle/göster fonksiyonu
+            const chatPanel = document.querySelector('.chat-panel');
+            const chatHeader = document.querySelector('.chat-header');
+            const leftPanel = document.getElementById('leftPanel');
+            const timerContainer = document.getElementById('timerContainer');
+            
+            // Chat header klonu oluştur (timer içine yerleştirilecek)
+            const chatHeaderClone = document.createElement('div');
+            chatHeaderClone.className = 'chat-header chat-header-movable';
+            chatHeaderClone.innerHTML = '<i class="fas fa-comments"></i>';
+            chatHeaderClone.style.display = 'none';
+            
+            // Timer container'a ekle
+            if (timerContainer) {
+                timerContainer.appendChild(chatHeaderClone);
+            }
+            
+            if (chatHeader && chatPanel && leftPanel) {
+                // Sayfa yüklendiğinde, kaydedilmiş chat panel durumunu kontrol et
+                const isChatCollapsed = localStorage.getItem('chatCollapsed') === 'true';
+                if (isChatCollapsed) {
+                    // Chat panelini gizle
+                    chatPanel.classList.add('collapsed');
+                    // Sol panel genişliğini ayarla
+                    leftPanel.style.width = '100%';
+                    // Timer içindeki chat header'ı göster
+                    chatHeaderClone.style.display = 'flex';
+                }
+                
+                // Orijinal chat header'a tıklama olayı
+                chatHeader.addEventListener('click', function() {
+                    // Chat panelinin durumunu değiştir
+                    chatPanel.classList.toggle('collapsed');
+                    
+                    // Durumu localStorage'a kaydet
+                    localStorage.setItem('chatCollapsed', chatPanel.classList.contains('collapsed'));
+                    
+                    // Sol panel genişliğini ayarla
+                    if (chatPanel.classList.contains('collapsed')) {
+                        // Masaüstü ve mobil görünümde sol panel tam genişliği kaplar
+                        leftPanel.style.width = '100%';
+                        
+                        // Timer içindeki chat header'ı göster
+                        chatHeaderClone.style.display = 'flex';
+                    } else {
+                        if (window.innerWidth > 768) { // Masaüstü görünümünde
+                            leftPanel.style.width = '70%';
+                        }
+                        
+                        // Timer içindeki chat header'ı gizle
+                        chatHeaderClone.style.display = 'none';
+                    }
+                });
+                
+                // Timer içindeki chat header'a tıklama olayı
+                chatHeaderClone.addEventListener('click', function() {
+                    // Chat panelinin durumunu değiştir
+                    chatPanel.classList.remove('collapsed');
+                    
+                    // Durumu localStorage'a kaydet
+                    localStorage.setItem('chatCollapsed', false);
+                    
+                    // Sol panel genişliğini ayarla
+                    if (window.innerWidth > 768) { // Masaüstü görünümünde
+                        leftPanel.style.width = '70%';
+                    } else { // Mobil görünümde
+                        leftPanel.style.width = 'calc(100% - 65px)';
+                    }
+                    
+                    // Kendini gizle
+                    this.style.display = 'none';
+                });
+            }
+            
+            // Pencere boyutu değiştiğinde chat panelini düzenle
+            window.addEventListener('resize', function() {
+                if (chatPanel && leftPanel) {
+                    if (chatPanel.classList.contains('collapsed')) {
+                        // Chat gizli ise sol panel tüm genişliği kaplar
+                        leftPanel.style.width = '100%';
+                    } else {
+                        // Chat açık ise normal oran
+                        if (window.innerWidth <= 768) { // Mobil görünümde
+                            leftPanel.style.width = 'calc(100% - 65px)';
+                        } else { // Masaüstü görünümünde
+                            leftPanel.style.width = '70%';
+                        }
+                    }
+                    
+                    // Resize sırasında chat panel durumuna göre timer içindeki chat header'ı ayarla
+                    if (chatHeaderClone) {
+                        chatHeaderClone.style.display = chatPanel.classList.contains('collapsed') ? 'flex' : 'none';
+                    }
+                }
+            });
             
             // Mesaj elemanı oluşturma fonksiyonu
             function createChatMessageElement(message, isOwn = false) {
@@ -1659,10 +2830,21 @@
                 // Kullanıcı adı bilgisi gerçek uygulamada dinamik olacaktır
                 const senderName = isOwn ? 'Ben' : 'Diğer Kullanıcı';
                 
+                // Rastgele renk sınıfı atama (kendi mesajımız dışındaki kullanıcılara)
+                let colorClass = '';
+                if (!isOwn) {
+                    // Kullanıcıya özgü renkler için kullanıcı adını hash'e çevirip renkle eşleştirebiliriz
+                    // Bu sadece demo amaçlı rastgele renkler atıyor
+                    const userColors = 8; // Toplam renk sayısı
+                    const colorNumber = Math.floor(Math.random() * userColors) + 1;
+                    colorClass = `user-color-${colorNumber}`;
+                }
+                
+                // Mesajın içeriğini oluştur - Twitch tarzı tek satır halinde
                 messageDiv.innerHTML = `
-                    <div class="message-sender">${senderName}</div>
-                    <div class="message-content">${message}</div>
-                    <div class="message-time">${timeString}</div>
+                    <span class="message-sender ${colorClass}">${senderName}:</span>
+                    <span class="message-content">${message}</span>
+                    <span class="message-time">${timeString}</span>
                 `;
                 
                 return messageDiv;
@@ -1727,15 +2909,15 @@
                 const isStarting = this.innerHTML.includes('fa-play');
                 
                 if (isStarting) {
-                    showTimerNotification('Zamanlayıcı başlatıldı!');
+                    showTimerNotification('Zamanlayıcı duraklatıldı !');
                     this.innerHTML = '<i class="fas fa-pause"></i> Duraklat';
                 } else {
-                    showTimerNotification('Zamanlayıcı duraklatıldı!');
+                    showTimerNotification('Zamanlayıcı başlatıldı!');
                     this.innerHTML = '<i class="fas fa-play"></i> Devam Et';
                 }
                 
                 // Tam ekran modu açıksa, oradaki butonu da güncelle
-                if (isFullscreen) {
+                if (window.isFullscreen) {
                     const fullscreenStartBtn = document.getElementById('fullscreenStartBtn');
                     if (fullscreenStartBtn) {
                         fullscreenStartBtn.innerHTML = this.innerHTML;
@@ -1750,13 +2932,214 @@
                 startTimerBtn.innerHTML = '<i class="fas fa-play"></i> Başlat';
                 
                 // Tam ekran modu açıksa, oradaki butonu da güncelle
-                if (isFullscreen) {
+                if (window.isFullscreen) {
                     const fullscreenStartBtn = document.getElementById('fullscreenStartBtn');
                     if (fullscreenStartBtn) {
                         fullscreenStartBtn.innerHTML = '<i class="fas fa-play"></i> Başlat';
                     }
                 }
             });
+
+            // Mobil görünümde oda başlığının stillerini düzenleyen fonksiyon
+            function handleMobileLayout() {
+                const roomHeader = document.getElementById('roomHeader');
+                const timerContainer = document.getElementById('timerContainer');
+                const leftPanel = document.getElementById('leftPanel');
+                const chatPanel = document.querySelector('.chat-panel');
+                const usersContainer = document.getElementById('usersContainer');
+                
+                if (!roomHeader || !timerContainer || !leftPanel || !chatPanel || !usersContainer) return;
+                
+                // Mobil görünüm kontrolü (768px altı)
+                if (window.innerWidth <= 768) {
+                    // Header'ı ilk sıraya getir
+                    if (roomHeader.nextElementSibling !== usersContainer) {
+                        leftPanel.insertBefore(roomHeader, leftPanel.firstChild);
+                    }
+                    
+                    // Katılımcılar kutusunu header'dan sonra yerleştir
+                    if (roomHeader.nextElementSibling !== usersContainer) {
+                        leftPanel.insertBefore(usersContainer, roomHeader.nextElementSibling);
+                    }
+                    
+                    // Zamanlayıcıyı en sona al
+                    leftPanel.appendChild(timerContainer);
+                    
+                    chatPanel.style.marginTop = '15px';
+                } else {
+                    // Masaüstü görünümünde varsayılan sıralama
+                    // 1. Zamanlayıcı, 2. Oda başlığı, 3. Katılımcılar kutucuğu
+                    leftPanel.insertBefore(timerContainer, leftPanel.firstChild);
+                    leftPanel.insertBefore(roomHeader, usersContainer);
+                    
+                    chatPanel.style.marginTop = '';
+                }
+            }
+            
+            // Sayfa yüklendiğinde düzeni ayarla
+            handleMobileLayout();
+            
+            // Pencere boyutu değiştiğinde düzeni tekrar ayarla
+            window.addEventListener('resize', handleMobileLayout);
+            
+            // Katılımcılar ile ilgili kodlar js/participants-button.js dosyasında yer alıyor
+
+            // Sayfa yüklendiğinde ekran kilidini etkinleştir (eğer açıksa)
+            if (keepScreenOnEnabled) {
+                requestWakeLock();
+            }
+
+            // Ek ayarlar için dinleyiciler
+            const timerSoundCheckbox = document.getElementById('timerSound');
+            if (timerSoundCheckbox) {
+                timerSoundCheckbox.addEventListener('change', function() {
+                    // Bildirim sesi ayarını kaydet
+                    localStorage.setItem('timerSound', this.checked);
+                });
+                
+                // Kaydedilmiş tercihi kontrol et
+                const savedSoundPreference = localStorage.getItem('timerSound');
+                if (savedSoundPreference !== null) {
+                    timerSoundCheckbox.checked = savedSoundPreference === 'true';
+                }
+            }
+            
+            const autoStartCheckbox = document.getElementById('autoStartNext');
+            if (autoStartCheckbox) {
+                autoStartCheckbox.addEventListener('change', function() {
+                    // Otomatik başlatma ayarını kaydet
+                    localStorage.setItem('autoStartNext', this.checked);
+                });
+                
+                // Kaydedilmiş tercihi kontrol et
+                const savedAutoStartPreference = localStorage.getItem('autoStartNext');
+                if (savedAutoStartPreference !== null) {
+                    autoStartCheckbox.checked = savedAutoStartPreference === 'true';
+                }
+            }
+
+            // Enter tuşuyla mesaj gönderme
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // Gönder butonuyla mesaj gönderme
+            chatSendBtn.addEventListener('click', sendMessage);
+            
+            // Mesaj gönderme fonksiyonu
+            function sendMessage() {
+                const message = chatInput.value.trim();
+                if (message) {
+                    // Yeni fonksiyonu kullan
+                    const messageElement = createCustomChatMessage(message, true);
+                    chatMessages.appendChild(messageElement);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    // İnputu temizle
+                    chatInput.value = '';
+                    
+                    // Tam ekran modundaysa, oraya da mesajı ekle
+                    if (window.isFullscreen && window.fullscreenChatMessages) {
+                        const fullscreenMessage = messageElement.cloneNode(true);
+                        window.fullscreenChatMessages.appendChild(fullscreenMessage);
+                        window.fullscreenChatMessages.scrollTop = window.fullscreenChatMessages.scrollHeight;
+                    }
+                }
+            }
+
+            // Yeni mesaj geldiğinde mesaj sayacını arttıran fonksiyon
+            function incrementUnreadMessages() {
+                // Mesaj sayacını her durumda arttır
+                unreadMessageCount++;
+                
+                // Normal görünümde chat buton rozeti
+                if (chatBadge) {
+                    chatBadge.textContent = unreadMessageCount;
+                    chatBadge.classList.add('show');
+                    chatBadge.classList.add('pulse');
+                    
+                    // Animasyonu tekrar çalıştırabilmek için eski sınıfı kaldır
+                    setTimeout(() => {
+                        chatBadge.classList.remove('pulse');
+                    }, 1200);
+                }
+                
+                // Chat header içindeki rozeti güncelle
+                const headerBadge = document.getElementById('headerChatBadge');
+                if (headerBadge) {
+                    headerBadge.textContent = unreadMessageCount;
+                    headerBadge.classList.add('show');
+                    headerBadge.classList.add('pulse');
+                    
+                    setTimeout(() => {
+                        headerBadge.classList.remove('pulse');
+                    }, 1200);
+                }
+                
+                // Tam ekrandaysa rozeti güncelle
+                if (window.isFullscreen) {
+                    // Tam ekrandaki chat butonu rozeti
+                    const fullscreenBadge = document.getElementById('fullscreenChatBadge');
+                    if (fullscreenBadge) {
+                        fullscreenBadge.textContent = unreadMessageCount;
+                        fullscreenBadge.classList.add('show');
+                        fullscreenBadge.classList.add('pulse');
+                        
+                        setTimeout(() => {
+                            fullscreenBadge.classList.remove('pulse');
+                        }, 1200);
+                    }
+                    
+                    // Tam ekrandaki chat header rozeti
+                    const fullscreenHeaderBadge = document.getElementById('fullscreenHeaderChatBadge');
+                    if (fullscreenHeaderBadge) {
+                        fullscreenHeaderBadge.textContent = unreadMessageCount;
+                        fullscreenHeaderBadge.classList.add('show');
+                        fullscreenHeaderBadge.classList.add('pulse');
+                        
+                        setTimeout(() => {
+                            fullscreenHeaderBadge.classList.remove('pulse');
+                        }, 1200);
+                    }
+                }
+            }
+            
+            // Mesaj rozeti sayacını sıfırlayan fonksiyon
+            function resetUnreadMessages() {
+                unreadMessageCount = 0;
+                
+                // Normal görünümde chat rozeti sıfırla
+                if (chatBadge) {
+                    chatBadge.textContent = '0';
+                    chatBadge.classList.remove('show');
+                }
+                
+                // Chat header içindeki rozeti sıfırla
+                const headerBadge = document.getElementById('headerChatBadge');
+                if (headerBadge) {
+                    headerBadge.textContent = '0';
+                    headerBadge.classList.remove('show');
+                }
+                
+                // Tam ekranda chat rozeti sıfırla
+                if (window.isFullscreen) {
+                    // Tam ekrandaki chat butonu rozeti
+                    const fullscreenBadge = document.getElementById('fullscreenChatBadge');
+                    if (fullscreenBadge) {
+                        fullscreenBadge.textContent = '0';
+                        fullscreenBadge.classList.remove('show');
+                    }
+                    
+                    // Tam ekrandaki chat header rozeti
+                    const fullscreenHeaderBadge = document.getElementById('fullscreenHeaderChatBadge');
+                    if (fullscreenHeaderBadge) {
+                        fullscreenHeaderBadge.textContent = '0';
+                        fullscreenHeaderBadge.classList.remove('show');
+                    }
+                }
+            }
         });
     </script>
 </body>

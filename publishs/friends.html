@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKSMate - Arkadaşlarım</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo(192).png">
+    
+    <style>
+        .friends-container {
+            max-height: 70vh;
+            min-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        /* Kullanıcı adı kaydırma stilleri */
+        .user-details {
+            max-width: 160px;
+            overflow: hidden;
+        }
+        
+        .user-details h3 {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: relative;
+            transition: transform 0.5s;
+            padding: 0 2px;
+        }
+        
+        .user-details h3.scrolling {
+            animation: scrollText 12s infinite linear;
+        }
+        
+        @keyframes scrollText {
+            0% { transform: translateX(0); }
+            15% { transform: translateX(0); }
+            70% { transform: translateX(calc(-100% + 160px)); }
+            85% { transform: translateX(calc(-100% + 160px)); }
+            100% { transform: translateX(0); }
+        }
+        
+        .friend-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s ease;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .friend-item:hover {
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+        
+        .dark-theme .friend-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .friend-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #e1e1e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+        
+        .friend-avatar i {
+            font-size: 24px;
+            color: #888;
+        }
+        
+        .friend-info {
+            flex: 1;
+            cursor: pointer;
+        }
+        
+        .friend-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 5px 0;
+        }
+        
+        .friend-status {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+        }
+        
+        .friend-status i {
+            font-size: 10px;
+            margin-right: 5px;
+        }
+        
+        .friend-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            margin-left: 10px;
+        }
+        
+        .friend-action-btn {
+            background: none;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #777;
+            transition: background-color 0.2s, color 0.2s;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .friend-action-btn:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+            color: #000;
+        }
+        
+        .dark-theme .friend-action-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        
+        .friend-action-btn i {
+            font-size: 14px;
+        }
+        
+        /* Spesifik buton stilleri */
+        .friend-action-btn[title="Mesaj Gönder"]:hover {
+            background-color: #4a6cf7;
+            color: white;
+        }
+        
+        .friend-action-btn[title="Birlikte Çalış"]:hover {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .friend-action-btn[title="Profil"]:hover {
+            background-color: #17a2b8;
+            color: white;
+        }
+        
+        .friend-action-btn[title="Arkadaşlıktan Çıkar"]:hover {
+            background-color: #ffc107;
+            color: white;
+        }
+        
+        .friend-action-btn[title="Engelle"]:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        /* Mobil uyumluluk için butonları küçültme */
+        @media (max-width: 576px) {
+            .friend-action-btn {
+                width: 28px;
+                height: 28px;
+            }
+            
+            .friend-action-btn i {
+                font-size: 12px;
+            }
+            
+            .friend-actions {
+                gap: 2px;
+            }
+        }
+        
+        .friends-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            background-color: #f9f9f9;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .friends-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #333;
+        }
+        
+        .friends-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            scroll-behavior: smooth;
+            width: 100%;
+        }
+        
+        .add-friend-form {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #eee;
+            background-color: #f9f9f9;
+            border-radius: 0 0 10px 10px;
+        }
+        
+        .add-friend-form input {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            padding: 10px 15px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+        }
+        
+        .add-friend-form button {
+            background-color: #4a6cf7;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            margin-left: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+        
+        .add-friend-form button:hover {
+            background-color: #3a5ce5;
+        }
+        
+        .friend-requests {
+            margin-top: 20px;
+        }
+        
+        .friend-requests h3 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+        }
+        
+        .request-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        
+        .request-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .accept-btn, .reject-btn, .cancel-btn {
+            padding: 5px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+        
+        .accept-btn {
+            background-color: #4a6cf7;
+            color: white;
+        }
+        
+        .accept-btn:hover {
+            background-color: #3a5ce5;
+        }
+        
+        .reject-btn, .cancel-btn {
+            background-color: transparent;
+            border: 1px solid #dc3545;
+            color: #dc3545;
+        }
+        
+        .reject-btn:hover, .cancel-btn:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .sent-requests {
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .sent-request {
+            background-color: #f0f7ff;
+            border-left: 3px solid #4a6cf7;
+        }
+        
+        .sent-request .friend-status {
+            color: #4a6cf7;
+        }
+        
+        .sent-request .friend-status i {
+            margin-right: 5px;
+        }
+        
+        .no-requests, .no-friends {
+            text-align: center;
+            color: #666;
+            padding: 15px;
+            font-style: italic;
+        }
+        
+        /* Mesaj kutusu stilleri */
+        .message-box {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            max-width: 350px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            transform: translateX(100%);
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+        
+        .message-box.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        
+        .message-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+        }
+        
+        .message-content span {
+            flex: 1;
+            margin-right: 10px;
+        }
+        
+        .message-close {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .message-info {
+            border-left: 4px solid #4a6cf7;
+        }
+        
+        .message-success {
+            border-left: 4px solid #28a745;
+        }
+        
+        .message-error {
+            border-left: 4px solid #dc3545;
+        }
+        
+        .message-warning {
+            border-left: 4px solid #ffc107;
+        }
+        
+        /* Karanlık tema uyumluluğu */
+        .dark-theme .message-box {
+            background-color: #333;
+            color: #eee;
+        }
+        
+        .dark-theme .message-close {
+            color: #aaa;
+        }
+        
+        .dark-theme .friends-container {
+            background-color: #2a2a2a;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .dark-theme .friends-header {
+            background-color: #333;
+            border-bottom: 1px solid #444;
+        }
+        
+        .dark-theme .friends-header h3 {
+            color: #eee;
+        }
+        
+        .dark-theme .friend-status {
+            color: #aaa;
+        }
+        
+        .dark-theme .friend-action-btn {
+            color: #aaa;
+        }
+        
+        .dark-theme .add-friend-form {
+            border-top: 1px solid #444;
+            background-color: #333;
+        }
+        
+        .dark-theme .add-friend-form input {
+            background-color: #444;
+            border-color: #555;
+            color: #eee;
+        }
+        
+        .dark-theme .request-item {
+            background-color: #333;
+        }
+        
+        .dark-theme .sent-request {
+            background-color: #2a3142;
+            border-left: 3px solid #4a6cf7;
+        }
+        
+        .dark-theme .no-requests, 
+        .dark-theme .no-friends {
+            color: #aaa;
+        }
+        
+        /* Sidebar avatar stili */
+        .sidebar .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #e1e1e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            overflow: hidden;
+        }
+        
+        .sidebar .user-avatar img.avatar-image-small {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Ana JavaScript -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth-check.js"></script>
+    <script src="js/theme-manager.js"></script>
+    <script src="js/app.js"></script>
+
+</head>
+<body class="light-theme">
+    <div class="container">
+        <div class="dashboard-container" id="dashboardContainer" style="display: none;">
+            <!-- Sidebar -->
+            <div class="sidebar">
+
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <img src="assets/images/default-avatar.png" alt="Profil Fotoğrafı" class="avatar-image-small">
+                    </div>
+                    <div class="user-details">
+                        <a href="profile.html" style="text-decoration: none; color: inherit;">
+                            <h3 id="userName">Kullanıcı Adı</h3>
+                            <p id="userExamType">Bölüm: TYT</p>
+                        </a>
+                    </div>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li>
+                            <a href="index.html"><i class="fas fa-home"></i><p>ana sayfa</p></a>
+                        </li>
+                        <li>
+                            <a href="exams.html"><i class="fas fa-file-alt"></i><p>denemelerim</p></a>
+                        </li>
+                        <li>
+                            <a href="timer.html"><i class="fas fa-clock"></i><p>zamanlayıcı</p></a>
+                        </li>
+                        <li>
+                            <a href="calendar.html"><i class="fas fa-calendar-alt"></i><p>takvim</p></a>
+                        </li>
+                        <li>
+                            <a href="notes.html"><i class="fas fa-sticky-note"></i><p>notlarım</p></a>
+                        </li>
+                        <li>
+                            <a href="community.html"><i class="fas fa-users"></i><p>topluluk</p></a>
+                        </li>
+                        <li class="active">
+                            <a href="friends.html"><i class="fas fa-user-friends"></i><p>arkadaşlarım</p></a>
+                        </li>
+                        <li>
+                            <a href="messages.html"><i class="fas fa-comment"></i><p>mesajlar</p></a>
+                        </li>
+                        <li>
+                            <a href="ai.html"><i class="fas fa-robot"></i><p>mateai</p></a>
+                        </li>
+                        <li>
+                            <a href="work-together.html"><i class="fas fa-users-cog"></i><p>birlikte çalış</p></a>
+                        </li>
+                        <li>
+                            <a href="settings.html"><i class="fas fa-cog"></i><p>ayarlar</p></a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="token-info">
+                        <i class="fas fa-coins"></i>
+                        <span id="tokenCount">0 Jeton</span>
+                    </div>
+                    <button id="collapseToggle" class="collapse-toggle">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    
+                </div>
+            </div>
+
+            <!-- Sidebar Overlay -->
+            <div class="sidebar-overlay"></div>
+
+            <!-- Ana İçerik -->
+            <div class="main-content">
+                <header class="content-header">
+                    <button id="sidebarToggle" class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="header-actions">
+                        <button class="theme-toggle" id="themeToggle">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <div class="notifications">
+                            <button class="notification-btn">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge">3</span>
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Arkadaşlar Sayfa İçeriği -->
+                <div class="page-content">
+                    <div class="friends-page">
+                        <h1 class="page-title">Arkadaşlarım</h1>
+                        
+                        <!-- Arkadaşlar Listesi -->
+                        <div class="friends-container">
+                            <div class="friends-header">
+                                <h3>Arkadaşlarım</h3>
+                                <div class="filter-options">
+                                    <select id="friendsFilter" class="friends-filter">
+                                        <option value="all">Tümü</option>
+                                        <option value="online">Çevrimiçi</option>
+                                        <option value="studying">Çalışanlar</option>
+                                    </select>
+                            </div>
+                                    </div>
+                            <div class="friends-list" id="friendsList">
+                                <!-- Örnek arkadaş öğeleri -->
+                                <div class="friend-item">
+                                    <div class="friend-avatar">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div class="friend-info">
+                                        <h4 class="friend-name">Ahmet Yılmaz</h4>
+                                        <p class="friend-status"><i class="fas fa-circle" style="color: #28a745;"></i> Çevrimiçi - Matematik çalışıyor</p>
+                                </div>
+                                    <div class="friend-actions">
+                                        <button class="friend-action-btn" title="Mesaj Gönder" onclick="sendMessage('${friendId}')">
+                                            <i class="fas fa-comment"></i>
+                                        </button>
+                                        <button class="friend-action-btn" title="Birlikte Çalış" onclick="studyTogether('${friendId}')">
+                                            <i class="fas fa-users"></i>
+                                        </button>
+                                        <button class="friend-action-btn" title="Arkadaşlıktan Çıkar" onclick="removeFriend('${friendId}')">
+                                            <i class="fas fa-user-minus"></i>
+                                        </button>
+                                        <button class="friend-action-btn" title="Engelle" onclick="blockUser('${friendId}')">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="friend-item">
+                                    <div class="friend-avatar">
+                                        <i class="fas fa-user"></i>
+                                </div>
+                                    <div class="friend-info">
+                                        <h4 class="friend-name">Zeynep Kaya</h4>
+                                        <p class="friend-status"><i class="fas fa-circle" style="color: #28a745;"></i> Çevrimiçi - Fizik çalışıyor</p>
+                                </div>
+                                    <div class="friend-actions">
+                                        <button class="friend-action-btn" title="Mesaj Gönder" onclick="sendMessage('${friendId}')">
+                                            <i class="fas fa-comment"></i>
+                                        </button>
+                                        <button class="friend-action-btn" title="Birlikte Çalış" onclick="studyTogether('${friendId}')">
+                                            <i class="fas fa-users"></i>
+                                        </button>
+                                        <button class="friend-action-btn" title="Arkadaşlıktan Çıkar" onclick="removeFriend('${friendId}')">
+                                            <i class="fas fa-user-minus"></i>
+                                        </button>
+                                        <button class="friend-action-btn" title="Engelle" onclick="blockUser('${friendId}')">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                </div>
+                                </div>
+                                
+                                <div class="friend-item">
+                                    <div class="friend-avatar">
+                                        <i class="fas fa-user"></i>
+                            </div>
+                                    <div class="friend-info">
+                                        <h4 class="friend-name">Mehmet Demir</h4>
+                                        <p class="friend-status"><i class="fas fa-circle" style="color: #6c757d;"></i> Çevrimdışı - 3 saat önce</p>
+                        </div>
+                                    <div class="friend-actions">
+                                        <button class="friend-action-btn" title="Mesaj Gönder" onclick="sendMessage('${friendId}')">
+                                            <i class="fas fa-comment"></i>
+                                        </button>
+                                        <button class="friend-action-btn" title="Birlikte Çalış" onclick="studyTogether('${friendId}')">
+                                            <i class="fas fa-users"></i>
+                                        </button>
+                                        <button class="friend-action-btn" title="Arkadaşlıktan Çıkar" onclick="removeFriend('${friendId}')">
+                                            <i class="fas fa-user-minus"></i>
+                                        </button>
+                                        <button class="friend-action-btn" title="Engelle" onclick="blockUser('${friendId}')">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                    </div>
+                </div>
+            </div>
+                            
+                            <!-- Arkadaş Ekleme Formu -->
+                            <div class="add-friend-form">
+                                <input type="text" id="friendUsername" placeholder="Kullanıcı adı veya e-posta ile arkadaş ekle">
+                                <button id="addFriendBtn">
+                                    <i class="fas fa-user-plus"></i>
+                                </button>
+        </div>
+    </div>
+
+                        <!-- Arkadaşlık İstekleri -->
+                        <div class="friend-requests">
+                            <h3>Arkadaşlık İstekleri</h3>
+                            <div id="friendRequests">
+                                <!-- Örnek istek -->
+                                <div class="request-item">
+                                    <div class="friend-avatar">
+                                        <i class="fas fa-user"></i>
+            </div>
+                                    <div class="friend-info">
+                                        <h4 class="friend-name">Ayşe Öztürk</h4>
+                                        <p class="friend-status">Eşit Ağırlık - 12. Sınıf</p>
+                    </div>
+                                    <div class="request-actions">
+                                        <button class="accept-btn">Kabul Et</button>
+                                        <button class="reject-btn">Reddet</button>
+                    </div>
+                    </div>
+                </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Güvenlik Kuralları Bilgisi -->
+    <div id="securityRulesInfo" style="display: none; margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #4a6cf7;">
+        <h3 style="margin-top: 0; color: #333;">Firebase Bağlantı Hatası</h3>
+        <p>Arkadaşlık isteği gönderirken bir bağlantı hatası oluştu. Lütfen internet bağlantınızı kontrol edin ve tekrar deneyin.</p>
+        <button id="closeRulesInfo" style="background-color: #4a6cf7; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">Kapat</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentUserId = null;
+            
+            // Oturum kontrolü
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        currentUserId = user.uid;
+                        // Kullanıcı bilgilerini güncelle
+                        firebase.database().ref('users/' + user.uid).once('value')
+                            .then((snapshot) => {
+                                const userData = snapshot.val();
+                                if (userData) {
+                                    document.getElementById("userName").textContent = userData.name || user.email.split('@')[0];
+                                    document.getElementById("userExamType").textContent = "Bölüm: " + getExamTypeText(userData.examType);
+                                    document.getElementById("tokenCount").textContent = `${userData.tokens || 0} Jeton`;
+                                }
+                                document.getElementById("dashboardContainer").style.display = "flex";
+                                
+                                // Kullanıcı durumunu çevrimiçi olarak güncelle
+                                updateUserStatus(user.uid, 'online');
+                                
+                                // Kullanıcı çıkış yaptığında veya sayfa kapandığında durumu güncelle
+                                window.addEventListener('beforeunload', function() {
+                                    updateUserStatus(user.uid, 'offline');
+                                });
+                                
+                                // Arkadaş listesini yükle
+                                loadFriends(user.uid);
+                                // Arkadaşlık isteklerini yükle
+                                loadFriendRequests(user.uid);
+                            });
+                    } else {
+                        // Misafir kullanıcı kontrolü
+                        const guestUser = localStorage.getItem('guestUser');
+                        if (guestUser) {
+                            const guestData = JSON.parse(guestUser);
+                            document.getElementById("userName").textContent = guestData.name;
+                            document.getElementById("userExamType").textContent = "Bölüm: " + getExamTypeText(guestData.examType);
+                            document.getElementById("tokenCount").textContent = `${guestData.tokens || 0} Jeton`;
+                            document.getElementById("dashboardContainer").style.display = "flex";
+                        } else {
+                            window.location.href = "login.html";
+                        }
+                    }
+                });
+            } else {
+                console.log("Firebase tanımlı değil, misafir modunda devam ediliyor");
+                document.getElementById("dashboardContainer").style.display = "flex";
+            }
+            
+            // Arkadaş ekleme butonu
+            const addFriendBtn = document.getElementById('addFriendBtn');
+            const friendUsernameInput = document.getElementById('friendUsername');
+            
+            addFriendBtn.addEventListener('click', function() {
+                const username = friendUsernameInput.value.trim();
+                if (username) {
+                    sendFriendRequest();
+                }
+            });
+            
+            // Enter tuşu ile arkadaş ekleme
+            friendUsernameInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const username = friendUsernameInput.value.trim();
+                    if (username) {
+                        sendFriendRequest();
+                    }
+                }
+            });
+            
+            // Arkadaş filtreleme
+            const friendsFilter = document.getElementById('friendsFilter');
+            friendsFilter.addEventListener('change', function() {
+                filterFriends(this.value);
+            });
+            
+            // Arkadaşlık isteklerini kabul etme ve reddetme butonları için event listener
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('accept-btn')) {
+                    const requestItem = e.target.closest('.request-item');
+                    const requestId = requestItem.dataset.requestId;
+                    acceptFriendRequest(requestId);
+                } else if (e.target.classList.contains('reject-btn')) {
+                    const requestItem = e.target.closest('.request-item');
+                    const requestId = requestItem.dataset.requestId;
+                    rejectFriendRequest(requestId);
+                } else if (e.target.classList.contains('cancel-btn')) {
+                    const requestId = e.target.dataset.requestId;
+                    cancelFriendRequest(requestId);
+                }
+            });
+        });
+
+        // Kullanıcı durumunu güncelleme
+        function updateUserStatus(userId, state, activity = null) {
+            if (!userId) return;
+            
+            const statusData = {
+                state: state,
+                lastActivity: firebase.database.ServerValue.TIMESTAMP
+            };
+            
+            if (activity) {
+                statusData.activity = activity;
+            }
+            
+            firebase.database().ref('status/' + userId).set(statusData)
+                .catch(error => {
+                    console.error('Kullanıcı durumu güncellenirken hata oluştu:', error);
+                });
+        }
+        
+        // Kullanıcının aktivitesini güncelleme
+        function updateUserActivity(activity) {
+            const currentUser = firebase.auth().currentUser;
+            if (currentUser) {
+                updateUserStatus(currentUser.uid, 'online', activity);
+            }
+        }
+        
+        // Sınav türü metni alma fonksiyonu
+        function getExamTypeText(examType) {
+            switch(examType) {
+                case 'tyt': return 'TYT';
+                case 'sayisal': return 'Sayısal';
+                case 'sozel': return 'Sözel';
+                case 'esitagirlik': return 'Eşit Ağırlık';
+                case 'dil': return 'Dil';
+                default: return 'TYT';
+            }
+        }
+        
+        // Arkadaş listesini yükleme
+        function loadFriends(userId) {
+            const friendsList = document.getElementById('friendsList');
+            friendsList.innerHTML = ''; // Listeyi temizle
+            
+            console.log("Arkadaş listesi yükleniyor, kullanıcı ID:", userId);
+            
+            // Firebase'den kullanıcı bilgilerini ve arkadaş listesini çek
+            firebase.database().ref('users/' + userId).once('value')
+                .then((snapshot) => {
+                    const userData = snapshot.val();
+                    console.log("Kullanıcı verileri:", userData);
+                    
+                    if (!userData || !userData.friends || Object.keys(userData.friends).length === 0) {
+                        console.log("Arkadaş bulunamadı");
+                        friendsList.innerHTML = '<p class="no-friends">Henüz arkadaşınız bulunmuyor.</p>';
+                        return;
+                    }
+                    
+                    console.log("Arkadaş listesi:", userData.friends);
+                    
+                    // Her bir arkadaş için bilgileri listele
+                    Object.keys(userData.friends).forEach(friendId => {
+                        const friendData = userData.friends[friendId];
+                        console.log("Arkadaş ID:", friendId, "Arkadaş verileri:", friendData);
+                        
+                        // Arkadaşın çevrimiçi durumunu kontrol et
+                        firebase.database().ref('status/' + friendId).once('value')
+                            .then((statusSnapshot) => {
+                                const statusData = statusSnapshot.val();
+                                const isOnline = statusData && statusData.state === 'online';
+                                const lastActivity = statusData ? statusData.lastActivity : null;
+                                const activity = statusData ? statusData.activity : null;
+                                
+                                // Arkadaş öğesini oluştur
+                                const friendItem = document.createElement('div');
+                                friendItem.className = 'friend-item';
+                                friendItem.dataset.friendId = friendId;
+                                
+                                // Çevrimiçi durumu ve aktivite bilgisini hazırla
+                                let statusText = '';
+                                let statusColor = '';
+                                
+                                if (isOnline) {
+                                    statusText = 'Çevrimiçi';
+                                    statusColor = '#28a745';
+                                    if (activity) {
+                                        statusText += ` - ${activity}`;
+                                    }
+                                } else {
+                                    statusText = 'Çevrimdışı';
+                                    statusColor = '#6c757d';
+                                    if (lastActivity) {
+                                        const lastSeen = new Date(lastActivity);
+                                        const now = new Date();
+                                        const diffHours = Math.floor((now - lastSeen) / (1000 * 60 * 60));
+                                        
+                                        if (diffHours < 1) {
+                                            statusText += ' - Az önce';
+                                        } else if (diffHours < 24) {
+                                            statusText += ` - ${diffHours} saat önce`;
+                                        } else {
+                                            const diffDays = Math.floor(diffHours / 24);
+                                            statusText += ` - ${diffDays} gün önce`;
+                                        }
+                                    }
+                                }
+                                
+                                // Arkadaş öğesi HTML'ini oluştur
+                                friendItem.innerHTML = `
+                                    <div class="friend-avatar" onclick="window.location.href='profile.html?user=${friendId}'">
+                                        ${friendData.profileImage ? 
+                                            `<img src="${friendData.profileImage}" alt="${friendData.name || 'Kullanıcı'}" class="avatar-image-small">` : 
+                                            `<i class="fas fa-user"></i>`}
+                                    </div>
+                                    <div class="friend-info" onclick="window.location.href='profile.html?user=${friendId}'">
+                                        <h4 class="friend-name">${friendData.name || 'İsimsiz Kullanıcı'}</h4>
+                                        <p class="friend-status"><i class="fas fa-circle" style="color: ${statusColor};"></i> ${statusText}</p>
+                                    </div>
+                                    <div class="friend-actions">
+                                        <button class="friend-action-btn" title="Mesaj Gönder" onclick="sendMessage('${friendId}')">
+                                            <i class="fas fa-comment"></i>
+                                        </button>
+                                        <button class="friend-action-btn" title="Birlikte Çalış" onclick="studyTogether('${friendId}')">
+                                            <i class="fas fa-users"></i>
+                                        </button>
+                                        <button class="friend-action-btn" title="Arkadaşlıktan Çıkar" onclick="removeFriend('${friendId}')">
+                                            <i class="fas fa-user-minus"></i>
+                                        </button>
+                                        <button class="friend-action-btn" title="Engelle" onclick="blockUser('${friendId}')">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                    </div>
+                                `;
+                                
+                                // Arkadaş öğesine tıklandığında profil sayfasına git
+                                friendItem.style.cursor = 'pointer';
+                                friendItem.addEventListener('click', function(e) {
+                                    // Butonlara tıklanmadıysa profile git
+                                    if (!e.target.closest('.friend-actions')) {
+                                        window.location.href = `profile.html?user=${friendId}`;
+                                    }
+                                });
+                                
+                                friendsList.appendChild(friendItem);
+                            })
+                            .catch(error => {
+                                console.error("Arkadaş durumu yüklenirken hata:", error);
+                            });
+                    });
+                })
+                .catch(error => {
+                    console.error("Arkadaş listesi yüklenirken hata:", error);
+                    friendsList.innerHTML = '<p class="error">Arkadaş listesi yüklenirken bir hata oluştu.</p>';
+                });
+        }
+        
+        // Arkadaşlık isteklerini yükleme
+        function loadFriendRequests(userId) {
+            const requestsContainer = document.getElementById('friendRequests');
+            requestsContainer.innerHTML = ''; // Listeyi temizle
+            
+            // Firebase'den gelen arkadaşlık isteklerini çek
+            firebase.database().ref('pendingRequests').orderByChild('toUserId').equalTo(userId).on('value', (snapshot) => {
+                const requests = snapshot.val();
+                
+                if (!requests) {
+                    requestsContainer.innerHTML = '<p class="no-requests">Arkadaşlık isteği bulunmuyor.</p>';
+                    return;
+                }
+                
+                let requestCount = 0;
+                
+                // Her bir istek için kullanıcı bilgilerini çek ve listele
+                Object.keys(requests).forEach(requestId => {
+                    const request = requests[requestId];
+                    
+                    if (request.status === 'pending') {
+                        requestCount++;
+                        const senderId = request.fromUserId || request.from; // Her iki alanı da kontrol et
+                        
+                        firebase.database().ref('users/' + senderId).once('value')
+                            .then((userSnapshot) => {
+                                const senderData = userSnapshot.val();
+                                if (senderData) {
+                                    // İstek öğesini oluştur
+                                    const requestItem = document.createElement('div');
+                                    requestItem.className = 'request-item';
+                                    requestItem.dataset.requestId = requestId;
+                                    requestItem.dataset.senderId = senderId;
+                                    
+                                    // Kullanıcının bölüm bilgisini hazırla
+                                    const examType = getExamTypeText(senderData.examType);
+                                    const grade = senderData.grade || 'Belirtilmemiş';
+                                    
+                                    // İstek öğesi HTML'ini oluştur
+                                    requestItem.innerHTML = `
+                                        <div class="friend-avatar" onclick="window.location.href='profile.html?user=${senderId}'">
+                                            ${senderData.profileImage ? 
+                                                `<img src="${senderData.profileImage}" alt="${senderData.name || 'Kullanıcı'}" class="avatar-image-small">` : 
+                                                `<i class="fas fa-user"></i>`}
+                                        </div>
+                                        <div class="friend-info">
+                                            <h4 class="friend-name">${senderData.name || 'İsimsiz Kullanıcı'}</h4>
+                                            <p class="friend-status">${examType} - ${grade}. Sınıf</p>
+                                        </div>
+                                        <div class="request-actions">
+                                            <button class="accept-btn">Kabul Et</button>
+                                            <button class="reject-btn">Reddet</button>
+                                        </div>
+                                    `;
+                                    
+                                    requestsContainer.appendChild(requestItem);
+                                }
+                            });
+                    }
+                });
+                
+                if (requestCount === 0) {
+                    requestsContainer.innerHTML = '<p class="no-requests">Arkadaşlık isteği bulunmuyor.</p>';
+                }
+            });
+            
+            // Gönderilen istekleri de gösterelim
+            firebase.database().ref('pendingRequests').orderByChild('fromUserId').equalTo(userId).on('value', (snapshot) => {
+                const sentRequests = snapshot.val();
+                
+                if (!sentRequests) {
+                    // from alanını da kontrol et (geriye dönük uyumluluk için)
+                    firebase.database().ref('pendingRequests').orderByChild('from').equalTo(userId).on('value', (fromSnapshot) => {
+                        const oldSentRequests = fromSnapshot.val();
+                        if (!oldSentRequests) {
+                            return; // İstek yok
+                        }
+                        processSentRequests(oldSentRequests);
+                    });
+                    return;
+                }
+                
+                processSentRequests(sentRequests);
+            });
+        }
+        
+        // Gönderilen istekleri işleme fonksiyonu
+        function processSentRequests(sentRequests) {
+            // Gönderilen istekler bölümü yoksa oluşturalım
+            let sentRequestsSection = document.querySelector('.sent-requests');
+            if (!sentRequestsSection) {
+                sentRequestsSection = document.createElement('div');
+                sentRequestsSection.className = 'friend-requests sent-requests';
+                sentRequestsSection.innerHTML = '<h3>Gönderilen İstekler</h3>';
+                const sentRequestsList = document.createElement('div');
+                sentRequestsList.id = 'sentRequestsList';
+                sentRequestsSection.appendChild(sentRequestsList);
+                
+                // Arkadaşlık istekleri bölümünden sonra ekleyelim
+                const friendRequestsSection = document.querySelector('.friend-requests');
+                friendRequestsSection.parentNode.insertBefore(sentRequestsSection, friendRequestsSection.nextSibling);
+            }
+            
+            const sentRequestsList = document.getElementById('sentRequestsList');
+            sentRequestsList.innerHTML = '';
+            
+            let sentCount = 0;
+            
+            // Her bir gönderilen istek için bilgileri listele
+            Object.keys(sentRequests).forEach(requestId => {
+                const request = sentRequests[requestId];
+                
+                if (request.status === 'pending') {
+                    sentCount++;
+                    
+                    // Hedef kullanıcının bilgilerini al
+                    firebase.database().ref('users/' + request.toUserId).once('value')
+                        .then((userSnapshot) => {
+                            const userData = userSnapshot.val();
+                            if (userData) {
+                                // İstek öğesini oluştur
+                                const requestItem = document.createElement('div');
+                                requestItem.className = 'request-item sent-request';
+                                
+                                // İstek öğesi HTML'ini oluştur
+                                requestItem.innerHTML = `
+                                    <div class="friend-avatar" onclick="window.location.href='profile.html?user=${request.toUserId}'">
+                                        ${userData.profileImage ? 
+                                            `<img src="${userData.profileImage}" alt="${userData.name || 'Kullanıcı'}" class="avatar-image-small">` : 
+                                            `<i class="fas fa-user"></i>`}
+                                    </div>
+                                    <div class="friend-info">
+                                        <h4 class="friend-name">${userData.name || 'İsimsiz Kullanıcı'}</h4>
+                                        <p class="friend-status"><i class="fas fa-clock"></i> İstek gönderildi</p>
+                                    </div>
+                                    <div class="request-actions">
+                                        <button class="cancel-btn" data-request-id="${requestId}">İptal Et</button>
+                                    </div>
+                                `;
+                                
+                                sentRequestsList.appendChild(requestItem);
+                            }
+                        });
+                }
+            });
+            
+            if (sentCount === 0) {
+                sentRequestsList.innerHTML = '<p class="no-requests">Gönderilen istek bulunmuyor.</p>';
+            }
+        }
+        
+        // Arkadaşlık isteği gönderme
+        function sendFriendRequest() {
+            try {
+                const username = document.getElementById('friendUsername').value.trim();
+                if (!username) {
+                    showMessage('Lütfen bir kullanıcı adı veya e-posta girin.', 'error');
+                    return;
+                }
+
+                const currentUser = firebase.auth().currentUser;
+                if (!currentUser) {
+                    showMessage('Arkadaş eklemek için giriş yapmalısınız.', 'error');
+                    return;
+                }
+
+                console.log("Kullanıcı aranıyor:", username);
+                console.log("Mevcut kullanıcı:", currentUser.uid, currentUser.email);
+                
+                // Önce kullanıcıyı bulmaya çalışalım
+                firebase.database().ref('users').orderByChild('email').equalTo(username).once('value')
+                    .then((snapshot) => {
+                        if (snapshot.exists()) {
+                            // Kullanıcı e-posta ile bulundu
+                            let foundUserId = null;
+                            snapshot.forEach((childSnapshot) => {
+                                foundUserId = childSnapshot.key;
+                            });
+                            
+                            if (foundUserId) {
+                                console.log("Kullanıcı e-posta ile bulundu, ID:", foundUserId);
+                                // Arkadaşlık isteği gönder
+                                return sendRequest(foundUserId);
+                            }
+                        } else {
+                            // E-posta ile bulunamadı, kullanıcı adı ile deneyelim
+                            console.log("Kullanıcı e-posta ile bulunamadı, kullanıcı adı ile deneniyor");
+                            return firebase.database().ref('users').orderByChild('name').equalTo(username).once('value')
+                                .then((nameSnapshot) => {
+                                    if (nameSnapshot.exists()) {
+                                        // Kullanıcı adı ile bulundu
+                                        let foundUserId = null;
+                                        nameSnapshot.forEach((childSnapshot) => {
+                                            foundUserId = childSnapshot.key;
+                                        });
+                                        
+                                        if (foundUserId) {
+                                            console.log("Kullanıcı adı ile bulundu, ID:", foundUserId);
+                                            // Arkadaşlık isteği gönder
+                                            return sendRequest(foundUserId);
+                                        }
+                                    } else {
+                                        // Kullanıcı bulunamadı
+                                        console.log("Kullanıcı bulunamadı");
+                                        showMessage('Kullanıcı bulunamadı. Lütfen doğru kullanıcı adı veya e-posta girdiğinizden emin olun.', 'error');
+                                        return Promise.reject('user_not_found');
+                                    }
+                                })
+                                .catch((error) => {
+                                    console.error("Kullanıcı adı araması sırasında hata:", error);
+                                    if (error === 'user_not_found') {
+                                        return Promise.reject(error);
+                                    }
+                                    showMessage('Kullanıcı aranırken bir hata oluştu: ' + (error.message || error), 'error');
+                                    return Promise.reject(error);
+                                });
+                        }
+                    })
+                    .catch((error) => {
+                        if (error === 'user_not_found') {
+                            return; // Bu hatayı zaten ele aldık
+                        }
+                        console.error("Arkadaşlık isteği gönderilirken hata:", error);
+                        let errorMessage = 'Arkadaşlık isteği gönderilirken bir hata oluştu: ';
+                        if (error.code) {
+                            errorMessage += error.code;
+                            // Yaygın Firebase hatalarını Türkçeleştir
+                            if (error.code === 'PERMISSION_DENIED') {
+                                errorMessage = 'Yetki hatası: Firebase güvenlik kuralları bu işleme izin vermiyor.';
+                                document.getElementById('securityRulesInfo').style.display = 'block';
+                            } else if (error.code === 'NETWORK_ERROR') {
+                                errorMessage = 'Ağ hatası: İnternet bağlantınızı kontrol edin.';
+                            }
+                        } else {
+                            errorMessage += (error.message || error);
+                        }
+                        showMessage(errorMessage, 'error');
+                    });
+                
+            } catch (error) {
+                console.error("Beklenmeyen hata:", error);
+                showMessage('Beklenmeyen bir hata oluştu: ' + (error.message || error), 'error');
+            }
+        }
+        
+        // Arkadaşlık isteği gönderme fonksiyonu
+        function sendRequest(targetUserId) {
+            const currentUser = firebase.auth().currentUser;
+            // Kendimize istek göndermediğimizden emin olalım
+            if (targetUserId === currentUser.uid) {
+                showMessage('Kendinize arkadaşlık isteği gönderemezsiniz.', 'error');
+                return Promise.reject('self_request');
+            }
+            
+            console.log("Arkadaşlık isteği gönderiliyor - Hedef kullanıcı ID:", targetUserId);
+            
+            // Kendi kullanıcı bilgilerimizi alalım
+            return firebase.database().ref('users/' + currentUser.uid).once('value')
+                .then((userSnapshot) => {
+                    const userData = userSnapshot.val();
+                    console.log("Kendi kullanıcı bilgilerim:", userData);
+                    
+                    // Zaten arkadaş olup olmadığımızı kontrol et
+                    if (userData && userData.friends && userData.friends[targetUserId]) {
+                        showMessage('Bu kullanıcı zaten arkadaş listenizde bulunuyor.', 'error');
+                        return Promise.reject('already_friends');
+                    }
+                    
+                    // Zaten istek gönderilip gönderilmediğini kontrol et
+                    return firebase.database().ref('pendingRequests').orderByChild('fromUserId').equalTo(currentUser.uid).once('value')
+                        .then((pendingSnapshot) => {
+                            let alreadySent = false;
+                            
+                            if (pendingSnapshot.exists()) {
+                                pendingSnapshot.forEach((childSnapshot) => {
+                                    const request = childSnapshot.val();
+                                    if (request.toUserId === targetUserId && request.status === 'pending') {
+                                        alreadySent = true;
+                                    }
+                                });
+                            }
+                            
+                            if (!alreadySent) {
+                                // Eski from alanını da kontrol et (geriye dönük uyumluluk için)
+                                return firebase.database().ref('pendingRequests').orderByChild('from').equalTo(currentUser.uid).once('value')
+                                    .then((oldPendingSnapshot) => {
+                                        if (oldPendingSnapshot.exists()) {
+                                            oldPendingSnapshot.forEach((childSnapshot) => {
+                                                const request = childSnapshot.val();
+                                                if (request.toUserId === targetUserId && request.status === 'pending') {
+                                                    alreadySent = true;
+                                                }
+                                            });
+                                        }
+                                        
+                                        if (alreadySent) {
+                                            showMessage('Bu kullanıcıya zaten bir arkadaşlık isteği gönderdiniz.', 'error');
+                                            return Promise.reject('request_already_sent');
+                                        }
+                                        
+                                        // Hedef kullanıcının bilgilerini al
+                                        return firebase.database().ref('users/' + targetUserId).once('value');
+                                    });
+                            } else {
+                                showMessage('Bu kullanıcıya zaten bir arkadaşlık isteği gönderdiniz.', 'error');
+                                return Promise.reject('request_already_sent');
+                            }
+                        });
+                })
+                .then((targetSnapshot) => {
+                    const targetData = targetSnapshot.val();
+                    console.log("Hedef kullanıcı bilgileri:", targetData);
+                    
+                    if (!targetData) {
+                        showMessage('Hedef kullanıcı bilgileri alınamadı.', 'error');
+                        return Promise.reject('target_user_not_found');
+                    }
+                    
+                    // Kendi bilgilerimizi alalım
+                    return firebase.database().ref('users/' + currentUser.uid).once('value')
+                        .then((mySnapshot) => {
+                            const myData = mySnapshot.val();
+                            console.log("Kendi kullanıcı bilgilerim (tekrar):", myData);
+                            
+                            try {
+                                // Arkadaşlık isteği gönder - pendingRequests koleksiyonunu kullan
+                                const requestRef = firebase.database().ref('pendingRequests').push();
+                                
+                                const requestData = {
+                                    fromUserId: currentUser.uid, // Güvenlik kuralları için gerekli
+                                    from: currentUser.uid, // Geriye dönük uyumluluk için
+                                    fromEmail: currentUser.email,
+                                    fromName: myData.name || currentUser.displayName || currentUser.email.split('@')[0],
+                                    toUserId: targetUserId,
+                                    toUsername: targetData.name || targetData.email,
+                                    status: 'pending',
+                                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                                };
+                                
+                                console.log("Arkadaşlık isteği gönderiliyor:", requestData);
+                                
+                                // İsteği veritabanına kaydet
+                                return requestRef.set(requestData)
+                                    .catch(error => {
+                                        console.error("Veritabanına yazma hatası:", error);
+                                        // Firebase güvenlik kuralları hatası mı kontrol et
+                                        if (error.code === 'PERMISSION_DENIED') {
+                                            document.getElementById('securityRulesInfo').style.display = 'block';
+                                            return Promise.reject('permission_denied');
+                                        }
+                                        return Promise.reject(error);
+                                    });
+                            } catch (error) {
+                                console.error("İstek oluşturma hatası:", error);
+                                return Promise.reject(error);
+                            }
+                        });
+                })
+                .then(() => {
+                    console.log("Arkadaşlık isteği başarıyla gönderildi");
+                    showMessage('Arkadaşlık isteği başarıyla gönderildi.', 'success');
+                    document.getElementById('friendUsername').value = '';
+                    
+                    // İstek listesini güncelle
+                    loadFriendRequests(currentUser.uid);
+                })
+                .catch((error) => {
+                    if (error === 'self_request' || error === 'already_friends' || error === 'request_already_sent' || error === 'user_not_found' || error === 'target_user_not_found' || error === 'permission_denied') {
+                        // Bu hataları zaten ele aldık
+                        return;
+                    }
+                    console.error("Arkadaşlık isteği gönderilirken beklenmeyen hata:", error);
+                    // Hata detaylarını göster
+                    let errorMessage = 'Arkadaşlık isteği gönderilirken bir hata oluştu. Lütfen tekrar deneyin.';
+                    if (error.code) {
+                        errorMessage += ' (Hata kodu: ' + error.code + ')';
+                    }
+                    showMessage(errorMessage, 'error');
+                });
+        }
+        
+        // Arkadaşlık isteğini kabul etme
+        function acceptFriendRequest(requestId) {
+            const currentUser = firebase.auth().currentUser;
+            if (!currentUser) {
+                showMessage('Bu işlemi gerçekleştirmek için giriş yapmalısınız.', 'error');
+                return;
+            }
+
+            const requestItem = document.querySelector(`.request-item[data-request-id="${requestId}"]`);
+            if (!requestItem) {
+                showMessage('İstek bulunamadı.', 'error');
+                return;
+            }
+
+            const senderId = requestItem.dataset.senderId;
+            console.log("Arkadaşlık isteği kabul ediliyor:", requestId, "Gönderen:", senderId);
+
+            // İsteği veritabanından alalım
+            firebase.database().ref('pendingRequests/' + requestId).once('value')
+                .then((requestSnapshot) => {
+                    const requestData = requestSnapshot.val();
+                    if (!requestData || requestData.status !== 'pending') {
+                        showMessage('Geçerli bir istek bulunamadı.', 'error');
+                        return Promise.reject('invalid_request');
+                    }
+
+                    // İsteği gönderen kullanıcının bilgilerini al
+                    return firebase.database().ref('users/' + senderId).once('value');
+                })
+                .then((senderSnapshot) => {
+                    const senderData = senderSnapshot.val() || {};
+                    if (!senderData) {
+                        showMessage('Kullanıcı bilgileri alınamadı.', 'error');
+                        return Promise.reject('user_not_found');
+                    }
+
+                    // Kendi kullanıcı bilgilerimizi alalım
+                    return firebase.database().ref('users/' + currentUser.uid).once('value')
+                        .then((mySnapshot) => {
+                            const myData = mySnapshot.val() || {};
+                            
+                            console.log("Gönderen kullanıcı verileri:", senderData);
+                            console.log("Benim verilerim:", myData);
+                            
+                            // İstek gönderen kullanıcının friends listesine bizi ekleyelim
+                            const senderFriendData = {
+                                email: currentUser.email,
+                                name: myData.name || currentUser.displayName || currentUser.email.split('@')[0],
+                                addedAt: firebase.database.ServerValue.TIMESTAMP
+                            };
+                            
+                            // Kendi friends listemize istek gönderen kullanıcıyı ekleyelim
+                            const myFriendData = {
+                                email: senderData.email,
+                                name: senderData.name || senderData.displayName || senderData.username || senderData.email,
+                                addedAt: firebase.database.ServerValue.TIMESTAMP
+                            };
+                            
+                            console.log("Gönderen kullanıcıya eklenecek arkadaş verisi:", senderFriendData);
+                            console.log("Bana eklenecek arkadaş verisi:", myFriendData);
+                            
+                            // Her iki kullanıcının da friends listesini ayrı ayrı güncelleyelim
+                            const updates = {};
+                            
+                            // Gönderen kullanıcının arkadaş listesine bizi ekleyelim
+                            updates['users/' + senderId + '/friends/' + currentUser.uid] = senderFriendData;
+                            
+                            // Kendi arkadaş listemize gönderen kullanıcıyı ekleyelim
+                            updates['users/' + currentUser.uid + '/friends/' + senderId] = myFriendData;
+                            
+                            // İsteği güncelleyelim
+                            updates['pendingRequests/' + requestId + '/status'] = 'accepted';
+                            updates['pendingRequests/' + requestId + '/acceptedAt'] = firebase.database.ServerValue.TIMESTAMP;
+                            
+                            console.log("Yapılacak güncellemeler:", updates);
+                            
+                            // Tüm güncellemeleri tek seferde yapalım
+                            return firebase.database().ref().update(updates);
+                        });
+                })
+                .then(() => {
+                    console.log("Arkadaşlık isteği başarıyla kabul edildi");
+                    showMessage('Arkadaşlık isteği kabul edildi.', 'success');
+                    loadFriendRequests(currentUser.uid); // İstek listesini güncelle
+                    loadFriends(currentUser.uid); // Arkadaş listesini güncelle
+                })
+                .catch((error) => {
+                    if (error === 'user_not_found' || error === 'invalid_request') {
+                        // Bu hatayı zaten ele aldık
+                        return;
+                    }
+                    console.error("Arkadaşlık isteği kabul edilirken hata:", error);
+                    showMessage('Arkadaşlık isteği kabul edilirken bir hata oluştu. Lütfen tekrar deneyin.', 'error');
+                });
+        }
+        
+        // Arkadaşlık isteğini reddetme
+        function rejectFriendRequest(requestId) {
+            const currentUser = firebase.auth().currentUser;
+            if (!currentUser) {
+                showMessage('Bu işlemi gerçekleştirmek için giriş yapmalısınız.', 'error');
+                return;
+            }
+
+            console.log("Arkadaşlık isteği reddediliyor:", requestId);
+
+            // İsteği güncelle
+            firebase.database().ref('pendingRequests/' + requestId).update({
+                status: 'rejected',
+                rejectedAt: firebase.database.ServerValue.TIMESTAMP
+            })
+            .then(() => {
+                console.log("Arkadaşlık isteği başarıyla reddedildi");
+                showMessage('Arkadaşlık isteği reddedildi.', 'success');
+                loadFriendRequests(currentUser.uid); // İstek listesini güncelle
+            })
+            .catch((error) => {
+                console.error("Arkadaşlık isteği reddedilirken hata:", error);
+                showMessage('Arkadaşlık isteği reddedilirken bir hata oluştu. Lütfen tekrar deneyin.', 'error');
+            });
+        }
+        
+        // Arkadaşları filtreleme
+        function filterFriends(filterType) {
+            const friendItems = document.querySelectorAll('.friend-item');
+            
+            friendItems.forEach(item => {
+                const status = item.querySelector('.friend-status').textContent.toLowerCase();
+                
+                if (filterType === 'all') {
+                    item.style.display = 'flex';
+                } else if (filterType === 'online' && status.includes('çevrimiçi')) {
+                    item.style.display = 'flex';
+                } else if (filterType === 'studying' && status.includes('çalışıyor')) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+        
+        // Mesaj gönderme fonksiyonu
+        function sendMessage(friendId) {
+            const currentUser = firebase.auth().currentUser;
+            if (!currentUser) {
+                showMessage('Mesaj göndermek için giriş yapmalısınız.', 'error');
+                return;
+            }
+            
+            // Mesajlaşma sayfasına yönlendir
+            window.location.href = `messages.html?friend=${friendId}`;
+        }
+        
+        // Birlikte çalışma fonksiyonu (örnek)
+        function studyTogether(friendId) {
+            alert('Birlikte çalışma özelliği yakında eklenecek!');
+            // Gerçek uygulamada çalışma odası oluşturma sayfasına yönlendirme yapılabilir
+            // window.location.href = `study-room.html?friend=${friendId}`;
+        }
+        
+        // Arkadaş seçeneklerini gösterme fonksiyonu (örnek)
+        function showFriendOptions(friendId) {
+            // Basit bir menü göster
+            const options = ['Profili Görüntüle', 'Arkadaşlıktan Çıkar', 'Engelle'];
+            const selectedOption = prompt(`Seçenekler:\n1. ${options[0]}\n2. ${options[1]}\n3. ${options[2]}\n\nLütfen bir seçenek numarası girin (1-3):`);
+            
+            switch(selectedOption) {
+                case '1':
+                    // Profil görüntüleme
+                    window.location.href = `profile.html?user=${friendId}`;
+                    break;
+                case '2':
+                    // Arkadaşlıktan çıkarma
+                    if (confirm('Bu kullanıcıyı arkadaş listenizden çıkarmak istediğinize emin misiniz?')) {
+                        removeFriend(friendId);
+                    }
+                    break;
+                case '3':
+                    // Engelleme
+                    if (confirm('Bu kullanıcıyı engellemek istediğinize emin misiniz?')) {
+                        blockUser(friendId);
+                    }
+                    break;
+                default:
+                    // İptal edildi veya geçersiz seçenek
+                    break;
+            }
+        }
+        
+        // Arkadaşlıktan çıkarma fonksiyonu
+        function removeFriend(friendId) {
+            const currentUser = firebase.auth().currentUser;
+            
+            if (!currentUser) {
+                showMessage('Bu işlemi gerçekleştirmek için giriş yapmalısınız.', 'error');
+                return;
+            }
+            
+            // Her iki kullanıcının da arkadaş listesinden çıkaralım
+            const updates = {};
+            
+            // Kendi arkadaş listemizden çıkar
+            updates[`users/${currentUser.uid}/friends/${friendId}`] = null;
+            
+            // Karşı tarafın arkadaş listesinden de çıkar
+            updates[`users/${friendId}/friends/${currentUser.uid}`] = null;
+            
+            firebase.database().ref().update(updates)
+                .then(() => {
+                    console.log("Kullanıcı arkadaş listesinden çıkarıldı");
+                    showMessage('Kullanıcı arkadaş listenizden çıkarıldı.', 'success');
+                    loadFriends(currentUser.uid); // Arkadaş listesini güncelle
+                })
+                .catch((error) => {
+                    console.error('Arkadaşlıktan çıkarılırken hata oluştu:', error);
+                    showMessage('Arkadaşlıktan çıkarılırken bir hata oluştu. Lütfen tekrar deneyin.', 'error');
+                });
+        }
+        
+        // Kullanıcı engelleme fonksiyonu
+        function blockUser(userId) {
+            const currentUser = firebase.auth().currentUser;
+            
+            if (!currentUser) {
+                showMessage('Bu işlemi gerçekleştirmek için giriş yapmalısınız.', 'error');
+                return;
+            }
+            
+            // Kullanıcıyı engelle
+            const blockData = {
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            };
+            
+            firebase.database().ref('blockedUsers/' + currentUser.uid + '/' + userId).set(blockData)
+                .then(() => {
+                    // Arkadaşlıktan da çıkar
+                    removeFriend(userId);
+                    showMessage('Kullanıcı engellendi.', 'success');
+                })
+                .catch((error) => {
+                    console.error('Kullanıcı engellenirken hata oluştu:', error);
+                    showMessage('Kullanıcı engellenirken bir hata oluştu. Lütfen tekrar deneyin.', 'error');
+                });
+        }
+
+        // Arkadaşlık isteğini iptal etme
+        function cancelFriendRequest(requestId) {
+            const currentUser = firebase.auth().currentUser;
+            if (!currentUser) {
+                showMessage('Bu işlemi gerçekleştirmek için giriş yapmalısınız.', 'error');
+                return;
+            }
+
+            console.log("Arkadaşlık isteği iptal ediliyor:", requestId);
+
+            // İsteği sil
+            firebase.database().ref('pendingRequests/' + requestId).remove()
+                .then(() => {
+                    console.log("Arkadaşlık isteği başarıyla iptal edildi");
+                    showMessage('Arkadaşlık isteği iptal edildi.', 'success');
+                    loadFriendRequests(currentUser.uid); // İstek listesini güncelle
+                })
+                .catch((error) => {
+                    console.error("Arkadaşlık isteği iptal edilirken hata:", error);
+                    showMessage('Arkadaşlık isteği iptal edilirken bir hata oluştu. Lütfen tekrar deneyin.', 'error');
+                });
+        }
+
+        // Güvenlik kuralları bilgisi için
+        document.addEventListener('DOMContentLoaded', function() {
+            // Kapat butonuna tıklandığında bilgiyi gizle
+            document.getElementById('closeRulesInfo').addEventListener('click', function() {
+                document.getElementById('securityRulesInfo').style.display = 'none';
+            });
+        });
+        
+        // Kullanıcıya mesaj gösterme fonksiyonu
+        function showMessage(message, type = 'info') {
+            // Mevcut mesaj kutusu varsa kaldır
+            const existingMessage = document.querySelector('.message-box');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+            
+            // Yeni mesaj kutusu oluştur
+            const messageBox = document.createElement('div');
+            messageBox.className = `message-box message-${type}`;
+            messageBox.innerHTML = `
+                <div class="message-content">
+                    <span>${message}</span>
+                    <button class="message-close"><i class="fas fa-times"></i></button>
+                </div>
+            `;
+            
+            // Mesaj kutusunu sayfaya ekle
+            document.body.appendChild(messageBox);
+            
+            // Mesaj kutusunu göster
+            setTimeout(() => {
+                messageBox.classList.add('show');
+            }, 10);
+            
+            // Kapatma butonuna tıklandığında mesajı kaldır
+            const closeButton = messageBox.querySelector('.message-close');
+            closeButton.addEventListener('click', () => {
+                messageBox.classList.remove('show');
+                setTimeout(() => {
+                    messageBox.remove();
+                }, 300);
+            });
+            
+            // Belirli bir süre sonra mesajı otomatik olarak kaldır
+            setTimeout(() => {
+                if (messageBox.parentNode) {
+                    messageBox.classList.remove('show');
+                    setTimeout(() => {
+                        if (messageBox.parentNode) {
+                            messageBox.remove();
+                        }
+                    }, 300);
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html> 

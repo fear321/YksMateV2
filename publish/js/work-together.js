@@ -29,6 +29,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const chatInput = document.getElementById('chatInput');
     const chatSendBtn = document.getElementById('chatSendBtn');
     const chatMessagesContainer = document.getElementById('chatMessages');
+    const showCreateRoomBtn = document.getElementById('showCreateRoomBtn');
+    const closeCreateRoomPopupBtn = document.getElementById('closeCreateRoomPopup');
     
     // Kullanıcı ve çalışma odası bilgileri
     let currentUser = null;
@@ -39,6 +41,31 @@ document.addEventListener('DOMContentLoaded', function() {
     let timerSeconds = 1500; // 25 dakika (Pomodoro varsayılan)
     let syncTimerRef = null;
     let participantsListener = null; // Katılımcı değişikliklerini dinlemek için
+    
+    // Boş odaları temizleme zamanlayıcısı
+    let emptyRoomCleanupInterval = null;
+    const ROOM_CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 dakika (milisaniye)
+    const ROOM_TTL = 10 * 60 * 1000; // 10 dakika (milisaniye)
+    
+    // Oda oluştur butonu - popup'ı göster
+    showCreateRoomBtn.addEventListener('click', function() {
+        // Popup'ı göster
+        createRoomContainer.style.display = 'flex';
+        // Animasyon ekle
+        setTimeout(() => {
+            createRoomContainer.classList.add('active');
+        }, 10);
+    });
+    
+    // Popup kapatma butonu
+    closeCreateRoomPopupBtn.addEventListener('click', function() {
+        // Animasyonu kaldır
+        createRoomContainer.classList.remove('active');
+        // Kısa bir süre sonra tamamen gizle
+        setTimeout(() => {
+            createRoomContainer.style.display = 'none';
+        }, 300);
+    });
     
     // Kullanıcı oturum durumunu kontrol et
     auth.onAuthStateChanged(function(user) {
@@ -59,11 +86,84 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Bildirimleri kontrol et
             checkForNotifications();
+            
+            // Boş odaları temizleme zamanlayıcısını başlat
+            startEmptyRoomCleanup();
         } else {
             // Giriş sayfasına yönlendir
             window.location.href = 'login.html';
         }
     });
+    
+    // Boş odaları temizleme işlemini başlat
+    function startEmptyRoomCleanup() {
+        console.log("Boş oda temizleme zamanlayıcısı başlatılıyor...");
+        
+        // Önceki zamanlayıcı varsa temizle
+        if (emptyRoomCleanupInterval) {
+            clearInterval(emptyRoomCleanupInterval);
+        }
+        
+        // İlk kontrol
+        cleanupEmptyRooms();
+        
+        // Düzenli olarak kontrol et
+        emptyRoomCleanupInterval = setInterval(cleanupEmptyRooms, ROOM_CLEANUP_INTERVAL);
+    }
+    
+    // Boş odaları temizle
+    function cleanupEmptyRooms() {
+        console.log("Boş odalar kontrol ediliyor...");
+        
+        // Şu anki zaman
+        const now = Date.now();
+        
+        // Aktif odaları kontrol et
+        activeRoomsRef.once('value', function(snapshot) {
+            if (!snapshot.exists()) return;
+            
+            const rooms = snapshot.val();
+            let cleanedRoomCount = 0;
+            
+            for (let roomId in rooms) {
+                const room = rooms[roomId];
+                
+                // Boşalma zamanı işaretli mi ve 10 dakikadan fazla zaman geçmiş mi kontrolü
+                if (room.lastEmptyTimestamp && (now - room.lastEmptyTimestamp) > ROOM_TTL) {
+                    // Katılımcıları bir kez daha kontrol et (gerekli olduğu için)
+                    let hasActiveParticipants = false;
+                    const participants = room.participants || {};
+                    
+                    for (let userId in participants) {
+                        if (participants[userId].status !== 'left') {
+                            hasActiveParticipants = true;
+                            break;
+                        }
+                    }
+                    
+                    // Hala aktif katılımcı yoksa odayı sil
+                    if (!hasActiveParticipants) {
+                        console.log(`Boş oda siliniyor: ${roomId}, şu tarihten beri boş: ${new Date(room.lastEmptyTimestamp).toLocaleString()}`);
+                        
+                        // İlgili mesajları sil
+                        database.ref(`workroom_messages/${roomId}`).remove()
+                            .then(() => console.log(`Oda mesajları silindi: ${roomId}`))
+                            .catch(error => console.error(`Oda mesajları silinirken hata: ${roomId}`, error));
+                        
+                        // Odayı sil
+                        activeRoomsRef.child(roomId).remove()
+                            .then(() => {
+                                console.log(`Oda silindi: ${roomId}`);
+                                cleanedRoomCount++;
+                            })
+                            .catch(error => console.error(`Oda silinirken hata: ${roomId}`, error));
+                    }
+                }
+            }
+            
+            console.log(`Boş oda kontrolü tamamlandı. ${cleanedRoomCount} adet oda silindi.`);
+        });
+    }
     
     // Form submit olayı
     createRoomForm.addEventListener('submit', function(e) {
@@ -136,9 +236,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 
-                // Katılımcısı olmayan odaları listeden çıkar
-                if (activeParticipants === 0) {
-                    console.log("Aktif katılımcısı olmayan oda, gösterilmiyor:", roomId);
+                // Katılımcısı olmayan odaları listeden çıkar, ANCAK kullanıcının kendi oluşturduğu odalar gösterilsin
+                if (activeParticipants === 0 && room.ownerId !== currentUser.uid) {
+                    console.log("Aktif katılımcısı olmayan ve kullanıcının sahibi olmadığı oda, gösterilmiyor:", roomId);
                     continue;
                 }
                 
@@ -209,6 +309,43 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Süre değerlerini al
+        let pomodoroWorkTime = 25; // Varsayılan değer
+        let pomodoroBreakTime = 5; // Varsayılan değer
+        let examTotalMinutes = 135; // Varsayılan değer
+        
+        if (roomMode === 'pomodoro') {
+            // Pomodoro süre ayarlarını al
+            const workTimeInput = document.getElementById('pomodoroWorkTime');
+            const breakTimeInput = document.getElementById('pomodoroBreakTime');
+            
+            if (workTimeInput && breakTimeInput) {
+                pomodoroWorkTime = parseInt(workTimeInput.value) || 25;
+                pomodoroBreakTime = parseInt(breakTimeInput.value) || 5;
+                
+                // Geçerlilik kontrolleri
+                if (pomodoroWorkTime < 1) pomodoroWorkTime = 1;
+                if (pomodoroWorkTime > 60) pomodoroWorkTime = 60;
+                if (pomodoroBreakTime < 1) pomodoroBreakTime = 1;
+                if (pomodoroBreakTime > 30) pomodoroBreakTime = 30;
+            }
+        } else if (roomMode === 'exam') {
+            // Deneme sınavı süre ayarlarını al
+            const hoursInput = document.getElementById('examHours');
+            const minutesInput = document.getElementById('examMinutes');
+            
+            if (hoursInput && minutesInput) {
+                const hours = parseInt(hoursInput.value) || 0;
+                const minutes = parseInt(minutesInput.value) || 0;
+                
+                examTotalMinutes = hours * 60 + minutes;
+                
+                // Minimum 10 dakika, maksimum 4 saat
+                if (examTotalMinutes < 10) examTotalMinutes = 10;
+                if (examTotalMinutes > 240) examTotalMinutes = 240;
+            }
+        }
+        
         // Önce kullanıcı bilgilerini doğrudan veritabanından al
         database.ref(`users/${currentUser.uid}`).once('value')
             .then(function(snapshot) {
@@ -237,18 +374,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     participants: {},
                     timer: {
                         running: false,
-                        seconds: roomMode === 'pomodoro' ? 1500 : (roomMode === 'exam' ? (parseInt(examDurationInput.value) || 135) * 60 : 0),
+                        seconds: 0,
                         startTime: null,
                         lastUpdate: firebase.database.ServerValue.TIMESTAMP
                     }
                 };
                 
-                console.log("Oluşturulacak oda verisi:", roomData);
-                
-                // Sınav modu için süre ekle
-                if (roomMode === 'exam') {
-                    roomData.examDuration = parseInt(examDurationInput.value) || 135;
+                // Mod özel ayarları
+                if (roomMode === 'pomodoro') {
+                    roomData.pomodoroSettings = {
+                        workTime: pomodoroWorkTime,
+                        breakTime: pomodoroBreakTime
+                    };
+                    roomData.timer.seconds = pomodoroWorkTime * 60; // Başlangıç süresi
+                } else if (roomMode === 'exam') {
+                    roomData.examDuration = examTotalMinutes;
+                    roomData.timer.seconds = examTotalMinutes * 60; // Başlangıç süresi
                 }
+                
+                console.log("Oluşturulacak oda verisi:", roomData);
                 
                 // Yeni bir oda referansı oluştur (sadece active_workrooms altına ekle)
                 const newRoomRef = activeRoomsRef.push();
@@ -269,13 +413,19 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.log("Oda active_workrooms altına kaydedildi");
                         
                         // Oda oluşturuldu bildirimi göster
-                        showNotification('success', 'Oda Oluşturuldu!', `"${roomName}" odası başarıyla oluşturuldu.`);
+                        let modeInfo = '';
+                        if (roomMode === 'pomodoro') {
+                            modeInfo = ` (${pomodoroWorkTime}dk çalışma + ${pomodoroBreakTime}dk mola)`;
+                        } else if (roomMode === 'exam') {
+                            const hours = Math.floor(examTotalMinutes / 60);
+                            const minutes = examTotalMinutes % 60;
+                            modeInfo = ` (Süre: ${hours > 0 ? `${hours} saat ` : ''}${minutes > 0 ? `${minutes} dakika` : ''})`;
+                        }
+                        
+                        showNotification('success', 'Oda Oluşturuldu!', `"${roomName}" odası başarıyla oluşturuldu${modeInfo}.`);
                         
                         // Formu sıfırla
                         roomNameInput.value = '';
-                        if (roomMode === 'exam') {
-                            examDurationInput.value = '135';
-                        }
                         
                         // Odaya katıl
                         joinRoom(newRoomId);
@@ -445,98 +595,122 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Odaya katıl
     function joinRoom(roomId) {
-        console.log("joinRoom fonksiyonu çağrıldı, roomId:", roomId);
+        console.log("joinRoom fonksiyonu çağrıldı, Oda ID:", roomId);
         
-        // Doğrudan active_workrooms altında odayı ara
-        activeRoomsRef.child(roomId).once('value', function(snapshot) {
-            console.log("Active room snapshot:", snapshot.val());
-            
+        if (!roomId) {
+            console.error("Oda ID tanımlı değil");
+            return;
+        }
+        
+        // Oda verisini al
+        activeRoomsRef.child(roomId).once('value')
+            .then(function(snapshot) {
             if (!snapshot.exists()) {
-                alert("Bu oda artık mevcut değil.");
+                    console.error("Oda bulunamadı, ID:", roomId);
+                    alert("Bu oda artık mevcut değil. Sayfayı yenileyerek güncel odaları görüntüleyebilirsiniz.");
                 return;
             }
             
-            processRoomJoin(roomId, snapshot.val());
-        });
+                const room = snapshot.val();
+                room.id = roomId; // ID'yi room nesnesine ekle
+                
+                // Odaya katılma işlemini başlat
+                processRoomJoin(roomId, room);
+            })
+            .catch(function(error) {
+                console.error("Oda bilgisi alınırken hata:", error);
+                alert("Oda bilgisi alınamadı: " + error.message);
+            });
     }
     
-    // Odaya katılım işlemini gerçekleştir
+    // Odaya katılma işlemini başlat
     function processRoomJoin(roomId, room) {
-        currentRoom = {
-            id: roomId,
-            ...room
-        };
+        console.log("Odaya katılınıyor:", room);
         
-        // Odayı localStorage'a kaydet
-        saveRoomSession(roomId, room.name);
-        
-        // Kullanıcı adını veritabanından al ve sonra katılımcı olarak ekle
+        // 1. Kullanıcının kendi adını al (varsa)
         database.ref(`users/${currentUser.uid}`).once('value')
             .then(function(snapshot) {
-                let userName = 'İsimsiz Kullanıcı';
+                let userName = currentUser.displayName || 'İsimsiz Kullanıcı';
                 
-                // Kullanıcı adını doğrudan users/[uid]/name yolundan al (user-name-sync.js ile aynı mantıkta)
                 if (snapshot.exists()) {
                     const userData = snapshot.val();
                     if (userData && userData.name) {
                         userName = userData.name;
-                        console.log("Kullanıcı adı doğrudan veritabanından alındı:", userName);
-                        
-                        // Global değişkene ata
-                        currentUserName = userName;
-                    } else {
-                        console.log("Veritabanında name özelliği bulunamadı, varsayılan isim kullanılacak");
                     }
-                } else {
-                    console.log("Kullanıcı verisi bulunamadı, varsayılan isim kullanılacak");
                 }
                 
-                // Katılımcı olarak ekle
-                let participantData = {
-                    name: userName, // Veritabanından alınan kullanıcı adı
+                // Kullanıcı adını güncelle
+                currentUserName = userName;
+                
+                // 2. Odanın katılımcılar listesine kullanıcıyı ekle
+                return activeRoomsRef.child(`${roomId}/participants/${currentUser.uid}`).update({
+                    name: userName,
                     joined: firebase.database.ServerValue.TIMESTAMP,
                     status: 'active'
-                };
+                });
+            })
+            .then(function() {
+                console.log("Katılımcı listesine eklendi");
                 
-                console.log("Kullanıcı odaya katılımcı olarak ekleniyor");
+                // 3. Kullanıcı varlık durumunu güncelle
+                return userPresenceRef.child(currentUser.uid).update({
+                    status: 'online',
+                    room_id: roomId,
+                    last_seen: firebase.database.ServerValue.TIMESTAMP
+                });
+            })
+            .then(function() {
+                console.log("Kullanıcı durumu güncellendi");
                 
-                // Sadece activeRoomsRef'te katılımcıyı güncelle
-                activeRoomsRef.child(`${roomId}/participants/${currentUser.uid}`).set(participantData)
+                // 4. Odanın lastEmptyTimestamp özelliğini temizle (eğer varsa)
+                // Çünkü artık odada aktif birisi var
+                return activeRoomsRef.child(roomId).update({
+                    lastEmptyTimestamp: null
+                });
+            })
                     .then(function() {
-                        console.log("Kullanıcı odaya eklendi");
+                console.log("Oda boşalma zamanı temizlendi");
                         
-                        // Kullanıcı varlığı izleme
+                // 5. Oda oturumunu kaydet
+                saveRoomSession(roomId, room.name);
+                
+                // 6. Varlık takibini başlat
                         setupPresenceTracking(roomId);
                         
-                        // Oda arayüzünü göster
+                // 7. Katılımcıları dinle
+                listenForParticipants(roomId);
+                
+                // 8. Oda arayüzünü göster
                         showRoomInterface(room);
                         
-                        // Katılımcıları dinle
-                        listenForParticipants(roomId);
-                        
-                        // Mesajları dinle
+                // 9. Zamanlayıcıyı ayarla
+                if (room.mode === 'pomodoro') {
+                    const pomodoroSettings = room.pomodoroSettings || { workTime: 25, breakTime: 5 };
+                    setupTimer('pomodoro', pomodoroSettings);
+                } else if (room.mode === 'exam') {
+                    setupTimer('exam', { examDuration: room.examDuration });
+                } else {
+                    setupTimer('free');
+                }
+                
+                // 10. Zamanlayıcı senkronizasyonunu başlat
+                setupTimerSync(roomId);
+                
+                // 11. Mesajları göster
                         listenForMessages(roomId);
                         
-                        // Zamanlayıcıyı ayarla
-                        setupTimer(room.mode, room.examDuration);
-                        
-                        // Zamanlayıcı senkronizasyonunu başlat (eğer timer özelliği varsa)
-                        if (room.timer) {
-                            setupTimerSync(roomId);
-                        }
-                        
-                        // Odaya katılım bildirimi göster
+                // 12. Oda davetlerini dinle
+                listenForRoomInvitationChanges(roomId);
+                
+                // 13. Oda bilgilerini güncelle
+                currentRoom = room;
+                
+                // 14. Bildirim göster
                         showNotification('success', 'Odaya Katıldınız', `"${room.name}" odasına başarıyla katıldınız.`);
                     })
                     .catch(function(error) {
-                        console.error("Odaya katılma hatası: ", error);
+                console.error("Odaya katılma hatası:", error);
                         alert("Odaya katılırken bir hata oluştu: " + error.message);
-                        clearRoomSession(); // Hata durumunda oturum bilgisini temizle
-                    });
-            })
-            .catch(function(error) {
-                console.error("Kullanıcı profili alınırken hata:", error);
-                alert("Kullanıcı profili alınırken bir hata oluştu: " + error.message);
             });
     }
     
@@ -613,7 +787,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Oda arayüzünü göster
     function showRoomInterface(room) {
-        createRoomContainer.style.display = 'none';
+        createRoomContainer.classList.remove('active');
+        setTimeout(() => {
+            createRoomContainer.style.display = 'none';
+        }, 300);
+        
         roomListContainer.style.display = 'none';
         workTogetherContainer.style.display = 'block';
         
@@ -644,7 +822,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const addButton = document.createElement('button');
         addButton.id = 'addParticipantBtn';
         addButton.className = 'btn-primary add-participant-btn';
-        addButton.innerHTML = '<i class="fas fa-user-plus"></i> Davet Et';
+        addButton.innerHTML = '<i class="fas fa-user-plus"></i>';
         
         // Butona olay dinleyicisi ekle
         addButton.addEventListener('click', function(e) {
@@ -859,16 +1037,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Zamanlayıcıyı ayarla
-    function setupTimer(mode, examDuration) {
+    function setupTimer(mode, options) {
+        console.log("Zamanlayıcı ayarlanıyor, mod:", mode, "seçenekler:", options);
+        
         switch(mode) {
             case 'pomodoro':
-                timerSeconds = 25 * 60; // 25 dakika
+                // Eğer özel ayarlar varsa kullan, yoksa varsayılan değerleri kullan
+                const workTime = options && options.workTime ? options.workTime : 25;
+                timerSeconds = workTime * 60; // Çalışma dakikası
+                console.log(`Pomodoro çalışma süresi: ${workTime} dakika (${timerSeconds} saniye)`);
                 break;
             case 'exam':
-                timerSeconds = (examDuration || 135) * 60; // Sınav süresi
+                // Sınav süresi (dakika olarak)
+                const examDuration = options && options.examDuration ? options.examDuration : 135;
+                timerSeconds = examDuration * 60;
+                console.log(`Sınav süresi: ${examDuration} dakika (${timerSeconds} saniye)`);
                 break;
             case 'free':
                 timerSeconds = 0; // Yukarı doğru sayacak
+                console.log("Serbest mod: Yukarı doğru sayım");
                 break;
         }
         
@@ -937,7 +1124,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Modu kontrol et ve zamanı ayarla
         if (currentRoom.mode === 'pomodoro') {
-            timerSeconds = 25 * 60; // 25 dakika
+            // Pomodoro ayarlarını kullan
+            const workTime = currentRoom.pomodoroSettings && currentRoom.pomodoroSettings.workTime ? 
+                            currentRoom.pomodoroSettings.workTime : 25;
+            timerSeconds = workTime * 60; // Çalışma süresi
         } else if (currentRoom.mode === 'exam') {
             timerSeconds = (currentRoom.examDuration || 135) * 60; // Sınav süresi
         } else {
@@ -1133,17 +1323,20 @@ document.addEventListener('DOMContentLoaded', function() {
             // Aktif oda listesini göster
             currentRoom = null;
             workTogetherContainer.style.display = 'none';
-            createRoomContainer.style.display = 'block';
             roomListContainer.style.display = 'block';
             
             // Oda oluştur butonunu tekrar göster
             const createRoomButtonContainer = document.getElementById('createRoomButtonContainer');
             if (createRoomButtonContainer) {
-                createRoomButtonContainer.style.display = 'block';
+                createRoomButtonContainer.style.display = 'flex';
             }
             
             // Odadan çıkış bildirimi göster
             showNotification('info', 'Odadan Ayrıldınız', 'Odadan başarıyla ayrıldınız.');
+            
+            // Odada kalan aktif katılımcı sayısını kontrol et
+            // Eğer 0 ise, odanın boşalma zamanını işaretle
+            checkIfRoomEmpty(roomId);
         })
         .catch(function(error) {
             console.error("Odadan ayrılma hatası: ", error);
@@ -1151,9 +1344,47 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Odanın boş olup olmadığını kontrol et
+    function checkIfRoomEmpty(roomId) {
+        activeRoomsRef.child(`${roomId}/participants`).once('value', function(snapshot) {
+            let activeParticipants = 0;
+            
+            if (snapshot.exists()) {
+                const participants = snapshot.val();
+                for (let userId in participants) {
+                    if (participants[userId].status !== 'left') {
+                        activeParticipants++;
+                    }
+                }
+            }
+            
+            // Odada hiç aktif katılımcı kalmadıysa, boşalma zamanını işaretle
+            if (activeParticipants === 0) {
+                console.log("Odada aktif katılımcı kalmadı, boşalma zamanı işaretleniyor");
+                activeRoomsRef.child(roomId).update({
+                    lastEmptyTimestamp: firebase.database.ServerValue.TIMESTAMP
+                })
+                .then(() => {
+                    console.log("Oda boşalma zamanı işaretlendi");
+                })
+                .catch(error => {
+                    console.error("Oda boşalma zamanı işaretlenirken hata:", error);
+                });
+            }
+        });
+    }
+    
     // Kullanıcının aktif oturumunu kontrol et
     function checkForActiveUserSession() {
         console.log("Aktif kullanıcı oturumu kontrol ediliyor...");
+        
+        // Bilinçli ayrılma kayıtlarını kontrol et
+        let voluntaryLeaves = {};
+        try {
+            voluntaryLeaves = JSON.parse(localStorage.getItem('voluntaryRoomLeaves') || '{}');
+        } catch (error) {
+            console.error("Bilinçli ayrılma kayıtları okunurken hata:", error);
+        }
         
         // Önce localStorage'da odada olup olmadığını kontrol et
         const savedRoomData = localStorage.getItem('currentRoomSession');
@@ -1164,25 +1395,79 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (roomData && roomData.roomId) {
                     console.log("Kaydedilmiş oda oturumu bulundu:", roomData);
                     
-                    // Oda oluşturma butonunu gizle
+                    // Kullanıcının bu odadan bilinçli olarak ayrılıp ayrılmadığını kontrol et
+                    if (voluntaryLeaves[roomData.roomId]) {
+                        console.log("Kullanıcı bu odadan bilinçli olarak ayrılmış, otomatik katılım yapılmıyor:", roomData.roomId);
+                        clearRoomSession(); // Oda oturumunu temizle
+                        
+                        // Oda oluşturma butonunu göster
                     const createRoomButtonContainer = document.getElementById('createRoomButtonContainer');
                     if (createRoomButtonContainer) {
-                        createRoomButtonContainer.style.display = 'none';
+                            createRoomButtonContainer.style.display = 'flex';
+                        }
+                        return;
                     }
                     
                     // Oda hala aktif mi kontrol et
                     activeRoomsRef.child(roomData.roomId).once('value')
                         .then(snapshot => {
                             if (snapshot.exists()) {
-                                console.log("Oda hala aktif, otomatik katılınıyor:", roomData.roomId);
+                                // Oda var, şimdi kullanıcının durumunu kontrol et
+                                const room = snapshot.val();
+                                const participants = room.participants || {};
+                                
+                                // Kullanıcı bu odada katılımcı mı ve durumu ne?
+                                if (participants[currentUser.uid]) {
+                                    const userStatus = participants[currentUser.uid].status;
+                                    
+                                    // Eğer kullanıcı odadan ayrılmışsa, bilinçli ayrılma olmadığı sürece geri katıl
+                                    if (userStatus === 'left') {
+                                        // Sayfa normal şekilde yenilenmişse ve bilinçli ayrılma yoksa, 
+                                        // kullanıcı otomatik olarak geri katılabilir
+                                        console.log("Kullanıcı bu odadan ayrılmış ancak bilinçli ayrılma olmadığı için odaya geri katılınıyor:", roomData.roomId);
+                                        
+                                        // Oda oluşturma butonunu gizle
+                                        const createRoomButtonContainer = document.getElementById('createRoomButtonContainer');
+                                        if (createRoomButtonContainer) {
+                                            createRoomButtonContainer.style.display = 'none';
+                                        }
+                                        
+                                        joinRoom(roomData.roomId);
+                                        return;
+                                    }
+                                    
+                                    // Kullanıcı hala aktif veya durumu belirtilmemiş, odaya geri dön
+                                    console.log("Kullanıcı hala aktif, odaya otomatik katılınıyor:", roomData.roomId);
+                                    
+                                    // Oda oluşturma butonunu gizle
+                                    const createRoomButtonContainer = document.getElementById('createRoomButtonContainer');
+                                    if (createRoomButtonContainer) {
+                                        createRoomButtonContainer.style.display = 'none';
+                                    }
+                                    
                                 joinRoom(roomData.roomId);
+                                } else {
+                                    // Kullanıcı bu odada hiç katılımcı olmamış, oturumu temizle
+                                    console.log("Kullanıcı bu odada katılımcı değil, oturumu temizliyorum");
+                                    clearRoomSession();
+                                    
+                                    // Oda oluşturma butonunu göster
+                                    const createRoomButtonContainer = document.getElementById('createRoomButtonContainer');
+                                    if (createRoomButtonContainer) {
+                                        createRoomButtonContainer.style.display = 'flex';
+                                    }
+                                    
+                                    // Firebase presence bilgisini kontrol et
+                                    checkFirebasePresence();
+                                }
                             } else {
                                 console.log("Kaydedilmiş oda artık aktif değil, oturumu temizliyorum");
                                 clearRoomSession();
                                 
-                                // Oda oluşturma butonunu tekrar göster
+                                // Oda oluşturma butonunu göster
+                                const createRoomButtonContainer = document.getElementById('createRoomButtonContainer');
                                 if (createRoomButtonContainer) {
-                                    createRoomButtonContainer.style.display = 'block';
+                                    createRoomButtonContainer.style.display = 'flex';
                                 }
                                 
                                 // Firebase presence bilgisini de kontrol et
@@ -1193,11 +1478,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             console.error("Oda kontrolü sırasında hata:", error);
                             clearRoomSession();
                             
-                            // Oda oluşturma butonunu tekrar göster
+                            // Oda oluşturma butonunu göster
+                            const createRoomButtonContainer = document.getElementById('createRoomButtonContainer');
                             if (createRoomButtonContainer) {
-                                createRoomButtonContainer.style.display = 'block';
+                                createRoomButtonContainer.style.display = 'flex';
                             }
                             
+                            // Firebase presence bilgisini kontrol et
                             checkFirebasePresence();
                         });
                     
@@ -1206,6 +1493,12 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (error) {
                 console.error("Kaydedilmiş oda verisini işlerken hata:", error);
                 clearRoomSession();
+                
+                // Oda oluşturma butonunu göster
+                const createRoomButtonContainer = document.getElementById('createRoomButtonContainer');
+                if (createRoomButtonContainer) {
+                    createRoomButtonContainer.style.display = 'flex';
+                }
             }
         }
         
@@ -1218,7 +1511,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     let presence = snapshot.val();
                     
                     if (presence.status === 'online' && presence.room_id) {
-                        // Kullanıcı zaten bir odada aktif, otomatik katıl
+                        // Kullanıcının bu odadan bilinçli olarak ayrılıp ayrılmadığını kontrol et
+                        if (voluntaryLeaves[presence.room_id]) {
+                            console.log("Kullanıcı bu odadan bilinçli olarak ayrılmış, otomatik katılım yapılmıyor:", presence.room_id);
+                            
+                            // Kullanıcı durumunu güncelle
+                            userPresenceRef.child(currentUser.uid).update({
+                                status: 'offline',
+                                room_id: null,
+                                last_seen: firebase.database.ServerValue.TIMESTAMP
+                            });
+                            
+                            // Oda oluşturma butonunu göster
+                            const createRoomButtonContainer = document.getElementById('createRoomButtonContainer');
+                            if (createRoomButtonContainer) {
+                                createRoomButtonContainer.style.display = 'flex';
+                            }
+                            return;
+                        }
+                        
+                        // Kullanıcının odadaki durumunu kontrol et
+                        activeRoomsRef.child(`${presence.room_id}/participants/${currentUser.uid}`).once('value', function(participantSnapshot) {
+                            if (participantSnapshot.exists() && participantSnapshot.val().status !== 'left') {
+                                // Kullanıcı hala aktif, odaya otomatik katıl
                         console.log("Firebase'de aktif oda bulundu, otomatik katılınıyor:", presence.room_id);
                         
                         // Oda oluşturma butonunu gizle
@@ -1228,6 +1543,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         
                         joinRoom(presence.room_id);
+                            } else {
+                                // Kullanıcı bilinçli olarak ayrılmamışsa, ayrılma durumu sayfa yenilenmesinden kaynaklanıyor olabilir, 
+                                // bu yüzden odaya geri katıl
+                                console.log("Kullanıcı ayrılmış görünüyor, ancak bilinçli ayrılma olmadığı için odaya geri katılınıyor:", presence.room_id);
+                                
+                                // Oda oluşturma butonunu gizle
+                                const createRoomButtonContainer = document.getElementById('createRoomButtonContainer');
+                                if (createRoomButtonContainer) {
+                                    createRoomButtonContainer.style.display = 'none';
+                                }
+                                
+                                joinRoom(presence.room_id);
+                            }
+                        });
                     }
                 }
             });
@@ -1363,9 +1692,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Süre dolduğunda bildirim ver
                     if (currentRoom.mode === 'pomodoro') {
-                        alert('Pomodoro süresi doldu! 5 dakika mola verebilirsiniz.');
                         // Mola süresini ayarla
-                        timerSeconds = 5 * 60;
+                        const breakTime = currentRoom.pomodoroSettings && currentRoom.pomodoroSettings.breakTime ? 
+                                         currentRoom.pomodoroSettings.breakTime : 5;
+                        
+                        alert(`Pomodoro süresi doldu! ${breakTime} dakika mola verebilirsiniz.`);
+                        
+                        // Mola süresini ayarla
+                        timerSeconds = breakTime * 60;
                         updateTimerDisplay();
                         
                         // Veritabanını güncelle
@@ -1415,23 +1749,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const dialog = document.createElement('div');
         dialog.id = 'addParticipantDialog';
         dialog.className = 'popup-overlay';
+        dialog.style.zIndex = "9999";
         
         dialog.innerHTML = `
-            <div class="popup-container">
-                <div class="popup-header">
-                    <h3>Arkadaşlarımı Odaya Davet Et</h3>
-                    <button class="popup-close-btn"><i class="fas fa-times"></i></button>
+            <div class="popup-container" style="opacity: 1 !important; visibility: visible !important; z-index: 10000 !important;">
+                <div class="popup-header" style="opacity: 1 !important; visibility: visible !important; z-index: 10000 !important;">
+                    <h3 style="opacity: 1 !important; visibility: visible !important; z-index: 10000 !important; color: #333 !important;">Arkadaşlarımı Odaya Davet Et</h3>
+                    <button class="popup-close-btn" style="opacity: 1 !important; visibility: visible !important; z-index: 10000 !important;"><i class="fas fa-times"></i></button>
                 </div>
-                <div class="popup-content">
-                    <p>Odaya davet etmek istediğin arkadaşlarını seç:</p>
-                    <div id="friendList" class="friend-list">
-                        <div class="loading-friends">
+                <div class="popup-content" style="opacity: 1 !important; visibility: visible !important; z-index: 10000 !important; flex: 1 !important; height: auto !important; max-height: none !important;">
+                    <div id="friendList" class="friend-list" style="opacity: 1 !important; visibility: visible !important; z-index: 10000 !important; height: calc(100% - 40px) !important; max-height: none !important;">
+                        <div class="loading-friends" style="opacity: 1 !important; visibility: visible !important; z-index: 10000 !important; color: #666 !important;">
                             <i class="fas fa-spinner fa-spin"></i> Arkadaşlar yükleniyor...
                         </div>
                     </div>
                 </div>
-                <div class="popup-footer">
-                    <button id="cancelAddParticipant" class="btn-secondary">Kapat</button>
+                <div class="popup-footer" style="opacity: 1 !important; visibility: visible !important; z-index: 10000 !important;">
+                    <button id="cancelAddParticipant" class="btn-secondary" style="opacity: 1 !important; visibility: visible !important; z-index: 10000 !important;">Kapat</button>
                 </div>
             </div>
         `;
@@ -1509,27 +1843,29 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             .popup-visible {
-                opacity: 1;
-                visibility: visible;
+                opacity: 1 !important;
+                visibility: visible !important;
             }
             
             .popup-container {
-                background-color: #fff;
+                background-color: #fff !important;
                 border-radius: 10px;
                 box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
                 width: 90%;
                 max-width: 500px;
-                max-height: 80vh;
+                height: 80vh !important;
+                max-height: 80vh !important;
                 display: flex;
                 flex-direction: column;
                 transform: scale(0.9);
                 opacity: 0;
                 transition: transform 0.3s ease, opacity 0.3s ease;
+                z-index: 10000 !important;
             }
             
             .popup-visible .popup-container {
                 transform: scale(1);
-                opacity: 1;
+                opacity: 1 !important;
             }
             
             .popup-header {
@@ -1539,12 +1875,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 align-items: center;
                 justify-content: space-between;
                 border-radius: 10px 10px 0 0;
+                z-index: 10000 !important;
+                background-color: #fff !important;
             }
             
             .popup-header h3 {
                 margin: 0;
                 font-size: 18px;
-                color: #333;
+                color: #333 !important;
+                z-index: 10000 !important;
             }
             
             .popup-close-btn {
@@ -1554,6 +1893,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 cursor: pointer;
                 font-size: 18px;
                 transition: color 0.2s ease;
+                z-index: 10000 !important;
             }
             
             .popup-close-btn:hover {
@@ -1561,9 +1901,29 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             .popup-content {
-                padding: 20px;
+                width: 100% !important;
+                height: 100% !important;
                 overflow-y: auto;
-                flex: 1;
+                flex: 1 !important;
+                height: auto !important;
+                z-index: 10000 !important;
+                background-color: #fff !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            
+            .popup-content p {
+                color: #333 !important;
+                z-index: 10000 !important;
+                margin-bottom: 10px !important;
+            }
+            
+            .popup-content .friend-list {
+                flex: 1 !important;
+                height: auto !important;
+                max-height: none !important;
+                overflow-y: auto !important;
+                margin-bottom: 0 !important;
             }
             
             .popup-footer {
@@ -1573,25 +1933,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 justify-content: flex-end;
                 gap: 10px;
                 border-radius: 0 0 10px 10px;
+                z-index: 10000 !important;
+                background-color: #fff !important;
             }
             
             /* Karanlık tema uyumluluğu */
             .dark-theme .popup-container {
-                background-color: #333;
+                background-color: #333 !important;
                 box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+                z-index: 10000 !important;
+                margin: 0 !important;
+                padding: 0 !important;
             }
             
             .dark-theme .popup-header,
             .dark-theme .popup-footer {
                 border-color: #444;
+                background-color: #333 !important;
+                z-index: 10000 !important;
             }
             
             .dark-theme .popup-header h3 {
-                color: #eee;
+                color: #eee !important;
+                z-index: 10000 !important;
             }
             
             .dark-theme .popup-close-btn {
                 color: #777;
+                z-index: 10000 !important;
             }
             
             .dark-theme .popup-close-btn:hover {
@@ -1599,7 +1968,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             .dark-theme .popup-content {
-                color: #ddd;
+                color: #ddd !important;
+                background-color: #333 !important;
+                z-index: 10000 !important;
+            }
+            
+            .dark-theme .popup-content p {
+                color: #ddd !important;
+                z-index: 10000 !important;
             }
         `;
         
@@ -1625,69 +2001,101 @@ document.addEventListener('DOMContentLoaded', function() {
             /* Arkadaş listesi stilleri */
             .friend-list {
                 margin-top: 15px;
-                max-height: 350px;
+                flex: 1 !important;
+                height: auto !important;
+                max-height: none !important;
                 overflow-y: auto;
+                z-index: 10000 !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                display: flex !important;
+                flex-direction: column !important;
             }
             
             .friend-item {
                 padding: 12px;
                 border-radius: 8px;
                 margin-bottom: 10px;
-                background-color: #f7f7f7;
+                background-color: #f7f7f7 !important;
                 display: flex;
                 align-items: center;
+                z-index: 10000 !important;
+                opacity: 1 !important;
+                visibility: visible !important;
             }
             
             .friend-item:hover {
-                background-color: #f0f0f0;
+                background-color: #f0f0f0 !important;
             }
             
             .friend-avatar {
                 width: 40px;
                 height: 40px;
                 border-radius: 50%;
-                background-color: #1976D2;
-                color: white;
+                background-color: #1976D2 !important;
+                color: white !important;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 font-weight: bold;
                 margin-right: 15px;
                 flex-shrink: 0;
+                z-index: 10000 !important;
+                opacity: 1 !important;
+                visibility: visible !important;
             }
             
             .friend-info {
                 flex: 1;
+                z-index: 10000 !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                background: none !important;
             }
             
             .friend-name {
                 font-weight: 600;
                 margin: 0 0 5px 0;
+                z-index: 10000 !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                color: #333 !important;
+                background: none !important;
             }
             
             .friend-status {
                 margin: 0;
                 font-size: 12px;
-                color: #666;
+                color: #666 !important;
+                z-index: 10000 !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                background: none !important;
             }
             
             .loading-friends {
                 text-align: center;
                 padding: 20px;
-                color: #666;
+                color: #666 !important;
+                z-index: 10000 !important;
+                opacity: 1 !important;
+                visibility: visible !important;
             }
             
             .no-friends {
                 text-align: center;
                 padding: 20px;
-                color: #666;
-                background-color: #f7f7f7;
+                color: #666 !important;
+                background-color: #f7f7f7 !important;
                 border-radius: 8px;
+                z-index: 10000 !important;
+                opacity: 1 !important;
+                visibility: visible !important;
             }
             
             .no-friends.error {
-                background-color: #ffebee;
-                color: #c62828;
+                background-color: #ffebee !important;
+                color: #c62828 !important;
             }
             
             .invite-btn {
@@ -1695,43 +2103,63 @@ document.addEventListener('DOMContentLoaded', function() {
                 font-size: 14px;
                 margin-left: 10px;
                 flex-shrink: 0;
+                z-index: 10000 !important;
+                opacity: 1 !important;
+                visibility: visible !important;
             }
             
             .invited-btn {
-                background-color: #4CAF50;
+                background-color: #4CAF50 !important;
                 cursor: default;
-                opacity: 0.8;
+                opacity: 0.8 !important;
             }
             
             /* Karanlık tema uyumluluğu - Arkadaş listesi */
             .dark-theme .friend-item {
-                background-color: #444;
+                background-color: #444 !important;
+                z-index: 10000 !important;
+                opacity: 1 !important;
+                visibility: visible !important;
             }
             
             .dark-theme .friend-item:hover {
-                background-color: #555;
+                background-color: #555 !important;
             }
             
             .dark-theme .friend-name {
-                color: #eee;
+                color: #eee !important;
+                z-index: 10000 !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                background: none !important;
             }
             
             .dark-theme .friend-status {
-                color: #aaa;
+                color: #aaa !important;
+                z-index: 10000 !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                background: none !important;
             }
             
             .dark-theme .no-friends {
-                color: #aaa;
-                background-color: #444;
+                color: #aaa !important;
+                background-color: #444 !important;
+                z-index: 10000 !important;
+                opacity: 1 !important;
+                visibility: visible !important;
             }
             
             .dark-theme .no-friends.error {
-                background-color: #4a2222;
-                color: #ff8a80;
+                background-color: #4a2222 !important;
+                color: #ff8a80 !important;
             }
             
             .dark-theme .loading-friends {
-                color: #aaa;
+                color: #aaa !important;
+                z-index: 10000 !important;
+                opacity: 1 !important;
+                visibility: visible !important;
             }
         `;
         
@@ -1871,6 +2299,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         friends.forEach(function(friend) {
                             const userItem = document.createElement('div');
                             userItem.className = 'friend-item';
+                            userItem.style.opacity = "1";
+                            userItem.style.visibility = "visible";
                             
                             // Kullanıcının baş harflerini avatar olarak kullan
                             let initials = friend.displayName.split(' ').map(name => name && name[0]).join('').toUpperCase();
@@ -1880,12 +2310,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                             
                             userItem.innerHTML = `
-                                <div class="friend-avatar">${initials}</div>
-                                <div class="friend-info">
-                                    <p class="friend-name">${friend.displayName}</p>
-                                    <p class="friend-status">${friend.status}</p>
+                                <div class="friend-avatar" style="background-color: #1976D2 !important; z-index: 10; opacity: 1; visibility: visible;">${initials}</div>
+                                <div class="friend-info" style="background: none !important; z-index: 10; opacity: 1; visibility: visible;">
+                                    <p class="friend-name" style="background: none !important; z-index: 10; opacity: 1; visibility: visible; color: #333 !important;">${friend.displayName}</p>
+                                    <p class="friend-status" style="background: none !important; z-index: 10; opacity: 1; visibility: visible; color: #666 !important;">${friend.status}</p>
                                 </div>
-                                <button class="btn-primary invite-btn" data-user-id="${friend.id}" data-user-name="${friend.displayName}">Davet Et</button>
+                                <button class="btn-primary invite-btn" data-user-id="${friend.id}" data-user-name="${friend.displayName}" style="z-index: 10; opacity: 1; visibility: visible;">Davet Et</button>
                             `;
                             
                             friendListContainer.appendChild(userItem);
@@ -2572,6 +3002,71 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error("Oda oturumu temizlenirken hata:", error);
         }
     }
+    
+    // DOM yükleme işlemi
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("DOM yüklendi - seçili modu kontrol ediyorum");
+        
+        // Form ve seçilen mod değerlerini kontrol et
+        const roomModeSelect = document.getElementById('roomMode');
+        
+        if (roomModeSelect) {
+            // Başlangıçta seçili olan modun ayarlarını göster
+            const initialMode = roomModeSelect.value;
+            console.log("Başlangıç modu:", initialMode);
+            
+            // İlk yüklenmede ilgili ayarları göster
+            if (initialMode === 'pomodoro') {
+                console.log("Pomodoro ayarları gösteriliyor");
+                const pomodoroSettings = document.getElementById('pomodoroSettingsContainer');
+                if (pomodoroSettings) pomodoroSettings.style.display = 'block';
+            } else if (initialMode === 'exam') {
+                console.log("Sınav ayarları gösteriliyor");
+                const examSettings = document.getElementById('examDurationContainer');
+                if (examSettings) examSettings.style.display = 'block';
+            }
+            
+            // Çalışma modu değiştiğinde süre ayarlarını göster/gizle
+            roomModeSelect.addEventListener('change', function() {
+                const selectedMode = this.value;
+                console.log("Seçilen mod değişti:", selectedMode);
+                
+                // Pomodoro ayarları
+                const pomodoroSettingsContainer = document.getElementById('pomodoroSettingsContainer');
+                if (pomodoroSettingsContainer) {
+                    pomodoroSettingsContainer.style.display = selectedMode === 'pomodoro' ? 'block' : 'none';
+                }
+                
+                // Sınav ayarları
+                const examDurationContainer = document.getElementById('examDurationContainer');
+                if (examDurationContainer) {
+                    examDurationContainer.style.display = selectedMode === 'exam' ? 'block' : 'none';
+                }
+            });
+        } else {
+            console.log("roomModeSelect bulunamadı");
+        }
+    });
+    
+    // Sayfa yüklendiğinde başlangıç moduna göre ayarları göster
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("DOM yüklendi, başlangıç mod ayarlarını kontrol ediyorum");
+        const initialMode = roomModeSelect ? roomModeSelect.value : null;
+        
+        if (initialMode) {
+            console.log("Başlangıç modu:", initialMode);
+            const pomodoroSettingsContainer = document.getElementById('pomodoroSettingsContainer');
+            const examDurationContainer = document.getElementById('examDurationContainer');
+            
+            if (pomodoroSettingsContainer) {
+                pomodoroSettingsContainer.style.display = initialMode === 'pomodoro' ? 'block' : 'none';
+            }
+            
+            if (examDurationContainer) {
+                examDurationContainer.style.display = initialMode === 'exam' ? 'block' : 'none';
+            }
+        }
+    });
 });
 
 // Bildirim stillerini ekle
@@ -2823,11 +3318,11 @@ function applyNotificationStyles() {
         
         /* Timer renk düzeltmesi */
         .dark-theme .timer-display {
-            color: #e74c3c !important;
+            color: rgb(75, 33, 56) !important;
         }
         
         .dark-theme .timer-fullscreen .timer-display {
-            color: #e74c3c !important;
+            color: rgb(75, 33, 56) !important;
         }
 
         @keyframes fadeInOut {

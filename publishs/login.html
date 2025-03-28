@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YKSMate - Giriş Yap</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/logo(192).png">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Ana JavaScript -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    
+    <style>
+        html, body {
+            background-color: #0a0a0a !important;
+            position: relative;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, rgba(255, 0, 0, 0.15) 0%, rgba(255, 0, 0, 0) 70%);
+            animation: flow 15s ease-in-out infinite;
+            z-index: 0;
+            filter: blur(50px);
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, rgba(255, 0, 0, 0.1) 0%, rgba(255, 0, 0, 0) 60%);
+            animation: flow 20s ease-in-out infinite reverse;
+            z-index: 0;
+            filter: blur(50px);
+        }
+
+        @keyframes flow {
+            0% {
+                transform: translate(-20%, -20%) scale(1.2);
+            }
+            50% {
+                transform: translate(20%, 20%) scale(1.2);
+            }
+            100% {
+                transform: translate(-20%, -20%) scale(1.2);
+            }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo h1 {
+            font-size: 32px;
+            color: #ffffff;
+            font-weight: 700;
+            margin-left: 15px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            letter-spacing: 0.5px;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: none;
+            font-size: 17px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            letter-spacing: 0.3px;
+        }
+        
+        .tab-btn:hover {
+            color: rgba(255, 255, 255, 1);
+        }
+        
+        .tab-btn.active {
+            color: #ffffff;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #ffffff;
+            font-size: 16px;
+            transition: all 0.3s;
+            letter-spacing: 0.3px;
+        }
+        
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 15px;
+            letter-spacing: 0.2px;
+        }
+        
+        .remember-me span {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 15px;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            text-align: center;
+            border: none;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+        }
+        
+        .exam-selection h3 {
+            font-size: 18px;
+            margin-bottom: 12px;
+            color: rgba(255, 255, 255, 1);
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        
+        .exam-label {
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+            letter-spacing: 0.2px;
+        }
+    </style>
+    
+    <!-- Oturum Kontrolü -->
+    <script>
+        // Sayfa yüklendiğinde çalışacak
+        document.addEventListener('DOMContentLoaded', function() {
+            // Firebase yüklendiyse
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                // Oturum kalıcılığını LOCAL olarak ayarla
+                firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+                    .then(() => {
+                        console.log("Oturum kalıcılığı LOCAL olarak ayarlandı");
+                    })
+                    .catch((error) => {
+                        console.error("Oturum kalıcılığı ayarlanamadı:", error);
+                    });
+                
+                // Kullanıcı oturumunu kontrol et
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        // Kullanıcı giriş yapmış, ana sayfaya yönlendir
+                        console.log("Kullanıcı zaten giriş yapmış, ana sayfaya yönlendiriliyor...");
+                        
+                        // Kullanıcı bilgilerini Firestore'dan al
+                        firebase.firestore().collection('users').doc(user.uid).get()
+                            .then(doc => {
+                                if (doc.exists) {
+                                    const userData = doc.data();
+                                    // Kullanıcı bilgilerini sessionStorage'a kaydet
+                                    if (userData.name) sessionStorage.setItem("registerName", userData.name);
+                                    if (userData.examType) sessionStorage.setItem("registerExamType", userData.examType);
+                                    console.log("Kullanıcı bilgileri sessionStorage'a kaydedildi:", userData);
+                                }
+                                // Ana sayfaya yönlendir
+                                window.location.href = "index.html";
+                            })
+                            .catch(error => {
+                                console.error("Kullanıcı bilgileri alınırken hata:", error);
+                                // Hata olsa bile ana sayfaya yönlendir
+                                window.location.href = "index.html";
+                            });
+                    } else {
+                        // Giriş ekranını göster
+                        document.getElementById("authContainer").style.display = "flex";
+                    }
+                });
+                
+                // Beni Hatırla checkbox'ını varsayılan olarak işaretle
+                const rememberMeCheckbox = document.getElementById('rememberMe');
+                if (rememberMeCheckbox) {
+                    rememberMeCheckbox.checked = true;
+                }
+            } else {
+                console.error("Firebase yüklenemedi!");
+                alert("Sistem yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.");
+            }
+        });
+    </script>
+</head>
+<body class="light-theme">
+    <div class="container">
+        <!-- Giriş Ekranı -->
+        <div class="auth-container" id="authContainer">
+            <div class="auth-box">
+                <div class="logo">
+                    <img src="assets/images/logo(192).png" alt="YKSMate Logo" width="50" height="50">
+                    <h1>YKSMate</h1>
+                </div>
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="login">Giriş Yap</button>
+                    <button class="tab-btn" data-tab="register">Kayıt Ol</button>
+                </div>
+                
+                <!-- Giriş Formu -->
+                <div class="tab-content active" id="login">
+                    <form id="loginForm" onsubmit="return false;">
+                        <div class="input-group">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="loginEmail" placeholder="E-posta" required>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="loginPassword" placeholder="Şifre" required>
+                        </div>
+                        <div class="remember-me">
+                            <label>
+                                <input type="checkbox" id="rememberMe">
+                                <span>Beni Hatırla</span>
+                            </label>
+                        </div>
+                        <button type="button" id="loginButton" class="btn btn-primary">Giriş Yap</button>
+                    </form>
+                </div>
+                
+                <!-- Kayıt Formu -->
+                <div class="tab-content" id="register">
+                    <form id="registerForm" onsubmit="return false;">
+                        <div class="input-group">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="registerName" placeholder="Ad Soyad" required>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="registerEmail" placeholder="E-posta" required>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="registerPassword" placeholder="Şifre" required>
+                        </div>
+                        <div class="exam-selection">
+                            <h3>Sınav Türü Seçin</h3>
+                            <div class="exam-options">
+                                <label class="exam-option">
+                                    <input type="radio" name="examType" value="tyt" checked>
+                                    <span class="exam-label">TYT</span>
+                                </label>
+                                <label class="exam-option">
+                                    <input type="radio" name="examType" value="sayisal">
+                                    <span class="exam-label">Sayısal</span>
+                                </label>
+                                <label class="exam-option">
+                                    <input type="radio" name="examType" value="sozel">
+                                    <span class="exam-label">Sözel</span>
+                                </label>
+                                <label class="exam-option">
+                                    <input type="radio" name="examType" value="esitagirlik">
+                                    <span class="exam-label">Eşit Ağırlık</span>
+                                </label>
+                                <label class="exam-option">
+                                    <input type="radio" name="examType" value="dil">
+                                    <span class="exam-label">Dil</span>
+                                </label>
+                            </div>
+                        </div>
+                        <button type="button" id="registerButton" class="btn btn-primary">Kayıt Ol</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

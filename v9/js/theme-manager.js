@@ -5,6 +5,13 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log("Tema yöneticisi başlatılıyor...");
     
+    // Global themeManager nesnesi oluştur
+    window.themeManager = {
+        applyTheme: applyTheme,
+        applyNarrowSidebarTheme: applyNarrowSidebarTheme,
+        updateThemeToggleIcon: updateThemeToggleIcon
+    };
+    
     // Tema bilgisini localStorage'dan al
     const savedTheme = localStorage.getItem('theme');
     const appearanceData = JSON.parse(localStorage.getItem('appearanceData')) || {};
@@ -95,6 +102,46 @@ document.addEventListener('DOMContentLoaded', function() {
         if (theme === 'dark') {
             applyDarkThemeStyles();
         }
+        
+        // Eğer sidebar-narrow aktifse, sidebar stillerini güncelle
+        if (document.body.classList.contains('sidebar-narrow-active')) {
+            applyNarrowSidebarTheme();
+        }
+    }
+    
+    // Dar sidebar için tema stillerini uygula 
+    function applyNarrowSidebarTheme() {
+        const sidebar = document.querySelector('.sidebar');
+        if (!sidebar) return;
+        
+        // Önce tüm stilleri temizle
+        sidebar.style.removeProperty('background-color');
+        sidebar.style.removeProperty('border-right');
+        
+        // Tema sınıflarını kontrol et
+        const isDarkTheme = document.body.classList.contains('dark-theme');
+        const isPurpleTheme = document.body.classList.contains('purple-theme'); 
+        const isBlueTheme = document.body.classList.contains('blue-theme');
+        const isGreenTheme = document.body.classList.contains('green-theme');
+        
+        // Tema değişkenine göre stil uygula
+        if (isDarkTheme) {
+            sidebar.style.setProperty('background-color', 'var(--dark-card-bg)', 'important');
+            sidebar.style.setProperty('border-right', '1px solid var(--dark-border)', 'important');
+        } else if (isPurpleTheme) {
+            sidebar.style.setProperty('background-color', 'var(--purple-card-bg)', 'important');
+            sidebar.style.setProperty('border-right', '1px solid var(--purple-border)', 'important');
+        } else if (isBlueTheme) {
+            sidebar.style.setProperty('background-color', 'var(--blue-card-bg)', 'important');
+            sidebar.style.setProperty('border-right', '1px solid var(--blue-border)', 'important');
+        } else if (isGreenTheme) {
+            sidebar.style.setProperty('background-color', 'var(--green-card-bg)', 'important');
+            sidebar.style.setProperty('border-right', '1px solid var(--green-border)', 'important');
+        } else {
+            // Varsayılan light tema
+            sidebar.style.setProperty('background-color', 'var(--light-card-bg)', 'important');
+            sidebar.style.setProperty('border-right', '1px solid var(--light-border)', 'important');
+        }
     }
     
     // Koyu tema için özel stil uygulamaları
@@ -177,8 +224,8 @@ document.addEventListener('DOMContentLoaded', function() {
         cssRules += `.dark-theme .container { background: #0a0a0a !important; }\n`;
         cssRules += `.dark-theme .dashboard-container { background: #0a0a0a !important; }\n`;
         
-        // Tüm öğelerin arkaplan rengini ayarla
-        cssRules += `.dark-theme * { background-color: #0a0a0a !important; }\n`;
+        // Karanlık temada text renklerini ayarla
+        cssRules += `.dark-theme { color: #eee !important; }\n`;
         
         // Stil kurallarını uygula
         styleElement.textContent = cssRules;

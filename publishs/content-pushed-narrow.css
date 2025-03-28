@@ -1,0 +1,1 @@
+.content-pushed-narrow { margin-left: 70px; width: calc(100% - 70px); transition: all 0.3s ease, margin-left 0.3s ease, width 0.3s ease; }
