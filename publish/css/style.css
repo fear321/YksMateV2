@@ -641,6 +641,7 @@ body.green-theme {
     flex-direction: column;
     height: 100%;
     min-height: 0;
+    width: 100% !important;
 }
 
 .sidebar-nav ul {
@@ -661,6 +662,7 @@ body.green-theme {
 
 /* Header bölgesi (Ana Sayfa) */
 .sidebar-header {
+    margin-top: 10px;
 
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -713,7 +715,7 @@ body.green-theme {
 
 /* Footer bölgesi (Ayarlar) */
 .sidebar-footer {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 5px;
 }
 
 /* Tüm öğeler için temel stil */
@@ -728,15 +730,25 @@ body.green-theme {
 
 .sidebar-nav a {
     display: flex;
-    align-items: center;
-    justify-content: center;
     padding: 10px 15px;
     color: var(--light-text);
     text-decoration: none;
     margin-bottom: 5px;
     transition: all 0.3s;
     border-left: 2px solid transparent;
-    width: 80%;
+    width: 100%;
+}
+.sidebar-header{
+    margin-top: 30px;
+}
+.sidebar-narrow .sidebar-header{
+    margin-top: 20px !important;
+}
+.sidebar-footer{
+    margin-bottom: 30px;
+}
+.sidebar-narrow .sidebar-footer{
+    margin-bottom: 20px !important;
 }
 
 .dark-theme .sidebar-nav a {
@@ -746,7 +758,7 @@ body.green-theme {
 .sidebar-nav a i {
     min-width: 24px;
     margin-right: 10px;
-    font-size: 18px;
+    font-size: 22px;
     text-align: center;
     transition: margin var(--menu-transition);
 }
@@ -755,11 +767,16 @@ body.green-theme {
     display: inline-block;
     text-align: left;
     margin: 0;
+    font-size: 13px;
 }
 
 .sidebar-nav li.active a {
     border-left-color: var(--primary-color);
     border-left: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    
+}
+.sidebar-nav li.active i, .sidebar-nav li.active p {
     color: var(--primary-color);
 }
 
@@ -779,7 +796,7 @@ body.green-theme {
 
 .sidebar-footer {
     min-height: 50px;
-    border-top: 1px solid var(--light-border);
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
